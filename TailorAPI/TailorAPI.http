@@ -1,0 +1,6 @@
+@TailorAPI_HostAddress = http://localhost:5148
+
+GET {{TailorAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
