@@ -1,5 +1,7 @@
 ﻿public class MeasurementDTO
 {
+
+
     public int CustomerID { get; set; } // ✅ Required to associate measurement with a customer
     public float Chest { get; set; }
     public float Waist { get; set; }

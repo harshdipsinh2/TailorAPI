@@ -81,13 +81,28 @@ public class CustomerService
     }
 
     // ✅ Delete customer
-    public async Task<bool> DeleteCustomerAsync(int customerId)
+    public async Task<bool> SoftDeleteCustomerAsync(int customerId)
     {
         var customer = await _context.Customers.FindAsync(customerId);
         if (customer == null) return false;
 
-        _context.Customers.Remove(customer);
+        // ✅ Soft delete Customer
+        customer.IsDeleted = true;
+
+        // ✅ Get the related Measurement (It will be deleted automatically)
+        var measurement = await _context.Measurements.FirstOrDefaultAsync(m => m.CustomerID == customerId);
+
+        // ✅ Soft delete Employees assigned to this Customer
+        var employees = await _context.Employees.Where(e => e.CustomerID == customerId).ToListAsync();
+        foreach (var emp in employees)
+        {
+            emp.IsDeleted = true;
+            emp.MeasurementID = null; // Remove assigned Measurement (since it will be deleted)
+        }
+
         await _context.SaveChangesAsync();
         return true;
     }
+
+
 }

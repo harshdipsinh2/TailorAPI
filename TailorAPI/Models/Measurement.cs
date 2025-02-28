@@ -4,8 +4,11 @@ using System.Text.Json.Serialization;
 
 public class Measurement
 {
-    [Key]
-    [ForeignKey("Customer")] // ✅ Foreign Key referencing CustomerID
+    [Key] // ✅ Primary Key (Only One!)
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int MeasurementID { get; set; }
+
+    [ForeignKey("Customer")]
     public int CustomerID { get; set; }
 
     public float Chest { get; set; }
@@ -20,7 +23,9 @@ public class Measurement
     public float Sleeve { get; set; }
     public float Arms { get; set; }
 
-    // Navigation Property
+    public bool IsDeleted { get; set; } = false; // ✅ Soft delete flag
+
+    // Navigation Property (Ignored in API Response)
     [JsonIgnore]
     public Customer Customer { get; set; }
 }

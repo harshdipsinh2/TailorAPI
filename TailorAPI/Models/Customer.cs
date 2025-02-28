@@ -19,6 +19,9 @@ public class Customer
     [Required]
     public string Address { get; set; }
 
+    public bool IsDeleted { get; set; } = false; // ✅ Soft delete flag
+
+
     // Navigation Property (One-to-One)
     public Measurement Measurement { get; set; }
     //public List<Measurement> Measurements { get; set; } // Add this line

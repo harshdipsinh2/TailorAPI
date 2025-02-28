@@ -75,13 +75,24 @@ public class MeasurementService
         };
     }
 
-    public async Task<bool> DeleteMeasurementAsync(int customerId)
+    public async Task<bool> SoftDeleteMeasurementAsync(int measurementId)
     {
-        var measurement = await _context.Measurements.FindAsync(customerId);
+        var measurement = await _context.Measurements.FindAsync(measurementId);
         if (measurement == null) return false;
 
-        _context.Measurements.Remove(measurement);
+        // ✅ Soft delete Measurement
+        measurement.IsDeleted = true;
+
+        // ✅ Soft delete Employees assigned to this Measurement
+        var employees = await _context.Employees.Where(e => e.MeasurementID == measurementId).ToListAsync();
+        foreach (var emp in employees)
+        {
+            emp.MeasurementID = null; // Remove assigned Measurement
+        }
+
         await _context.SaveChangesAsync();
         return true;
     }
+
+
 }

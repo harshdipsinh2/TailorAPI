@@ -50,11 +50,14 @@ public class CustomerController : ControllerBase
     }
 
     // ✅ 5. Delete customer
+    // ✅ 5. Soft Delete customer
     [HttpDelete]
-    public async Task<IActionResult> DeleteCustomer([FromQuery] int customerId)
+    public async Task<IActionResult> SoftDeleteCustomer([FromQuery] int customerId)
     {
-        var result = await _customerService.DeleteCustomerAsync(customerId);
-        if (!result) return NotFound();
+        var result = await _customerService.SoftDeleteCustomerAsync(customerId);
+        if (!result) return NotFound("Customer not found.");
+
         return NoContent();
     }
+
 }
