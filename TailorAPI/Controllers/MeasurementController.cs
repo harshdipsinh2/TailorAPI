@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿namespace TailorAPI.Controllers;
+
+
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
 [Route("api/[controller]")]
@@ -39,10 +42,13 @@ public class MeasurementController : ControllerBase
     }
 
     [HttpDelete("{customerId}")]
-    public async Task<IActionResult> DeleteMeasurement(int customerId)
+    [HttpDelete]
+    public async Task<IActionResult> SoftDeleteMeasurement([FromQuery] int measurementId)
     {
-        var deleted = await _measurementService.DeleteMeasurementAsync(customerId);
-        if (!deleted) return NotFound("Measurement not found.");
+        var result = await _measurementService.SoftDeleteMeasurementAsync(measurementId);
+        if (!result) return NotFound("Measurement not found.");
+
         return NoContent();
     }
+
 }
