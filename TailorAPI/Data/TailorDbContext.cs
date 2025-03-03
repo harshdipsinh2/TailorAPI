@@ -1,31 +1,28 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-//using TailorAPI.Migrations;
 using TailorAPI.Models;
 
-public class TailorDbContext : IdentityDbContext<AppUser>
+public class TailorDbContext : DbContext // ✅ Remove IdentityDbContext<AppUser>
 {
     public TailorDbContext(DbContextOptions<TailorDbContext> options)
         : base(options)
     {
     }
 
+    // ✅ Define your tables
     public DbSet<Customer> Customers { get; set; }
-    public DbSet<Employee> Employees { get; set; }
+    //public DbSet<Employee> Employees { get; set; }
     public DbSet<Measurement> Measurements { get; set; }
-
     public DbSet<Order> Orders { get; set; }
     public DbSet<Product> Products { get; set; }
 
-    public DbSet<AppUser> AppUsers { get; set; }
+    public DbSet<Role> Roles { get; set; }
+    public DbSet<User> Users { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
-
-        // ✅ Ensure Identity Tables Exist
-        modelBuilder.Entity<IdentityRole>().ToTable("AppUser");
-
+        base.OnModelCreating(modelBuilder); // ✅ Only call this once
 
         // ✅ Customer Configuration
         modelBuilder.Entity<Customer>(entity =>
@@ -39,30 +36,30 @@ public class TailorDbContext : IdentityDbContext<AppUser>
         });
 
         // ✅ Employee Configuration
-        modelBuilder.Entity<Employee>(entity =>
-        {
-            entity.HasKey(e => e.EmployeeID);
-            entity.Property(e => e.FullName).IsRequired();
-            entity.Property(e => e.Email).IsRequired();
-            entity.Property(e => e.Address).IsRequired();
-            entity.Property(e => e.PhoneNumber).IsRequired();
-            entity.Property(e => e.Role).IsRequired();
-            entity.Property(e => e.Salary).HasColumnType("decimal(18,2)");
-            entity.Property(e => e.Attendance).HasColumnType("int");
-            entity.Property(e => e.Status).HasColumnType("int");
-            entity.Property(e => e.IsDeleted).HasColumnType("bit");
+        //modelBuilder.Entity<Employee>(entity =>
+        //{
+        //    entity.HasKey(e => e.EmployeeID);
+        //    entity.Property(e => e.FullName).IsRequired();
+        //    entity.Property(e => e.Email).IsRequired();
+        //    entity.Property(e => e.Address).IsRequired();
+        //    entity.Property(e => e.PhoneNumber).IsRequired();
+        //    entity.Property(e => e.Role).IsRequired();
+        //    entity.Property(e => e.Salary).HasColumnType("decimal(18,2)");
+        //    entity.Property(e => e.Attendance).HasColumnType("int");
+        //    entity.Property(e => e.Status).HasColumnType("int");
+        //    entity.Property(e => e.IsDeleted).HasColumnType("bit");
 
-            // Foreign Keys
-            entity.HasOne(e => e.Customer)
-                .WithMany()
-                .HasForeignKey(e => e.CustomerID)
-                .OnDelete(DeleteBehavior.NoAction);
+        //    // Foreign Keys
+        //    entity.HasOne(e => e.Customer)
+        //        .WithMany()
+        //        .HasForeignKey(e => e.CustomerID)
+        //        .OnDelete(DeleteBehavior.NoAction);
 
-            entity.HasOne(e => e.Measurement)
-                .WithMany()
-                .HasForeignKey(e => e.MeasurementID)
-                .OnDelete(DeleteBehavior.NoAction);
-        });
+        //    entity.HasOne(e => e.Measurement)
+        //        .WithMany()
+        //        .HasForeignKey(e => e.MeasurementID)
+        //        .OnDelete(DeleteBehavior.NoAction);
+        //});
 
         // ✅ Measurement Configuration
         modelBuilder.Entity<Measurement>(entity =>
@@ -88,21 +85,34 @@ public class TailorDbContext : IdentityDbContext<AppUser>
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        {
-            base.OnModelCreating(modelBuilder);
+        // ✅ Order & Product Precision Fix
+        modelBuilder.Entity<Order>().Property(o => o.TotalPrice).HasColumnType("decimal(18,2)");
+        modelBuilder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");
 
-            modelBuilder.Entity<Order>()
-                .Property(o => o.TotalPrice)
-                .HasColumnType("decimal(18,2)"); // ✅ Fix precision
+        // ✅ Ensure ProductID is manually assigned
+        modelBuilder.Entity<Product>()
+            .Property(p => p.ProductID)
+            .ValueGeneratedNever();
 
-            modelBuilder.Entity<Product>()
-                .Property(p => p.Price)
-                .HasColumnType("decimal(18,2)"); // ✅ Fix precision
-            {
-                modelBuilder.Entity<Product>()
-                    .Property(p => p.ProductID)
-                    .ValueGeneratedNever(); // Ensures ProductID is not auto-generated
-            }
-        }
+        // ✅ Seed Roles
+        modelBuilder.Entity<Role>().HasData(
+            new Role { RoleID = 1, RoleName = "Admin" },
+            new Role { RoleID = 2, RoleName = "Tailor" },
+            new Role { RoleID = 3, RoleName = "Manager" }
+        );
+
+        //// ✅ Seed Default Admin User
+        //modelBuilder.Entity<User>().HasData(
+        //    new User
+        //    {
+        //        UserID = 1,
+        //        Name = "Admin",
+        //        Email = "admin@shop.com",
+        //        MobileNo = "9898989898",
+        //        PasswordHash = "hashed_password_here", // 🔑 Make sure to hash the password
+        //        Address = "Admin",
+        //        RoleID = 1
+        //    }
+        //);
     }
 }

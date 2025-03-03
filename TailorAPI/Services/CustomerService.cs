@@ -41,28 +41,29 @@ public class CustomerService
 
 
     // ✅ Add a new customer
-   public async Task<CustomerDTO> AddCustomerAsync(CustomerDTO customerDto)
-{
-    var customer = new Customer
+    public async Task<CustomerDTO> AddCustomerAsync(CustomerDTO customerDto)
     {
-        FullName = customerDto.FullName,
-        PhoneNumber = customerDto.PhoneNumber,
-        Email = customerDto.Email,
-        Address = customerDto.Address
-    };
+        var customer = new Customer
+        {
+            FullName = customerDto.FullName,
+            PhoneNumber = customerDto.PhoneNumber,
+            Email = customerDto.Email,
+            Address = customerDto.Address
+        };
 
-    _context.Customers.Add(customer);
-    await _context.SaveChangesAsync();
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
 
-    // ✅ Return only DTO (without CustomerId)
-    return new CustomerDTO
-    {
-        FullName = customer.FullName,
-        PhoneNumber = customer.PhoneNumber,
-        Email = customer.Email,
-        Address = customer.Address
-    };
-}
+        return new CustomerDTO
+        {
+            FullName = customer.FullName,
+            PhoneNumber = customer.PhoneNumber,
+            Email = customer.Email,
+            Address = customer.Address
+        };
+    }
+
+
 
 
     // ✅ Update existing customer
@@ -93,12 +94,12 @@ public class CustomerService
         var measurement = await _context.Measurements.FirstOrDefaultAsync(m => m.CustomerID == customerId);
 
         // ✅ Soft delete Employees assigned to this Customer
-        var employees = await _context.Employees.Where(e => e.CustomerID == customerId).ToListAsync();
-        foreach (var emp in employees)
-        {
-            emp.IsDeleted = true;
-            emp.MeasurementID = null; // Remove assigned Measurement (since it will be deleted)
-        }
+        //var employees = await _context.Employees.Where(e => e.CustomerID == customerId).ToListAsync();
+        //foreach (var emp in employees)
+        //{
+        //    emp.IsDeleted = true;
+        //    emp.MeasurementID = null; // Remove assigned Measurement (since it will be deleted)
+        //}
 
         await _context.SaveChangesAsync();
         return true;
