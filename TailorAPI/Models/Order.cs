@@ -35,8 +35,8 @@ namespace TailorAPI.Models
         [ForeignKey("ProductID")]
         public virtual Product Product { get; set; }
 
-        [ForeignKey("EmployeeID")]
-        public virtual Employee Employee { get; set; }
+        //[ForeignKey("EmployeeID")]
+        //public virtual Employee Employee { get; set; }
     }
 
 }

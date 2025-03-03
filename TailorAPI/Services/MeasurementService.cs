@@ -77,22 +77,25 @@ public class MeasurementService
 
     public async Task<bool> SoftDeleteMeasurementAsync(int measurementId)
     {
-        var measurement = await _context.Measurements.FindAsync(measurementId);
+        var measurement = await _context.Measurements
+            .FirstOrDefaultAsync(m => m.MeasurementID == measurementId); // ✅ Correct filtering
+
         if (measurement == null) return false;
 
         // ✅ Soft delete Measurement
         measurement.IsDeleted = true;
 
         // ✅ Soft delete Employees assigned to this Measurement
-        var employees = await _context.Employees.Where(e => e.MeasurementID == measurementId).ToListAsync();
-        foreach (var emp in employees)
-        {
-            emp.MeasurementID = null; // Remove assigned Measurement
-        }
+        //var employees = await _context.Employees.Where(e => e.MeasurementID == measurementId).ToListAsync();
+        //foreach (var emp in employees)
+        //{
+        //    emp.MeasurementID = null; // Remove assigned Measurement
+        //}
 
         await _context.SaveChangesAsync();
         return true;
     }
+
 
 
 }

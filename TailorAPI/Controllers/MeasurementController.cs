@@ -15,7 +15,7 @@ public class MeasurementController : ControllerBase
         _measurementService = measurementService;
     }
 
-    [HttpPost]
+    [HttpPost("AddMeasurement")]
     public async Task<IActionResult> AddMeasurement([FromBody] MeasurementDTO measurementDto)
     {
         try
@@ -33,7 +33,7 @@ public class MeasurementController : ControllerBase
         }
     }
 
-    [HttpGet("{customerId}")]
+    [HttpGet("Detail")]
     public async Task<IActionResult> GetMeasurementByCustomerID(int customerId)
     {
         var measurement = await _measurementService.GetMeasurementByCustomerIDAsync(customerId);
@@ -41,7 +41,15 @@ public class MeasurementController : ControllerBase
         return Ok(measurement);
     }
 
-    [HttpDelete("{customerId}")]
+    //[HttpDelete("{customerId}")]
+    //[HttpDelete]
+    //public async Task<IActionResult> SoftDeleteMeasurement([FromQuery] int measurementId)
+    //{
+    //    var result = await _measurementService.SoftDeleteMeasurementAsync(measurementId);
+    //    if (!result) return NotFound("Measurement not found.");
+
+    //    return NoContent();
+    //}
     [HttpDelete]
     public async Task<IActionResult> SoftDeleteMeasurement([FromQuery] int measurementId)
     {
@@ -50,5 +58,6 @@ public class MeasurementController : ControllerBase
 
         return NoContent();
     }
+
 
 }

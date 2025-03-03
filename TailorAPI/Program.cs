@@ -1,28 +1,14 @@
-﻿using TailorAPI.Repositories; 
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using TailorAPI.Services.Interface;
-using TailorAPI.Services;
+using Microsoft.EntityFrameworkCore;
 using TailorAPI.Models;
+using TailorAPI.Repositories;
+using TailorAPI.Services;
+using TailorAPI.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// Add DbContext
-builder.Services.AddDbContext<TailorDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-);
-
-// Add Identity
-builder.Services.AddIdentity<AppUser, IdentityRole>()
-    .AddEntityFrameworkStores<TailorDbContext>()
-    .AddDefaultTokenProviders();
-
-// Configure JSON Serialization
+// ✅ Configure Services
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -30,53 +16,115 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.WriteIndented = true;
     });
 
-// Register Services & Repositories
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// ✅ Configure Database
+builder.Services.AddDbContext<TailorDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
+
+// ✅ Configure Identity
+builder.Services.AddIdentity<AppUser, IdentityRole>()
+    .AddEntityFrameworkStores<TailorDbContext>()
+    .AddDefaultTokenProviders();
+
+// ✅ Configure CORS
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(MyAllowSpecificOrigins, policy =>
+    {
+        policy.WithOrigins("http://localhost:3001") // Update with your frontend URL
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// ✅ Register Services & Repositories
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<OrderRepository>();
-builder.Services.AddScoped<IEmployeeService, EmployeeService>();
-builder.Services.AddScoped<EmployeeRepository>();
+builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<MeasurementRepository>();
+
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<MeasurementService>();
-//builder.Services.AddScoped<UserManager<AppUser>>();
-//builder.Services.AddScoped<SignInManager<AppUser>>();
-//builder.Services.AddScoped<RoleManager<IdentityRole>>();
 
-
+// ✅ Build Application
 var app = builder.Build();
 
-// ✅ Seed Roles at Startup (Ensures roles exist before app starts)
+// ✅ Seed Roles & Admin on Startup
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    await SeedRolesAsync(services);
+    var dbContext = scope.ServiceProvider.GetRequiredService<TailorDbContext>();
+    EnsureAdminExists(dbContext);
 }
 
+// ✅ Middleware Configuration
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseAuthentication();
+
 app.UseHttpsRedirection();
+app.UseCors(MyAllowSpecificOrigins);
+
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();
 
-// ✅ Asynchronous Method for Role Seeding
-async Task SeedRolesAsync(IServiceProvider serviceProvider)
-{
-    var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    string[] roles = { "Admin", "Tailor", "DeliveryStaff", "Receptionist", "Manager" };
 
-    foreach (var role in roles)
+static void EnsureAdminExists(TailorDbContext context)
+{
+    context.Database.Migrate(); // Ensure DB is up-to-date
+
+    // ✅ Check if "Admin" Role Exists
+    var adminRole = context.Roles.FirstOrDefault(r => r.RoleName == "Admin");
+    if (adminRole == null)
     {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new IdentityRole(role));
-        }
+        adminRole = new Role { RoleID = 1, RoleName = "Admin" };
+        context.Roles.Add(adminRole);
+        context.SaveChanges();
     }
+
+    // ✅ Check if Admin User Exists
+    var adminUser = context.Users.FirstOrDefault(u => u.Email == "admin@example.com");
+    if (adminUser == null)
+    {
+        var newAdmin = new User
+        {
+           
+            Name = "Admin",
+            Email = "admin@shop.com",
+            MobileNo = "989898989",
+            PasswordHash = HashPassword("Admin@123"), // Secure password hashing
+            RoleID = adminRole.RoleID,
+            Address = "Shop"
+        };
+
+        context.Users.Add(newAdmin);
+        context.SaveChanges();
+        Console.WriteLine("✅ Admin user created.");
+    }
+    else
+    {
+        Console.WriteLine("✅ Admin user already exists.");
+    }
+}
+
+/// ✅ Securely Hash Passwords
+static string HashPassword(string password)
+{
+    using var sha256 = System.Security.Cryptography.SHA256.Create();
+    var hashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+    return Convert.ToBase64String(hashedBytes);
 }

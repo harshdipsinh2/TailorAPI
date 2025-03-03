@@ -15,6 +15,15 @@
             await _context.SaveChangesAsync();
             return measurement;
         }
+        public async Task<bool> SoftDeleteMeasurementAsync(int measurementId)
+        {
+            var measurement = await _context.Measurements.FindAsync(measurementId);
+            if (measurement == null) return false;
+
+            measurement.IsDeleted = true;
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 
 }

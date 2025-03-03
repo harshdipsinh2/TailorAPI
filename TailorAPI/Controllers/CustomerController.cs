@@ -51,7 +51,7 @@ public class CustomerController : ControllerBase
 
     // ✅ 5. Delete customer
     // ✅ 5. Soft Delete customer
-    [HttpDelete]
+    [HttpDelete("Delete")]
     public async Task<IActionResult> SoftDeleteCustomer([FromQuery] int customerId)
     {
         var result = await _customerService.SoftDeleteCustomerAsync(customerId);
