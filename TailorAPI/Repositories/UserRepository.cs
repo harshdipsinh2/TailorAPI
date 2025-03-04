@@ -20,6 +20,12 @@
             await _context.SaveChangesAsync();
             return user;
         }
+        public async Task<Role> GetRoleByNameAsync(string roleName)
+        {
+            return await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == roleName);
+        }
+
+
 
         // Get a user by ID
         public async Task<User?> GetUserByIdAsync(int userId)

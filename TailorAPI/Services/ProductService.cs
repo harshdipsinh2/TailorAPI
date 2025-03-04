@@ -1,41 +1,39 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using TailorAPI.Models;
+using TailorAPI.Repositories;
 using TailorAPI.Services.Interface;
 
 namespace TailorAPI.Services
 {
     public class ProductService : IProductService
     {
-        private readonly TailorDbContext _context;
+        private readonly ProductRepository _productRepository;
 
-        public ProductService(TailorDbContext context)
+        public ProductService(ProductRepository productRepository)
         {
-            _context = context;
+            _productRepository = productRepository;
         }
 
         public async Task<string> AddProduct(int productID, string productName, decimal price)
         {
-            if (_context.Products.Any(p => p.ProductID == productID))
-            {
-                return "Product ID already exists.";
-            }
-
             var product = new Product
             {
                 ProductID = productID,
                 ProductName = productName,
                 Price = price
             };
-
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
-            return "Product added successfully.";
+            return await _productRepository.AddProduct(product);
         }
 
         public async Task<List<Product>> GetProducts()
         {
-            return await Task.FromResult(_context.Products.ToList());
+            return await _productRepository.GetProducts(); // Use repository method
+        }
+
+        public async Task<bool> DeleteProduct(int productId)
+        {
+            return await _productRepository.DeleteProduct(productId); // Directly use repository method
         }
     }
-
 }

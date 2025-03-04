@@ -1,11 +1,10 @@
-﻿using TailorAPI.Models;
+﻿using TailorAPI.DTO;
 
-namespace TailorAPI.Services.Interface
+public interface IOrderService
 {
-    public interface IOrderService
-    {
-        Task<string> AddOrder(int customerID, int productID, int employeeID, int quantity);
-        Task<List<Order>> GetOrders();
-    }
-
+    Task<IEnumerable<OrderResponseDto>> GetAllOrders();
+    Task<OrderResponseDto> GetOrderById(int id);
+    Task<OrderResponseDto> CreateOrder(OrderResponseDto request);
+    Task<OrderResponseDto> UpdateOrder(int orderId, int quantity, string orderStatus, string paymentStatus, DateTime? completionDate);
+    Task<bool> DeleteOrder(int orderId);
 }

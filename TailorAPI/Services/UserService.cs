@@ -23,10 +23,16 @@
         // Register a new user
         public async Task<User> RegisterUserAsync(UserDto userDto)
         {
+            // Check if the user already exists
             var users = await _userRepository.GetAllUsersAsync();
             if (users.Any(u => u.Email == userDto.Email))
-                return null;
+                return null; // Prevent duplicate users
 
+            // Find the role by RoleName
+            var role = await _userRepository.GetRoleByNameAsync(userDto.RoleName);
+            if (role == null) return null; // Handle case if role does not exist
+
+            // Create user
             var user = new User
             {
                 Name = userDto.Name,
@@ -34,13 +40,12 @@
                 MobileNo = userDto.MobileNo,
                 Address = userDto.Address,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password),
-                RoleID = 2 // Assign default RoleID (e.g., "2" for basic user)
+                RoleID = role.RoleID // Assign role based on RoleName
             };
 
             await _userRepository.CreateUserAsync(user);
             return user;
         }
-
 
         // Authenticate user (Login)
         public async Task<User?> AuthenticateUserAsync(string email, string password)
