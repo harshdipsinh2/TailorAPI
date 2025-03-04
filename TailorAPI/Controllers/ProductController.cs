@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TailorAPI.Repositories;
 using TailorAPI.Services.Interface;
 
 namespace TailorAPI.Controllers
@@ -28,8 +27,13 @@ namespace TailorAPI.Controllers
             var products = await _productService.GetProducts();
             return Ok(products);
         }
+        [HttpDelete("delete/{productId}")]
+        public async Task<IActionResult> DeleteProduct(int productId)
+        {
+            var result = await _productService.DeleteProduct(productId);
+            if (!result) return NotFound("Product not found or already deleted.");
+            return Ok("Product deleted successfully.");
+        }
+
     }
-
-
-
 }

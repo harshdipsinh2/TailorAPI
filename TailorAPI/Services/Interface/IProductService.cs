@@ -6,6 +6,7 @@ namespace TailorAPI.Services.Interface
     {
         Task<string> AddProduct(int productID, string productName, decimal price);
         Task<List<Product>> GetProducts();
-    }
+        Task<bool> DeleteProduct(int productId);
 
+    }
 }

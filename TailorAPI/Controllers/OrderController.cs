@@ -1,35 +1,50 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TailorAPI.Services.Interface;
-using TailorAPI.Repositories;
+using TailorAPI.DTO;
 
-namespace TailorAPI.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class OrderController : ControllerBase
 {
-    [Route("api/order")]
-    [ApiController]
-    public class OrderController : ControllerBase
+    private readonly IOrderService _orderService;
+    public OrderController(IOrderService orderService)
     {
-        private readonly IOrderService _orderService;
+        _orderService = orderService;
+    }
 
-        public OrderController(IOrderService orderService)
-        {
-            _orderService = orderService;
-        }
+    [HttpGet]
+    public async Task<IActionResult> GetAllOrders() => Ok(await _orderService.GetAllOrders());
 
-        [HttpPost("add-order")]
-        public async Task<IActionResult> AddOrder([FromQuery] int customerID, [FromQuery] int productID, [FromQuery] int employeeID, [FromQuery] int quantity)
-        {
-            var result = await _orderService.AddOrder(customerID, productID, employeeID, quantity);
-            return Ok(result);
-        }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetOrderById(int id)
+    {
+        var order = await _orderService.GetOrderById(id);
+        if (order == null) return NotFound();
+        return Ok(order);
+    }
 
-        [HttpGet("get-orders")]
-        public async Task<IActionResult> GetOrders()
-        {
-            var orders = await _orderService.GetOrders();
-            return Ok(orders);
-        }
+    [HttpPost]
+    [HttpPost]
+    public async Task<IActionResult> CreateOrder([FromBody] OrderResponseDto request)
+    {
+        var order = await _orderService.CreateOrder(request);
+        return Ok(order);
     }
 
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateOrder(int id, [FromBody] OrderRequestDto request)
+    {
+        var order = await _orderService.UpdateOrder(id, request.Quantity, "Updated", "Updated", DateTime.UtcNow);
+        if (order == null) return NotFound();
+        return Ok(order);
+    }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteOrder(int id)
+    {
+        var deleted = await _orderService.DeleteOrder(id);
+        if (!deleted) return NotFound();
+        return NoContent();
+    }
 }
+

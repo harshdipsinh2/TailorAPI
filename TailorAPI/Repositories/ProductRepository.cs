@@ -1,4 +1,6 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using TailorAPI.Models;
 
@@ -13,19 +15,12 @@ namespace TailorAPI.Repositories
             _context = context;
         }
 
-        public async Task<string> AddProduct(int productID, string productName, decimal price)
+        public async Task<string> AddProduct(Product product)
         {
-            if (await _context.Products.AnyAsync(p => p.ProductID == productID))
+            if (await _context.Products.AnyAsync(p => p.ProductID == product.ProductID))
             {
                 return "Product ID already exists.";
             }
-
-            var product = new Product
-            {
-                ProductID = productID,
-                ProductName = productName,
-                Price = price
-            };
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
@@ -34,9 +29,17 @@ namespace TailorAPI.Repositories
 
         public async Task<List<Product>> GetProducts()
         {
-            return await _context.Products.ToListAsync();
+            return await _context.Products.Where(p => !p.IsDeleted).ToListAsync(); // Soft delete check
+        }
+
+        public async Task<bool> DeleteProduct(int productId)
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null) return false;
+
+            product.IsDeleted = true; // Soft delete
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
-
-
 }

@@ -7,5 +7,8 @@
         public string MobileNo { get; set; }
         public string Address { get; set; }
         public string Password { get; set; } // Rename to Password for clarity
+
+        public string RoleName { get; set; } // Optional if using RoleID
+
     }
 }

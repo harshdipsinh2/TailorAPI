@@ -2,8 +2,6 @@
 
 namespace TailorAPI.Models
 {
-    using System.ComponentModel.DataAnnotations;
-
     public class Product
     {
         [Key]
@@ -14,6 +12,7 @@ namespace TailorAPI.Models
 
         [Required]
         public decimal Price { get; set; }  // Price of the product
-    }
 
+        public bool IsDeleted { get; set; } = false;
+    }
 }
