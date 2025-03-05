@@ -1,115 +1,155 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using TailorAPI.DTO;
+using TailorAPI.Models;
+using TailorAPI.Repositories;
 
-public class OrderService : IOrderService
+namespace TailorAPI.Services
 {
-    private readonly OrderRepository _orderRepository;
-    private readonly TailorDbContext _context;
-
-    public OrderService(OrderRepository orderRepository, TailorDbContext context)
+    public class OrderService : IOrderService
     {
-        _orderRepository = orderRepository;
-        _context = context;
-    }
+        private readonly OrderRepository _orderRepository;
+        private readonly TailorDbContext _context;
 
-    public async Task<IEnumerable<OrderResponseDto>> GetAllOrders()
-    {
-        var orders = await _orderRepository.GetAllOrders();
-        return orders.Select(o => new OrderResponseDto
+        public OrderService(OrderRepository orderRepository, TailorDbContext context)
         {
-            CustomerName = _context.Customers.Find(o.CustomerID)?.FullName,
-            ProductName = _context.Products.Find(o.ProductID)?.ProductName,
-            Quantity = o.Quantity,
-            TotalPrice = o.TotalPrice,
-            OrderStatus = o.OrderStatus,
-            PaymentStatus = o.PaymentStatus,
-            OrderDate = o.OrderDate,
-            CompletionDate = o.CompletionDate
-        }).ToList();
-    }
+            _orderRepository = orderRepository;
+            _context = context;
+        }
 
-    public async Task<OrderResponseDto> GetOrderById(int id)
-    {
-        var order = await _orderRepository.GetOrderById(id);
-        if (order == null) return null;
-        return new OrderResponseDto
+        public async Task<IEnumerable<OrderResponseDto>> GetAllOrders()
         {
-            CustomerName = _context.Customers.Find(order.CustomerID)?.FullName,
-            ProductName = _context.Products.Find(order.ProductID)?.ProductName,
-            Quantity = order.Quantity,
-            TotalPrice = order.TotalPrice,
-            OrderStatus = order.OrderStatus,
-            PaymentStatus = order.PaymentStatus,
-            OrderDate = order.OrderDate,
-            CompletionDate = order.CompletionDate
-        };
-    }
+            var orders = await _orderRepository.GetAllOrders();
 
-    public async Task<OrderResponseDto> CreateOrder(OrderResponseDto request)
-    {
-        // 🔹 Find Customer by Name
-        var customer = await _context.Customers.FirstOrDefaultAsync(c => c.FullName == request.CustomerName);
-        if (customer == null) throw new Exception("Customer not found");
+            return orders.Select(o => new OrderResponseDto
+            {
+                CustomerName = o.Customer?.FullName ?? "Unknown",
+                ProductName = o.Product?.ProductName ?? "Unknown",
+                Quantity = o.Quantity,
+                TotalPrice = o.TotalPrice,
+                OrderStatus = o.OrderStatus,
+                PaymentStatus = o.PaymentStatus,
+                OrderDate = o.OrderDate.ToString("dd-MM-yyyy"), // Format as string
+                CompletionDate = o.CompletionDate?.ToString("dd-MM-yyyy") // Format as string
+            }).ToList();
+        }
 
-        // 🔹 Find Product by Name
-        var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductName == request.ProductName);
-        if (product == null) throw new Exception("Product not found");
-
-        // 🔹 Calculate Total Price
-        var totalPrice = product.Price * request.Quantity;
-
-        // 🔹 Create New Order
-        var order = new Order
+        public async Task<OrderResponseDto> GetOrderById(int id)
         {
-            CustomerID = customer.CustomerID,  // ✅ Use ID found from Name
-            ProductID = product.ProductID,    // ✅ Use ID found from Name
-            Quantity = request.Quantity,
-            TotalPrice = totalPrice,
-            OrderStatus = request.OrderStatus,
-            PaymentStatus = request.PaymentStatus,
-            OrderDate = request.OrderDate,
-            CompletionDate = request.CompletionDate
-        };
+            var order = await _orderRepository.GetOrderById(id);
+            if (order == null) return null;
 
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
+            return new OrderResponseDto
+            {
+                CustomerName = order.Customer?.FullName ?? "Unknown",
+                ProductName = order.Product?.ProductName ?? "Unknown",
+                Quantity = order.Quantity,
+                TotalPrice = order.TotalPrice,
+                OrderStatus = order.OrderStatus,
+                PaymentStatus = order.PaymentStatus,
+                OrderDate = order.OrderDate.ToString("dd-MM-yyyy"), // Format as string
+                CompletionDate = order.CompletionDate?.ToString("dd-MM-yyyy") // Format as string
+            };
+        }
 
-        // 🔹 Return OrderResponseDto with names instead of IDs
-        return new OrderResponseDto
+        public async Task<OrderResponseDto> CreateOrder(OrderResponseDto request)
         {
-            CustomerName = customer.FullName,  // ✅ Return Name instead of ID
-            ProductName = product.ProductName,
-            Quantity = order.Quantity,
-            TotalPrice = order.TotalPrice,
-            OrderStatus = order.OrderStatus,
-            PaymentStatus = order.PaymentStatus,
-            OrderDate = order.OrderDate,
-            CompletionDate = order.CompletionDate
-        };
-    }
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.FullName == request.CustomerName);
+            if (customer == null) return null;
 
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductName == request.ProductName);
+            if (product == null) return null;
 
+            var totalPrice = product.Price * request.Quantity;
 
-    public async Task<OrderResponseDto> UpdateOrder(int orderId, int quantity, string orderStatus, string paymentStatus, DateTime? completionDate)
-    {
-        var order = await _orderRepository.GetOrderById(orderId);
-        if (order == null) return null;
+            // Parse the OrderDate from the string
+            if (!DateTime.TryParseExact(request.OrderDate, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var orderDate))
+            {
+                throw new ArgumentException("Invalid OrderDate format. Expected format: dd-MM-yyyy");
+            }
 
-        order.Quantity = quantity;
-        order.OrderStatus = orderStatus;
-        order.PaymentStatus = paymentStatus;
-        order.CompletionDate = completionDate;
+            // Parse the CompletionDate from the string if provided
+            DateTime? completionDate = null;
+            if (!string.IsNullOrEmpty(request.CompletionDate))
+            {
+                if (!DateTime.TryParseExact(request.CompletionDate, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedCompletionDate))
+                {
+                    throw new ArgumentException("Invalid CompletionDate format. Expected format: dd-MM-yyyy");
+                }
+                completionDate = parsedCompletionDate;
+            }
 
-        await _orderRepository.UpdateOrder(order);
-        return await GetOrderById(orderId);
-    }
+            var order = new Order
+            {
+                CustomerID = customer.CustomerID,
+                ProductID = product.ProductID,
+                Quantity = request.Quantity,
+                TotalPrice = totalPrice,
+                OrderStatus = request.OrderStatus ?? "Pending",
+                PaymentStatus = request.PaymentStatus ?? "Pending",
+                OrderDate = orderDate,
+                CompletionDate = completionDate
+            };
 
-    public async Task<bool> DeleteOrder(int orderId)
-    {
-        var order = await _orderRepository.GetOrderById(orderId);
-        if (order == null) return false;
+            await _orderRepository.AddOrder(order);
 
-        await _orderRepository.DeleteOrder(order);
-        return true;
+            return new OrderResponseDto
+            {
+                CustomerName = customer.FullName,
+                ProductName = product.ProductName,
+                Quantity = order.Quantity,
+                TotalPrice = order.TotalPrice,
+                OrderStatus = order.OrderStatus,
+                PaymentStatus = order.PaymentStatus,
+                OrderDate = order.OrderDate.ToString("dd-MM-yyyy"),
+                CompletionDate = order.CompletionDate?.ToString("dd-MM-yyyy")
+            };
+        }
+
+        public async Task<OrderUpdateDto> UpdateOrder(int orderId, int quantity, string orderStatus, string paymentStatus, string completionDate)
+        {
+            var order = await _orderRepository.GetOrderById(orderId);
+            if (order == null) return null;
+
+            order.Quantity = quantity;
+            order.OrderStatus = orderStatus;
+            order.PaymentStatus = paymentStatus;
+
+            // Parse the CompletionDate from the string if provided
+            if (!string.IsNullOrEmpty(completionDate))
+            {
+                if (!DateTime.TryParseExact(completionDate, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedCompletionDate))
+                {
+                    throw new ArgumentException("Invalid CompletionDate format. Expected format: dd-MM-yyyy");
+                }
+                order.CompletionDate = parsedCompletionDate;
+            }
+            else
+            {
+                order.CompletionDate = null;
+            }
+
+            await _orderRepository.UpdateOrder(order);
+
+            return new OrderUpdateDto
+            {
+                Quantity = order.Quantity,
+                OrderStatus = order.OrderStatus,
+                PaymentStatus = order.PaymentStatus,
+                CompletionDate = order.CompletionDate?.ToString("dd-MM-yyyy")
+            };
+        }
+
+        public async Task<bool> DeleteOrder(int orderId)
+        {
+            var order = await _orderRepository.GetOrderById(orderId);
+            if (order == null) return false;
+
+            await _orderRepository.DeleteOrder(order);
+            return true;
+        }
     }
 }

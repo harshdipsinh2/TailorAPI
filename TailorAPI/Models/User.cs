@@ -17,4 +17,6 @@ public class User
     public int RoleID { get; set; } // Assigned automatically
     [ForeignKey("RoleID")]
     public Role Role { get; set; }
+
+    //public string Status { get; set; } = "Available"; 
 }

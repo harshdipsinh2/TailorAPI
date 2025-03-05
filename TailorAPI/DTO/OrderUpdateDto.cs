@@ -5,7 +5,8 @@
         public int Quantity { get; set; }
         public string OrderStatus { get; set; }
         public string PaymentStatus { get; set; }
-        public DateTime? CompletionDate { get; set; }
-    }
+        public string CompletionDate { get; set; }
 
+        //public int? AssignedTo { get; set; }  
+    }
 }

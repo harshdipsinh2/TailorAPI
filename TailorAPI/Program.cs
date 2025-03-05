@@ -5,6 +5,9 @@ using TailorAPI.Models;
 using TailorAPI.Repositories;
 using TailorAPI.Services;
 using TailorAPI.Services.Interface;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +19,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.WriteIndented = true;
     });
 
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -23,11 +27,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<TailorDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
-
-// ✅ Configure Identity
-builder.Services.AddIdentity<AppUser, IdentityRole>()
-    .AddEntityFrameworkStores<TailorDbContext>()
-    .AddDefaultTokenProviders();
 
 // ✅ Configure CORS
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
@@ -46,15 +45,48 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
-
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<MeasurementRepository>();
-
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<MeasurementService>();
+builder.Services.AddScoped<JwtService>();
+
+
+
+
+
+
+// Add JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
+
+
+
+
+
+builder.Services.AddAuthorization();
+
 
 // ✅ Build Application
 var app = builder.Build();
@@ -75,10 +107,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(MyAllowSpecificOrigins);
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.Run();
 
@@ -91,13 +121,13 @@ static void EnsureAdminExists(TailorDbContext context)
     var adminRole = context.Roles.FirstOrDefault(r => r.RoleName == "Admin");
     if (adminRole == null)
     {
-        adminRole = new Role { RoleID = 1, RoleName = "Admin" };
+        adminRole = new Role { RoleName = "Admin" };
         context.Roles.Add(adminRole);
         context.SaveChanges();
     }
 
     // ✅ Check if Admin User Exists
-    var adminUser = context.Users.FirstOrDefault(u => u.Email == "admin@example.com");
+    var adminUser = context.Users.FirstOrDefault(u => u.RoleID == adminRole.RoleID);
     if (adminUser == null)
     {
         var newAdmin = new User

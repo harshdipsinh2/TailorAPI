@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TailorAPI.DTO;
 
 [Route("api/[controller]")]
@@ -22,10 +23,14 @@ public class OrderController : ControllerBase
         return Ok(order);
     }
 
-    [HttpPost]
+    [Authorize(Roles = "Manager")]
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] OrderResponseDto request)
     {
+        if (request.CompletionDate == default)
+        {
+            return BadRequest("Completion date is required.");
+        }
         var order = await _orderService.CreateOrder(request);
         return Ok(order);
     }
@@ -34,7 +39,12 @@ public class OrderController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateOrder(int id, [FromBody] OrderRequestDto request)
     {
-        var order = await _orderService.UpdateOrder(id, request.Quantity, "Updated", "Updated", DateTime.UtcNow);
+        // Convert DateTime.UtcNow to a string in the "dd-MM-yyyy" format
+        string completionDate = DateTime.UtcNow.ToString("dd-MM-yyyy");
+
+        // Call the UpdateOrder method with the completionDate as a string
+        var order = await _orderService.UpdateOrder(id, request.Quantity, "Updated", "Updated", completionDate);
+
         if (order == null) return NotFound();
         return Ok(order);
     }
