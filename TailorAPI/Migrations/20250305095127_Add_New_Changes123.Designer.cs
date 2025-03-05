@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    partial class TailorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250305095127_Add_New_Changes123")]
+    partial class Add_New_Changes123
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,6 +119,9 @@ namespace TailorAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderID"));
 
+                    b.Property<int?>("AssignedTo")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("CompletionDate")
                         .HasColumnType("datetime2");
 
@@ -143,6 +149,8 @@ namespace TailorAPI.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("OrderID");
+
+                    b.HasIndex("AssignedTo");
 
                     b.HasIndex("CustomerID");
 
@@ -256,6 +264,10 @@ namespace TailorAPI.Migrations
 
             modelBuilder.Entity("Order", b =>
                 {
+                    b.HasOne("User", "AssignedTailor")
+                        .WithMany()
+                        .HasForeignKey("AssignedTo");
+
                     b.HasOne("Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerID")
@@ -267,6 +279,8 @@ namespace TailorAPI.Migrations
                         .HasForeignKey("ProductID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("AssignedTailor");
 
                     b.Navigation("Customer");
 

@@ -1,69 +1,59 @@
-﻿namespace TailorAPI.Services
-{
-    using Microsoft.AspNetCore.Identity;
-    using Microsoft.EntityFrameworkCore;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using TailorAPI.Models;
-    using TailorAPI.Services.Interface;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TailorAPI.Models;
+using TailorAPI.Services.Interface;
 
+namespace TailorAPI.Services
+{
     public class RoleService : IRoleService
     {
-        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly TailorDbContext _context;
 
-        public RoleService(RoleManager<IdentityRole> roleManager)
+        public RoleService(TailorDbContext context)
         {
-            _roleManager = roleManager;
+            _context = context;
         }
 
         public async Task<bool> CreateRoleAsync(string roleName)
         {
-            // Only allow creating "Tailor" or "Manager" roles
-            if (roleName != "Tailor" && roleName != "Manager")
-                return false;
+            if (await _context.Roles.AnyAsync(r => r.RoleName == roleName))
+                return false; // Role already exists
 
-            // Check if the role already exists
-            var roleExists = await _roleManager.RoleExistsAsync(roleName);
-            if (roleExists)
-                return false;
-
-            // Create the new role
-            var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
-            return result.Succeeded;
+            var role = new Role { RoleName = roleName };
+            _context.Roles.Add(role);
+            await _context.SaveChangesAsync();
+            return true;
         }
 
-
-        public async Task<List<IdentityRole>> GetAllRolesAsync()
+        public async Task<List<Role>> GetAllRolesAsync()
         {
-            return await _roleManager.Roles.ToListAsync();
+            return await _context.Roles.ToListAsync();
         }
 
-        public async Task<IdentityRole?> GetRoleByIdAsync(string roleId)
+        public async Task<Role?> GetRoleByIdAsync(int roleId)
         {
-            return await _roleManager.FindByIdAsync(roleId);
+            return await _context.Roles.FindAsync(roleId);
         }
 
-        public async Task<bool> UpdateRoleAsync(string roleId, string newRoleName)
+        public async Task<bool> UpdateRoleAsync(int roleId, string newRoleName)
         {
-            var role = await _roleManager.FindByIdAsync(roleId);
-            if (role == null)
-                return false;
+            var role = await _context.Roles.FindAsync(roleId);
+            if (role == null) return false;
 
-            // Update the role name
-            role.Name = newRoleName;
-            var result = await _roleManager.UpdateAsync(role);
-            return result.Succeeded;
+            role.RoleName = newRoleName;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
-        public async Task<bool> DeleteRoleAsync(string roleId)
+        public async Task<bool> DeleteRoleAsync(int roleId)
         {
-            var role = await _roleManager.FindByIdAsync(roleId);
-            if (role == null)
-                return false;
+            var role = await _context.Roles.FindAsync(roleId);
+            if (role == null) return false;
 
-            // Delete the role
-            var result = await _roleManager.DeleteAsync(role);
-            return result.Succeeded;
+            _context.Roles.Remove(role);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

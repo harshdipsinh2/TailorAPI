@@ -6,6 +6,7 @@
     using Microsoft.AspNetCore.Identity;
     using TailorAPI.Services.Interface;
     using TailorAPI.DTO;
+    using TailorAPI.Models;
 
     [Route("api/[controller]")]
     [ApiController]
@@ -31,15 +32,14 @@
             return Ok(new { message = "Role created successfully." });
         }
 
-
         [HttpGet("all")]
-        public async Task<ActionResult<List<IdentityRole>>> GetAllRoles()
+        public async Task<ActionResult<List<Role>>> GetAllRoles()
         {
             return Ok(await _roleService.GetAllRolesAsync());
         }
 
         [HttpGet("{roleId}")]
-        public async Task<ActionResult<IdentityRole>> GetRoleById(string roleId)
+        public async Task<ActionResult<Role>> GetRoleById(int roleId)
         {
             var role = await _roleService.GetRoleByIdAsync(roleId);
             if (role == null)
@@ -49,7 +49,7 @@
         }
 
         [HttpPut("update/{roleId}")]
-        public async Task<IActionResult> UpdateRole(string roleId, [FromBody] string newRoleName)
+        public async Task<IActionResult> UpdateRole(int roleId, [FromBody] string newRoleName)
         {
             var result = await _roleService.UpdateRoleAsync(roleId, newRoleName);
             if (!result)
@@ -59,7 +59,7 @@
         }
 
         [HttpDelete("delete/{roleId}")]
-        public async Task<IActionResult> DeleteRole(string roleId)
+        public async Task<IActionResult> DeleteRole(int roleId)
         {
             var result = await _roleService.DeleteRoleAsync(roleId);
             if (!result)
@@ -68,5 +68,6 @@
             return Ok("Role deleted successfully.");
         }
     }
+
 
 }

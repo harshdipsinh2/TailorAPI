@@ -1,14 +1,15 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using TailorAPI.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace TailorAPI.Services.Interface
 {
     public interface IRoleService
     {
         Task<bool> CreateRoleAsync(string roleName);
-        Task<List<IdentityRole>> GetAllRolesAsync();
-        Task<IdentityRole?> GetRoleByIdAsync(string roleId);
-        Task<bool> UpdateRoleAsync(string roleId, string newRoleName);
-        Task<bool> DeleteRoleAsync(string roleId);
+        Task<List<Role>> GetAllRolesAsync();
+        Task<Role?> GetRoleByIdAsync(int roleId);
+        Task<bool> UpdateRoleAsync(int roleId, string newRoleName);
+        Task<bool> DeleteRoleAsync(int roleId);
     }
-
 }
