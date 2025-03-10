@@ -9,9 +9,9 @@ public class CustomerController : ControllerBase
     public CustomerController(CustomerService customerService)
     {
         _customerService = customerService;
-    }
+    }   
 
-    // ✅ 1. Get all customers
+    //  Get all customers
     [HttpGet("GetAllCustomers")]
     public async Task<ActionResult<List<CustomerDTO>>> GetAllCustomers()
     {
@@ -19,16 +19,16 @@ public class CustomerController : ControllerBase
         return Ok(customers);
     }
 
-    // ✅ 2. Get customer by ID (Using FromQuery)
+    // Get customer by ID (Using FromQuery)
     [HttpGet("GetCustomer")]
-    public async Task<ActionResult<CustomerDTO>> GetCustomerById([FromQuery] int customerId)  // ✅ Using FromQuery
+    public async Task<ActionResult<CustomerDTO>> GetCustomerById([FromQuery] int customerId)  // Use FromQuery
     {
         var customer = await _customerService.GetCustomerByIdAsync(customerId);
         if (customer == null) return NotFound();
         return Ok(customer);
     }
 
-    // ✅ 3. Create new customer
+    //  Create new customer
     [HttpPost("AddCustomer")]
     public async Task<ActionResult<CustomerDTO>> PostCustomer([FromBody] CustomerDTO customerDto)
     {
@@ -40,7 +40,7 @@ public class CustomerController : ControllerBase
     }
 
 
-    // ✅ 4. Update existing customer
+    //  Update existing customer
     [HttpPut]
     public async Task<IActionResult> UpdateCustomer([FromQuery] int customerId, [FromBody] CustomerDTO customerDto)
     {
@@ -49,8 +49,8 @@ public class CustomerController : ControllerBase
         return Ok(updatedCustomer);
     }
 
-    // ✅ 5. Delete customer
-    // ✅ 5. Soft Delete customer
+    //  Delete customer
+    //  Soft Delete customer
     [HttpDelete("Delete")]
     public async Task<IActionResult> SoftDeleteCustomer([FromQuery] int customerId)
     {

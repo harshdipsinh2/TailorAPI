@@ -1,4 +1,6 @@
-﻿namespace TailorAPI.Repositories
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace TailorAPI.Repositories
 {
     public class MeasurementRepository
     {
@@ -24,6 +26,14 @@
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<List<Measurement>> GetAllMeasurementsAsync()
+        {
+            return await _context.Measurements
+                .Include(m => m.Customer) // Ensure Customer data is loaded
+                .Where(m => !m.IsDeleted) // Exclude soft-deleted records
+                .ToListAsync();
+        }
+
     }
 
 }
