@@ -23,7 +23,7 @@ public class OrderController : ControllerBase
         return Ok(order);
     }
 
-    [Authorize(Roles = "Manager")]
+  
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] OrderResponseDto request)
     {

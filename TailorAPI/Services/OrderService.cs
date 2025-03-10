@@ -84,7 +84,7 @@ namespace TailorAPI.Services
 
             var order = new Order
             {
-                CustomerID = customer.CustomerID,
+                CustomerID = customer.CustomerId,
                 ProductID = product.ProductID,
                 Quantity = request.Quantity,
                 TotalPrice = totalPrice,
