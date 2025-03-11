@@ -27,7 +27,7 @@ public class TailorDbContext : DbContext // ✅ Remove IdentityDbContext<AppUser
         // ✅ Customer Configuration
         modelBuilder.Entity<Customer>(entity =>
         {
-            entity.HasKey(e => e.CustomerID);
+            entity.HasKey(e => e.CustomerId);
             entity.Property(e => e.FullName).IsRequired();
             entity.Property(e => e.Email).IsRequired();
             entity.Property(e => e.Address).IsRequired();
