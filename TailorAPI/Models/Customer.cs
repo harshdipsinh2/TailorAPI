@@ -5,7 +5,7 @@ public class Customer
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // ✅ Auto-generate in SQL
-    public int CustomerID { get; set; }
+    public int CustomerId { get; set; }
 
     [Required]
     public string FullName { get; set; }

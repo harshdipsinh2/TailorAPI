@@ -30,7 +30,7 @@ public class MeasurementService
 
         var measurement = new Measurement
         {
-            CustomerID = measurementDto.CustomerID, // FK
+            //CustomerID = measurementDto.CustomerID, // 
             Chest = measurementDto.Chest,
             Waist = measurementDto.Waist,
             Hip = measurementDto.Hip,
@@ -60,7 +60,7 @@ public class MeasurementService
 
         return new MeasurementDTO
         {
-            CustomerID = measurement.CustomerID,
+            //CustomerID = measurement.CustomerID,
             Chest = measurement.Chest,
             Waist = measurement.Waist,
             Hip = measurement.Hip,
@@ -95,6 +95,37 @@ public class MeasurementService
         await _context.SaveChangesAsync();
         return true;
     }
+    public async Task<List<MeasurementDTO>> GetAllMeasurementsAsync()
+    {
+        var measurements = await _context.Measurements
+            .Include(m => m.Customer) // Ensure Customer data is loaded
+            .Where(m => !m.IsDeleted) // Exclude soft-deleted records
+            .Select(m => new MeasurementDTO
+            {
+                MeasurementID = m.MeasurementID,
+                CustomerID = m.CustomerID, // Include Customer ID
+                Chest = m.Chest,
+                Waist = m.Waist,
+                Hip = m.Hip,
+                Shoulder = m.Shoulder,
+                SleeveLength = m.SleeveLength,
+                TrouserLength = m.TrouserLength,
+                Inseam = m.Inseam,
+                Thigh = m.Thigh,
+                Neck = m.Neck,
+                Sleeve = m.Sleeve,
+                Arms = m.Arms
+            })
+            .ToListAsync();
+
+        return measurements;
+    }
+
+
+
+
+
+
 
 
 

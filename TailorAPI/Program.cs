@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        //options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
         options.JsonSerializerOptions.WriteIndented = true;
     });
 
@@ -34,7 +34,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(MyAllowSpecificOrigins, policy =>
     {
-        policy.WithOrigins("http://localhost:3001") // Update with your frontend URL
+        policy.WithOrigins("http://localhost:3000") // Update with your frontend URL
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -52,12 +52,9 @@ builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<MeasurementRepository>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<MeasurementService>();
-builder.Services.AddScoped<JwtService>();
+//builder.Services.AddScoped<JwtService>();
 
-
-
-
-
+//builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -81,12 +78,12 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
-
-
-
-builder.Services.AddAuthorization();
-
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("TailorOnly", policy => policy.RequireRole("Tailor"));
+    options.AddPolicy("ManagerOnly", policy => policy.RequireRole("Manager"));
+});
 
 // ✅ Build Application
 var app = builder.Build();
