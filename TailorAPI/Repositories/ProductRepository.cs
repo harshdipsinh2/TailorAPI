@@ -41,5 +41,11 @@ namespace TailorAPI.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<Product> GetProductById(int productId)
+        {
+            return await _context.Products.FindAsync(productId);
+        }
+
+
     }
 }

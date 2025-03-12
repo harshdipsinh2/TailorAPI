@@ -1,60 +1,64 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using TailorAPI.DTO;
+﻿using Microsoft.AspNetCore.Mvc;
+using TailorAPI.DTOs.Request;
+using TailorAPI.Services;
 
-[Route("api/[controller]")]
-[ApiController]
-public class OrderController : ControllerBase
+namespace TailorAPI.Controllers
 {
-    private readonly IOrderService _orderService;
-    public OrderController(IOrderService orderService)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class OrderController : ControllerBase
     {
-        _orderService = orderService;
-    }
+        private readonly IOrderService _orderService;
 
-    [HttpGet]
-    public async Task<IActionResult> GetAllOrders() => Ok(await _orderService.GetAllOrders());
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetOrderById(int id)
-    {
-        var order = await _orderService.GetOrderById(id);
-        if (order == null) return NotFound();
-        return Ok(order);
-    }
-
-  
-    [HttpPost]
-    public async Task<IActionResult> CreateOrder([FromBody] OrderResponseDto request)
-    {
-        if (request.CompletionDate == default)
+        public OrderController(IOrderService orderService)
         {
-            return BadRequest("Completion date is required.");
+            _orderService = orderService;
         }
-        var order = await _orderService.CreateOrder(request);
-        return Ok(order);
-    }
 
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateOrder(
+            [FromQuery] int customerId,
+            [FromQuery] int productId,
+            [FromQuery] int fabricId,
+            [FromBody] OrderRequestDto request)
+        {
+            var result = await _orderService.CreateOrderAsync(customerId, productId, fabricId, request);
+            return Ok(result);
+        }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateOrder(int id, [FromBody] OrderRequestDto request)
-    {
-        // Convert DateTime.UtcNow to a string in the "dd-MM-yyyy" format
-        string completionDate = DateTime.UtcNow.ToString("dd-MM-yyyy");
+        [HttpGet]
+        public async Task<IActionResult> GetAllOrders()
+        {
+            var result = await _orderService.GetAllOrdersAsync();
+            return Ok(result);
+        }
 
-        // Call the UpdateOrder method with the completionDate as a string
-        var order = await _orderService.UpdateOrder(id, request.Quantity, "Updated", "Updated", completionDate);
+        [HttpGet("by-id")]
+        public async Task<IActionResult> GetOrderById([FromQuery] int id)
+        {
+            var result = await _orderService.GetOrderByIdAsync(id);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
 
-        if (order == null) return NotFound();
-        return Ok(order);
-    }
+        [HttpPut("update")]
+        public async Task<IActionResult> UpdateOrder(
+            [FromQuery] int id,
+            [FromQuery] int productId,
+            [FromQuery] int fabricId,
+            [FromBody] OrderRequestDto request)
+        {
+            var result = await _orderService.UpdateOrderAsync(id, productId, fabricId, request);
+            if (!result) return NotFound();
+            return Ok("Order updated successfully");
+        }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteOrder(int id)
-    {
-        var deleted = await _orderService.DeleteOrder(id);
-        if (!deleted) return NotFound();
-        return NoContent();
+        [HttpDelete("delete")]
+        public async Task<IActionResult> SoftDeleteOrder([FromQuery] int id)
+        {
+            var result = await _orderService.SoftDeleteOrderAsync(id);
+            if (!result) return NotFound();
+            return Ok("Order deleted successfully");
+        }
     }
 }
-

@@ -1,70 +1,31 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TailorAPI.Models;
 
-public class TailorDbContext : DbContext // ✅ Remove IdentityDbContext<AppUser>
+public class TailorDbContext : DbContext
 {
     public TailorDbContext(DbContextOptions<TailorDbContext> options)
         : base(options)
     {
     }
 
-    // ✅ Define your tables
+    // Define your tables
     public DbSet<Customer> Customers { get; set; }
-    //public DbSet<Employee> Employees { get; set; }
     public DbSet<Measurement> Measurements { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<Product> Products { get; set; }
-
+    public DbSet<Fabric> Fabrics { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder); // ✅ Only call this once
-
-        // ✅ Customer Configuration
-        modelBuilder.Entity<Customer>(entity =>
-        {
-            entity.HasKey(e => e.CustomerId);
-            entity.Property(e => e.FullName).IsRequired();
-            entity.Property(e => e.Email).IsRequired();
-            entity.Property(e => e.Address).IsRequired();
-            entity.Property(e => e.PhoneNumber).IsRequired();
-            entity.Property(e => e.IsDeleted).HasColumnType("bit");
-        });
-
-        // ✅ Employee Configuration
-        //modelBuilder.Entity<Employee>(entity =>
-        //{
-        //    entity.HasKey(e => e.EmployeeID);
-        //    entity.Property(e => e.FullName).IsRequired();
-        //    entity.Property(e => e.Email).IsRequired();
-        //    entity.Property(e => e.Address).IsRequired();
-        //    entity.Property(e => e.PhoneNumber).IsRequired();
-        //    entity.Property(e => e.Role).IsRequired();
-        //    entity.Property(e => e.Salary).HasColumnType("decimal(18,2)");
-        //    entity.Property(e => e.Attendance).HasColumnType("int");
-        //    entity.Property(e => e.Status).HasColumnType("int");
-        //    entity.Property(e => e.IsDeleted).HasColumnType("bit");
-
-        //    // Foreign Keys
-        //    entity.HasOne(e => e.Customer)
-        //        .WithMany()
-        //        .HasForeignKey(e => e.CustomerID)
-        //        .OnDelete(DeleteBehavior.NoAction);
-
-        //    entity.HasOne(e => e.Measurement)
-        //        .WithMany()
-        //        .HasForeignKey(e => e.MeasurementID)
-        //        .OnDelete(DeleteBehavior.NoAction);
-        //});
+        base.OnModelCreating(modelBuilder);
 
         // ✅ Measurement Configuration
         modelBuilder.Entity<Measurement>(entity =>
         {
             entity.HasKey(e => e.MeasurementID);
+
             entity.Property(e => e.Arms).HasColumnType("real");
             entity.Property(e => e.Chest).HasColumnType("real");
             entity.Property(e => e.Hip).HasColumnType("real");
@@ -78,21 +39,50 @@ public class TailorDbContext : DbContext // ✅ Remove IdentityDbContext<AppUser
             entity.Property(e => e.Waist).HasColumnType("real");
             entity.Property(e => e.IsDeleted).HasColumnType("bit");
 
-            // Foreign Key
+            // ✅ Correct Foreign Key
             entity.HasOne(e => e.Customer)
                 .WithOne(c => c.Measurement)
-                .HasForeignKey<Measurement>(e => e.CustomerID)
+                .HasForeignKey<Measurement>(e => e.CustomerId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ✅ Order & Product Precision Fix
-        modelBuilder.Entity<Order>().Property(o => o.TotalPrice).HasColumnType("decimal(18,2)");
-        modelBuilder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");
+        // ✅ Order Entity Configuration
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasKey(o => o.OrderID);
 
-        // ✅ Ensure ProductID is manually assigned
-        modelBuilder.Entity<Product>()
-            .Property(p => p.ProductID)
-            .ValueGeneratedNever();
+            entity.Property(o => o.TotalPrice).HasColumnType("decimal(18,2)");
+            entity.Property(o => o.FabricLength).HasColumnType("decimal(18,2)");
+
+            entity.HasOne(o => o.Customer)
+                .WithMany()
+                .HasForeignKey(o => o.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(o => o.Product)
+                .WithMany()
+                .HasForeignKey(o => o.ProductID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(o => o.Fabric)
+                .WithMany()
+                .HasForeignKey(o => o.FabricID)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ✅ Product Configuration
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(p => p.ProductID);
+            entity.Property(p => p.MakingPrice).HasColumnType("decimal(18,2)");
+            entity.Property(p => p.ProductID).ValueGeneratedNever(); // Manual ProductID assignment
+        });
+
+        // ✅ Soft Delete Filters
+        modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
+        modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
+        modelBuilder.Entity<Fabric>().HasQueryFilter(f => !f.IsDeleted);
+        modelBuilder.Entity<Order>().HasQueryFilter(o => !o.IsDeleted);
 
         // ✅ Seed Roles
         modelBuilder.Entity<Role>().HasData(
@@ -100,19 +90,5 @@ public class TailorDbContext : DbContext // ✅ Remove IdentityDbContext<AppUser
             new Role { RoleID = 2, RoleName = "Tailor" },
             new Role { RoleID = 3, RoleName = "Manager" }
         );
-
-        //// ✅ Seed Default Admin User
-        //modelBuilder.Entity<User>().HasData(
-        //    new User
-        //    {
-        //        UserID = 1,
-        //        Name = "Admin",
-        //        Email = "admin@shop.com",
-        //        MobileNo = "9898989898",
-        //        PasswordHash = "hashed_password_here", // 🔑 Make sure to hash the password
-        //        Address = "Admin",
-        //        RoleID = 1
-        //    }
-        //);
     }
 }

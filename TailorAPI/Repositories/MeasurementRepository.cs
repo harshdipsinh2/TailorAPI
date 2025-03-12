@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TailorAPI.Models;
 
 namespace TailorAPI.Repositories
 {
@@ -17,6 +18,7 @@ namespace TailorAPI.Repositories
             await _context.SaveChangesAsync();
             return measurement;
         }
+
         public async Task<bool> SoftDeleteMeasurementAsync(int measurementId)
         {
             var measurement = await _context.Measurements.FindAsync(measurementId);
@@ -26,14 +28,13 @@ namespace TailorAPI.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
+
         public async Task<List<Measurement>> GetAllMeasurementsAsync()
         {
             return await _context.Measurements
-                .Include(m => m.Customer) // Ensure Customer data is loaded
-                .Where(m => !m.IsDeleted) // Exclude soft-deleted records
+                .Include(m => m.Customer)
+                .Where(m => !m.IsDeleted)
                 .ToListAsync();
         }
-
     }
-
 }

@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    [Migration("20250305084250_Add_New_Changes")]
-    partial class Add_New_Changes
+    [Migration("20250312054744_AddNewMeasurementFields")]
+    partial class AddNewMeasurementFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -26,11 +26,11 @@ namespace TailorAPI.Migrations
 
             modelBuilder.Entity("Customer", b =>
                 {
-                    b.Property<int>("CustomerID")
+                    b.Property<int>("CustomerId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CustomerID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CustomerId"));
 
                     b.Property<string>("Address")
                         .IsRequired()
@@ -44,6 +44,10 @@ namespace TailorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(10)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -51,64 +55,9 @@ namespace TailorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("CustomerID");
+                    b.HasKey("CustomerId");
 
                     b.ToTable("Customers");
-                });
-
-            modelBuilder.Entity("Measurement", b =>
-                {
-                    b.Property<int>("MeasurementID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MeasurementID"));
-
-                    b.Property<float>("Arms")
-                        .HasColumnType("real");
-
-                    b.Property<float>("Chest")
-                        .HasColumnType("real");
-
-                    b.Property<int>("CustomerID")
-                        .HasColumnType("int");
-
-                    b.Property<float>("Hip")
-                        .HasColumnType("real");
-
-                    b.Property<float>("Inseam")
-                        .HasColumnType("real");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<float>("Neck")
-                        .HasColumnType("real");
-
-                    b.Property<float>("Shoulder")
-                        .HasColumnType("real");
-
-                    b.Property<float>("Sleeve")
-                        .HasColumnType("real");
-
-                    b.Property<float>("SleeveLength")
-                        .HasColumnType("real");
-
-                    b.Property<float>("Thigh")
-                        .HasColumnType("real");
-
-                    b.Property<float>("TrouserLength")
-                        .HasColumnType("real");
-
-                    b.Property<float>("Waist")
-                        .HasColumnType("real");
-
-                    b.HasKey("MeasurementID");
-
-                    b.HasIndex("CustomerID")
-                        .IsUnique();
-
-                    b.ToTable("Measurements");
                 });
 
             modelBuilder.Entity("Order", b =>
@@ -152,6 +101,76 @@ namespace TailorAPI.Migrations
                     b.HasIndex("ProductID");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("TailorAPI.Models.Measurement", b =>
+                {
+                    b.Property<int>("MeasurementID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MeasurementID"));
+
+                    b.Property<float>("Ankle")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Arms")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Bicep")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Calf")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Chest")
+                        .HasColumnType("real");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<float>("Forearm")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Hip")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Inseam")
+                        .HasColumnType("real");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<float>("Neck")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Shoulder")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Sleeve")
+                        .HasColumnType("real");
+
+                    b.Property<float>("SleeveLength")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Thigh")
+                        .HasColumnType("real");
+
+                    b.Property<float>("TrouserLength")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Waist")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Wrist")
+                        .HasColumnType("real");
+
+                    b.HasKey("MeasurementID");
+
+                    b.HasIndex("CustomerId")
+                        .IsUnique();
+
+                    b.ToTable("Measurements");
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Product", b =>
@@ -246,17 +265,6 @@ namespace TailorAPI.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Measurement", b =>
-                {
-                    b.HasOne("Customer", "Customer")
-                        .WithOne("Measurement")
-                        .HasForeignKey("Measurement", "CustomerID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Customer");
-                });
-
             modelBuilder.Entity("Order", b =>
                 {
                     b.HasOne("Customer", "Customer")
@@ -274,6 +282,17 @@ namespace TailorAPI.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("TailorAPI.Models.Measurement", b =>
+                {
+                    b.HasOne("Customer", "Customer")
+                        .WithOne("Measurement")
+                        .HasForeignKey("TailorAPI.Models.Measurement", "CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("User", b =>

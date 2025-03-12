@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using TailorAPI.Models;
+﻿using TailorAPI.Models;
+using Microsoft.EntityFrameworkCore;
+using TailorAPI.DTOs.Request;
+using TailorAPI.DTOs.Response;
+using TailorAPI.Repositories;
 
 namespace TailorAPI.Repositories
 {
@@ -14,36 +15,44 @@ namespace TailorAPI.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Order>> GetAllOrders()
-        {
-            return await _context.Orders.Include(o => o.Customer)
-                                        .Include(o => o.Product)
-                                        .ToListAsync();
-        }
-
-        public async Task<Order?> GetOrderById(int id)
-        {
-            return await _context.Orders.Include(o => o.Customer)
-                                        .Include(o => o.Product)
-                                        .FirstOrDefaultAsync(o => o.OrderID == id);
-        }
-
-        public async Task AddOrder(Order order)
+        public async Task<Order> AddOrderAsync(Order order)
         {
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
+            return order;
         }
 
-        public async Task UpdateOrder(Order order)
+        public async Task<IEnumerable<Order>> GetAllOrdersAsync()
+        {
+            return await _context.Orders.Include(o => o.Customer).Include(o => o.Product).Include(o => o.Fabric).ToListAsync();
+        }
+
+        public async Task<Order> GetOrderByIdAsync(int id)
+        {
+            return await _context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.Product)
+                .Include(o => o.Fabric)
+                .FirstOrDefaultAsync(o => o.OrderID == id);
+        }
+
+
+
+        public async Task<bool> UpdateOrderAsync(Order order)
         {
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
+            return true;
         }
 
-        public async Task DeleteOrder(Order order)
+        public async Task<bool> SoftDeleteOrderAsync(int id)
         {
-            _context.Orders.Remove(order);
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return false;
+
+            order.IsDeleted = true;
             await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

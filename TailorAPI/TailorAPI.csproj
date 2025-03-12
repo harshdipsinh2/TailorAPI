@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTO\NewFolder\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
 

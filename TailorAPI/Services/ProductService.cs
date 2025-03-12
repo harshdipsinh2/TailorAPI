@@ -15,25 +15,30 @@ namespace TailorAPI.Services
             _productRepository = productRepository;
         }
 
-        public async Task<string> AddProduct(int productID, string productName, decimal price)
+        public async Task<string> AddProduct(int productID, string productName, decimal makingPrice)
         {
             var product = new Product
             {
                 ProductID = productID,
                 ProductName = productName,
-                Price = price
+                MakingPrice = makingPrice
             };
             return await _productRepository.AddProduct(product);
         }
 
         public async Task<List<Product>> GetProducts()
         {
-            return await _productRepository.GetProducts(); // Use repository method
+            return await _productRepository.GetProducts();
         }
 
         public async Task<bool> DeleteProduct(int productId)
         {
-            return await _productRepository.DeleteProduct(productId); // Directly use repository method
+            return await _productRepository.DeleteProduct(productId);
         }
+        public async Task<Product> GetProductById(int productId)
+        {
+            return await _productRepository.GetProductById(productId);
+        }
+
     }
 }
