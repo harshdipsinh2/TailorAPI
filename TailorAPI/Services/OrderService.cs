@@ -1,9 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
-using TailorAPI.DTO;
+﻿using TailorAPI.DTOs.Request;
+using TailorAPI.DTOs.Response;
 using TailorAPI.Models;
 using TailorAPI.Repositories;
 
@@ -20,136 +16,118 @@ namespace TailorAPI.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<OrderResponseDto>> GetAllOrders()
+        public async Task<OrderResponseDto> CreateOrderAsync(int customerId, int productId, int fabricId, OrderRequestDto request)
         {
-            var orders = await _orderRepository.GetAllOrders();
+            var product = await _context.Products.FindAsync(productId);
+            var fabric = await _context.Fabrics.FindAsync(fabricId);
 
-            return orders.Select(o => new OrderResponseDto
-            {
-                CustomerName = o.Customer?.FullName ?? "Unknown",
-                ProductName = o.Product?.ProductName ?? "Unknown",
-                Quantity = o.Quantity,
-                TotalPrice = o.TotalPrice,
-                OrderStatus = o.OrderStatus,
-                PaymentStatus = o.PaymentStatus,
-                OrderDate = o.OrderDate.ToString("dd-MM-yyyy"), // Format as string
-                CompletionDate = o.CompletionDate?.ToString("dd-MM-yyyy") // Format as string
-            }).ToList();
-        }
+            if (product == null || fabric == null) throw new Exception("Invalid Product or Fabric");
 
-        public async Task<OrderResponseDto> GetOrderById(int id)
-        {
-            var order = await _orderRepository.GetOrderById(id);
-            if (order == null) return null;
-
-            return new OrderResponseDto
-            {
-                CustomerName = order.Customer?.FullName ?? "Unknown",
-                ProductName = order.Product?.ProductName ?? "Unknown",
-                Quantity = order.Quantity,
-                TotalPrice = order.TotalPrice,
-                OrderStatus = order.OrderStatus,
-                PaymentStatus = order.PaymentStatus,
-                OrderDate = order.OrderDate.ToString("dd-MM-yyyy"), // Format as string
-                CompletionDate = order.CompletionDate?.ToString("dd-MM-yyyy") // Format as string
-            };
-        }
-
-        public async Task<OrderResponseDto> CreateOrder(OrderResponseDto request)
-        {
-            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.FullName == request.CustomerName);
-            if (customer == null) return null;
-
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductName == request.ProductName);
-            if (product == null) return null;
-
-            var totalPrice = product.Price * request.Quantity;
-
-            // Parse the OrderDate from the string
-            if (!DateTime.TryParseExact(request.OrderDate, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var orderDate))
-            {
-                throw new ArgumentException("Invalid OrderDate format. Expected format: dd-MM-yyyy");
-            }
-
-            // Parse the CompletionDate from the string if provided
-            DateTime? completionDate = null;
-            if (!string.IsNullOrEmpty(request.CompletionDate))
-            {
-                if (!DateTime.TryParseExact(request.CompletionDate, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedCompletionDate))
-                {
-                    throw new ArgumentException("Invalid CompletionDate format. Expected format: dd-MM-yyyy");
-                }
-                completionDate = parsedCompletionDate;
-            }
+            var totalPrice = ((decimal)request.FabricLength * fabric.PricePerMeter)
+                + ((decimal)product.MakingPrice * request.Quantity);
 
             var order = new Order
             {
-                CustomerID = customer.CustomerId,
-                ProductID = product.ProductID,
+                CustomerId = customerId,
+                ProductID = productId,
+                FabricID = fabricId,
+                FabricLength = (decimal)request.FabricLength,
                 Quantity = request.Quantity,
                 TotalPrice = totalPrice,
-                OrderStatus = request.OrderStatus ?? "Pending",
-                PaymentStatus = request.PaymentStatus ?? "Pending",
-                OrderDate = orderDate,
-                CompletionDate = completionDate
+                CompletionDate = request.CompletionDate
             };
 
-            await _orderRepository.AddOrder(order);
+            await _orderRepository.AddOrderAsync(order);
 
             return new OrderResponseDto
             {
-                CustomerName = customer.FullName,
+                CustomerName = (await _context.Customers.FindAsync(customerId))?.FullName,
                 ProductName = product.ProductName,
-                Quantity = order.Quantity,
-                TotalPrice = order.TotalPrice,
-                OrderStatus = order.OrderStatus,
-                PaymentStatus = order.PaymentStatus,
-                OrderDate = order.OrderDate.ToString("dd-MM-yyyy"),
-                CompletionDate = order.CompletionDate?.ToString("dd-MM-yyyy")
+                FabricName = fabric.FabricName,
+                FabricLength = (decimal)request.FabricLength,
+                Quantity = request.Quantity,
+                TotalPrice = totalPrice,
+                CompletionDate = request.CompletionDate.ToString("yyyy-MM-dd")
             };
         }
 
-        public async Task<OrderUpdateDto> UpdateOrder(int orderId, int quantity, string orderStatus, string paymentStatus, string completionDate)
+        public async Task<bool> UpdateOrderAsync(int id, int productId, int fabricId, OrderRequestDto request)
         {
-            var order = await _orderRepository.GetOrderById(orderId);
-            if (order == null) return null;
-
-            order.Quantity = quantity;
-            order.OrderStatus = orderStatus;
-            order.PaymentStatus = paymentStatus;
-
-            // Parse the CompletionDate from the string if provided
-            if (!string.IsNullOrEmpty(completionDate))
-            {
-                if (!DateTime.TryParseExact(completionDate, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedCompletionDate))
-                {
-                    throw new ArgumentException("Invalid CompletionDate format. Expected format: dd-MM-yyyy");
-                }
-                order.CompletionDate = parsedCompletionDate;
-            }
-            else
-            {
-                order.CompletionDate = null;
-            }
-
-            await _orderRepository.UpdateOrder(order);
-
-            return new OrderUpdateDto
-            {
-                Quantity = order.Quantity,
-                OrderStatus = order.OrderStatus,
-                PaymentStatus = order.PaymentStatus,
-                CompletionDate = order.CompletionDate?.ToString("dd-MM-yyyy")
-            };
-        }
-
-        public async Task<bool> DeleteOrder(int orderId)
-        {
-            var order = await _orderRepository.GetOrderById(orderId);
+            var order = await _orderRepository.GetOrderByIdAsync(id);
             if (order == null) return false;
 
-            await _orderRepository.DeleteOrder(order);
+            var product = await _context.Products.FindAsync(productId);
+            var fabric = await _context.Fabrics.FindAsync(fabricId);
+
+            if (product == null || fabric == null) throw new Exception("Invalid Product or Fabric");
+
+            order.FabricLength = (decimal)request.FabricLength;
+            order.Quantity = request.Quantity;
+            order.TotalPrice = ((decimal)request.FabricLength * fabric.PricePerMeter)
+                   + ((decimal)product.MakingPrice * (decimal)request.Quantity);
+
+            order.CompletionDate = request.CompletionDate;
+
+            await _orderRepository.UpdateOrderAsync(order);
             return true;
+        }
+
+        public async Task<bool> SoftDeleteOrderAsync(int id)
+        {
+            var order = await _orderRepository.GetOrderByIdAsync(id);
+            if (order == null) return false;
+
+            order.IsDeleted = true;
+            await _orderRepository.UpdateOrderAsync(order);
+
+            return true;
+        }
+
+        public async Task<OrderResponseDto?> GetOrderByIdAsync(int id)
+        {
+            var order = await _orderRepository.GetOrderByIdAsync(id);
+            if (order == null) return null;
+
+            var product = await _context.Products.FindAsync(order.ProductID);
+            var fabric = await _context.Fabrics.FindAsync(order.FabricID);
+            var customer = await _context.Customers.FindAsync(order.CustomerId);
+
+            return new OrderResponseDto
+            {
+                CustomerName = customer?.FullName,
+                ProductName = product?.ProductName,
+                FabricName = fabric?.FabricName,
+                FabricLength = order.FabricLength,
+                Quantity = order.Quantity,
+                TotalPrice = order.TotalPrice,
+                CompletionDate = order.CompletionDate.ToString("yyyy-MM-dd")
+            };
+        }
+
+        public async Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync()
+        {
+            var orders = await _orderRepository.GetAllOrdersAsync();
+
+            var orderDtos = new List<OrderResponseDto>();
+            foreach (var order in orders)
+            {
+                var product = await _context.Products.FindAsync(order.ProductID);
+                var fabric = await _context.Fabrics.FindAsync(order.FabricID);
+                var customer = await _context.Customers.FindAsync(order.CustomerId);
+
+                orderDtos.Add(new OrderResponseDto
+                {
+                    CustomerName = customer?.FullName,
+                    ProductName = product?.ProductName,
+                    FabricName = fabric?.FabricName,
+                    FabricLength = order.FabricLength,
+                    Quantity = order.Quantity,
+                    TotalPrice = order.TotalPrice,
+                    CompletionDate = order.CompletionDate.ToString("yyyy-MM-dd")
+                });
+            }
+
+            return orderDtos;
         }
     }
 }

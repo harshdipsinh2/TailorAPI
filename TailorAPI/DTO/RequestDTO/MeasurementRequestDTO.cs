@@ -1,14 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
-
-namespace TailorAPI.Models
+﻿namespace TailorAPI.DTO.RequestDTO
 {
-    public class Measurement
+    public class MeasurementRequestDTO
     {
-        [Key]
-        public int MeasurementID { get; set; }
-
         public float Chest { get; set; }
         public float Waist { get; set; }
         public float Hip { get; set; }
@@ -25,12 +18,5 @@ namespace TailorAPI.Models
         public float Wrist { get; set; }
         public float Ankle { get; set; }
         public float Calf { get; set; }
-        public bool IsDeleted { get; set; }
-
-        [ForeignKey("Customer")]
-        public int CustomerId { get; set; }
-
-        [JsonIgnore]
-        public Customer Customer { get; set; }
     }
 }

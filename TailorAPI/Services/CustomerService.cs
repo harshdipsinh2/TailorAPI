@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using TailorAPI.DTO.RequestDTO;
+using TailorAPI.Services;
 
-public class CustomerService
+public class CustomerService : ICustomerService
 {
     private readonly TailorDbContext _context;
 
@@ -11,18 +11,18 @@ public class CustomerService
         _context = context;
     }
 
-    // ✅ Get all customers
     public async Task<List<CustomerDTO>> GetAllCustomersAsync()
     {
         return await _context.Customers
-            .Where(c => !c.IsDeleted) // Exclude soft-deleted records
+            .Where(c => !c.IsDeleted)
+            .AsNoTracking()
             .Select(c => new CustomerDTO
             {
-                CustomerId = c.CustomerId,
                 FullName = c.FullName,
                 PhoneNumber = c.PhoneNumber,
                 Email = c.Email,
-                Address = c.Address
+                Address = c.Address,
+                Gender = c.Gender
             })
             .ToListAsync();
     }
@@ -37,20 +37,20 @@ public class CustomerService
             FullName = customer.FullName,
             PhoneNumber = customer.PhoneNumber,
             Email = customer.Email,
-            Address = customer.Address
+            Address = customer.Address,
+            Gender = customer.Gender
         };
     }
 
-
-    // ✅ Add a new customer
-    public async Task<CustomerDTO> AddCustomerAsync(CustomerDTO customerDto)
+    public async Task<CustomerDTO> AddCustomerAsync(CustomerRequestDTO customerDto)
     {
         var customer = new Customer
         {
             FullName = customerDto.FullName,
             PhoneNumber = customerDto.PhoneNumber,
             Email = customerDto.Email,
-            Address = customerDto.Address
+            Address = customerDto.Address,
+            Gender = customerDto.Gender
         };
 
         _context.Customers.Add(customer);
@@ -61,15 +61,12 @@ public class CustomerService
             FullName = customer.FullName,
             PhoneNumber = customer.PhoneNumber,
             Email = customer.Email,
-            Address = customer.Address
+            Address = customer.Address,
+            Gender = customer.Gender
         };
     }
 
-
-
-
-    // ✅ Update existing customer
-    public async Task<Customer> UpdateCustomerAsync(int customerId, CustomerDTO customerDto)
+    public async Task<Customer> UpdateCustomerAsync(int customerId, CustomerRequestDTO customerDto)
     {
         var customer = await _context.Customers.FindAsync(customerId);
         if (customer == null) return null;
@@ -78,28 +75,29 @@ public class CustomerService
         customer.PhoneNumber = customerDto.PhoneNumber;
         customer.Email = customerDto.Email;
         customer.Address = customerDto.Address;
+        customer.Gender = customerDto.Gender;
 
         await _context.SaveChangesAsync();
         return customer;
     }
 
-    // ✅Delete customer
     public async Task<bool> SoftDeleteCustomerAsync(int customerId)
     {
-        var customer = await _context.Customers.FindAsync(customerId);
+        var customer = await _context.Customers
+            .Include(c => c.Measurement) // ✅ Ensure Measurement is included
+            .FirstOrDefaultAsync(c => c.CustomerId == customerId);
+
         if (customer == null) return false;
 
-        //  Soft delete Customer
         customer.IsDeleted = true;
 
-        // (It will be deleted auto)
-        var measurement = await _context.Measurements.FirstOrDefaultAsync(m => m.CustomerID == customerId);
-
-      
+        if (customer.Measurement != null) // ✅ Null check for Measurement
+        {
+            customer.Measurement.IsDeleted = true;
+        }
 
         await _context.SaveChangesAsync();
         return true;
     }
-
 
 }

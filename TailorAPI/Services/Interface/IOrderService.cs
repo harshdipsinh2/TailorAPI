@@ -1,10 +1,11 @@
-﻿using TailorAPI.DTO;
+﻿using TailorAPI.DTOs.Request;
+using TailorAPI.DTOs.Response;
 
 public interface IOrderService
 {
-    Task<IEnumerable<OrderResponseDto>> GetAllOrders();
-    Task<OrderResponseDto> GetOrderById(int id);
-    Task<OrderResponseDto> CreateOrder(OrderResponseDto request);
-    Task<OrderUpdateDto> UpdateOrder(int orderId, int quantity, string orderStatus, string paymentStatus, string completionDate);
-    Task<bool> DeleteOrder(int orderId);
+    Task<OrderResponseDto> CreateOrderAsync(int customerId, int productId, int fabricId, OrderRequestDto request);
+    Task<bool> UpdateOrderAsync(int id, int productId, int fabricId, OrderRequestDto request);
+    Task<bool> SoftDeleteOrderAsync(int id);
+    Task<OrderResponseDto?> GetOrderByIdAsync(int id);
+    Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync();
 }

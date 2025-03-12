@@ -8,6 +8,7 @@ using TailorAPI.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,12 @@ builder.Services.AddDbContext<TailorDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
+
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+
 // ✅ Configure CORS
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 builder.Services.AddCors(options =>
@@ -41,10 +48,13 @@ builder.Services.AddCors(options =>
 });
 
 // ✅ Register Services & Repositories
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IMeasurementService, MeasurementService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IFabricService, FabricService>();
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<UserRepository>();
@@ -52,6 +62,7 @@ builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<MeasurementRepository>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<MeasurementService>();
+builder.Services.AddScoped<FabricRepository>();
 //builder.Services.AddScoped<JwtService>();
 
 //builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));

@@ -1,17 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TailorAPI.DTO.RequestDTO;
+using TailorAPI.Services;
 
 [Route("api/[controller]")]
 [ApiController]
 public class CustomerController : ControllerBase
 {
-    private readonly CustomerService _customerService;
+    private readonly ICustomerService _customerService;
 
-    public CustomerController(CustomerService customerService)
+    public CustomerController(ICustomerService customerService)
     {
         _customerService = customerService;
-    }   
+    }
 
-    //  Get all customers
     [HttpGet("GetAllCustomers")]
     public async Task<ActionResult<List<CustomerDTO>>> GetAllCustomers()
     {
@@ -19,38 +20,32 @@ public class CustomerController : ControllerBase
         return Ok(customers);
     }
 
-    // Get customer by ID (Using FromQuery)
     [HttpGet("GetCustomer")]
-    public async Task<ActionResult<CustomerDTO>> GetCustomerById([FromQuery] int customerId)  // Use FromQuery
+    public async Task<ActionResult<CustomerDTO>> GetCustomerById([FromQuery] int customerId)
     {
         var customer = await _customerService.GetCustomerByIdAsync(customerId);
         if (customer == null) return NotFound();
         return Ok(customer);
     }
 
-    //  Create new customer
     [HttpPost("AddCustomer")]
-    public async Task<ActionResult<CustomerDTO>> PostCustomer([FromBody] CustomerDTO customerDto)
+    public async Task<ActionResult<CustomerDTO>> PostCustomer([FromBody] CustomerRequestDTO customerDto)
     {
         if (customerDto == null)
             return BadRequest("Invalid customer data");
 
         var createdCustomer = await _customerService.AddCustomerAsync(customerDto);
-        return CreatedAtAction(nameof(GetCustomerById), new { customerId = createdCustomer.FullName }, createdCustomer); // ✅ Returns DTO, not full entity
+        return CreatedAtAction(nameof(GetCustomerById), new { customerId = createdCustomer.FullName }, createdCustomer);
     }
 
-
-    //  Update existing customer
-    [HttpPut]
-    public async Task<IActionResult> UpdateCustomer([FromQuery] int customerId, [FromBody] CustomerDTO customerDto)
+    [HttpPut("Edit")]
+    public async Task<IActionResult> UpdateCustomer([FromQuery] int customerId, [FromBody] CustomerRequestDTO customerDto)
     {
         var updatedCustomer = await _customerService.UpdateCustomerAsync(customerId, customerDto);
         if (updatedCustomer == null) return NotFound();
         return Ok(updatedCustomer);
     }
 
-    //  Delete customer
-    //  Soft Delete customer
     [HttpDelete("Delete")]
     public async Task<IActionResult> SoftDeleteCustomer([FromQuery] int customerId)
     {
@@ -59,5 +54,4 @@ public class CustomerController : ControllerBase
 
         return NoContent();
     }
-
 }

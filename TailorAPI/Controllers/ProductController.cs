@@ -15,9 +15,9 @@ namespace TailorAPI.Controllers
         }
 
         [HttpPost("add-product")]
-        public async Task<IActionResult> AddProduct([FromQuery] int productID, [FromQuery] string productName, [FromQuery] decimal price)
+        public async Task<IActionResult> AddProduct([FromQuery] int productID, [FromQuery] string productName, [FromQuery] decimal makingPrice)
         {
-            var result = await _productService.AddProduct(productID, productName, price);
+            var result = await _productService.AddProduct(productID, productName, makingPrice);
             return Ok(result);
         }
 
@@ -27,12 +27,20 @@ namespace TailorAPI.Controllers
             var products = await _productService.GetProducts();
             return Ok(products);
         }
+
         [HttpDelete("delete/{productId}")]
         public async Task<IActionResult> DeleteProduct(int productId)
         {
             var result = await _productService.DeleteProduct(productId);
             if (!result) return NotFound("Product not found or already deleted.");
             return Ok("Product deleted successfully.");
+        }
+        [HttpGet("get-product/{productId}")]
+        public async Task<IActionResult> GetProductById(int productId)
+        {
+            var product = await _productService.GetProductById(productId);
+            if (product == null) return NotFound("Product not found.");
+            return Ok(product);
         }
 
     }

@@ -11,8 +11,8 @@ namespace TailorAPI.Models
         public string ProductName { get; set; }
 
         [Required]
-        public decimal Price { get; set; }  // Price of the product
+        public decimal MakingPrice { get; set; }  // Tailoring work price (excluding fabric cost)
 
-        public bool IsDeleted { get; set; } = false;
+        public bool IsDeleted { get; set; } = false;  // Soft delete property
     }
 }
