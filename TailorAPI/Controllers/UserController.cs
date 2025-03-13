@@ -6,7 +6,7 @@
     using TailorAPI.Services.Interface;
     using TailorAPI.DTO;
 
-    [Route("api/user")]
+    [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
     {
@@ -17,62 +17,59 @@
             _userService = userService;
         }
 
-        // Register a new user
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserDto userDto)
+        [HttpPost("Register")]
+        public async Task<IActionResult> RegisterUser([FromBody] UserDto userDto)
         {
-            var newUser = await _userService.RegisterUserAsync(userDto);
-            if (newUser == null)
-                return BadRequest("User already exists");
+            var user = await _userService.RegisterUserAsync(userDto);
+            if (user == null) return BadRequest("User registration failed.");
 
-            return Ok(newUser);
-        }
-
-
-        // Login user
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDTO loginDto)
-        {
-            var user = await _userService.AuthenticateUserAsync(loginDto.Email, loginDto.Password);
-            if (user == null) return Unauthorized("Invalid credentials");
             return Ok(user);
         }
 
-        // Get all users
-        [HttpGet]
-        public async Task<IActionResult> GetUsers()
+        [HttpPost("Login")]
+        public async Task<IActionResult> Authenticate(string email, string password)
+        {
+            var user = await _userService.AuthenticateUserAsync(email, password);
+            if (user == null) return Unauthorized("Invalid credentials.");
+
+            return Ok(user);
+        }
+
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync();
             return Ok(users);
         }
 
-        // Get user by ID
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetUser(int id)
+        [HttpGet("Get/{id}")]
+        public async Task<IActionResult> GetUserById(int id)
         {
             var user = await _userService.GetUserByIdAsync(id);
-            if (user == null) return NotFound();
+            if (user == null) return NotFound("User not found.");
+
             return Ok(user);
         }
 
-        // Update user
-        [HttpPut("update/{id}")]
+        [HttpPut("Update/{id}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
         {
-            if (id != user.UserID) return BadRequest("User ID mismatch");
             var updatedUser = await _userService.UpdateUserAsync(user);
-            if (updatedUser == null) return NotFound();
-            return Ok(updatedUser);
+            if (updatedUser == null) return NotFound("User not found.");
+
+            return Ok("User updated successfully.");
         }
 
-        // Delete user
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("Delete/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var success = await _userService.DeleteUserAsync(id);
-            return success ? Ok("User deleted") : NotFound("User not found");
+            var result = await _userService.DeleteUserAsync(id);
+            if (!result) return NotFound("User not found.");
+
+            return Ok("User deleted successfully.");
         }
     }
 }
+
 
  

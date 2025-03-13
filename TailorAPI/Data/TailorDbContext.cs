@@ -40,10 +40,21 @@ public class TailorDbContext : DbContext
             entity.Property(e => e.IsDeleted).HasColumnType("bit");
 
             // ✅ Correct Foreign Key
-            entity.HasOne(e => e.Customer)
-                .WithOne(c => c.Measurement)
-                .HasForeignKey<Measurement>(e => e.CustomerId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Customer>()
+         .HasOne(c => c.Measurement)
+         .WithOne(m => m.Customer)
+         .HasForeignKey<Measurement>(m => m.CustomerId)
+         .IsRequired(false); // Make it optional
+
+            modelBuilder.Entity<Fabric>()
+    .Property(f => f.PricePerMeter)
+    .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Fabric>()
+                .Property(f => f.StockQuantity)
+                .HasColumnType("decimal(18,2)");
+
+
         });
 
         // ✅ Order Entity Configuration
@@ -60,13 +71,18 @@ public class TailorDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(o => o.Product)
-                .WithMany()
-                .HasForeignKey(o => o.ProductID)
-                .OnDelete(DeleteBehavior.Restrict);
+                       .WithMany(p => p.Orders)
+                       .HasForeignKey(o => o.ProductID)
+                       .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(o => o.Fabric)
-                .WithMany()
+                .WithMany(f => f.Orders)
                 .HasForeignKey(o => o.FabricID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(o => o.Assigned)
+                .WithMany()
+                .HasForeignKey(o => o.AssignedTo)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -77,7 +93,14 @@ public class TailorDbContext : DbContext
             entity.Property(p => p.MakingPrice).HasColumnType("decimal(18,2)");
             entity.Property(p => p.ProductID).ValueGeneratedNever(); // Manual ProductID assignment
         });
+        // ✅ User Entity Configuration
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(u => u.UserID);
 
+            entity.Property(u => u.UserStatus)
+                .HasDefaultValue(UserStatus.Available); // Default Status
+        });
         // ✅ Soft Delete Filters
         modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
         modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);

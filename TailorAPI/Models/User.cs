@@ -1,11 +1,20 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using TailorAPI.Models;
+
+// Enum for UserStatus
+public enum UserStatus
+{
+    Available,
+    Busy
+}
 
 public class User
 {
     [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Auto-generate UserID
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int UserID { get; set; }
 
     public string Name { get; set; }
@@ -14,9 +23,11 @@ public class User
     public string PasswordHash { get; set; }
     public string Address { get; set; }
 
-    public int RoleID { get; set; } // Assigned automatically
+    public int RoleID { get; set; }
     [ForeignKey("RoleID")]
     public Role Role { get; set; }
 
-    //public string Status { get; set; } = "Available"; 
+    [Column(TypeName = "nvarchar(10)")] // ✅ Stored as string in SQL
+    [JsonConverter(typeof(JsonStringEnumConverter))] // ✅ Displayed as string in JSON
+    public UserStatus UserStatus { get; set; } = UserStatus.Available; // Default value
 }

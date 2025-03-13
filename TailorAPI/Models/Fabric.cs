@@ -18,5 +18,8 @@ namespace TailorAPI.Models
         public decimal? StockQuantity { get; set; } // Optional for tracking inventory
 
         public bool IsDeleted { get; set; } = false; // Soft delete flag
+
+        // Navigation property for Orders
+        public ICollection<Order> Orders { get; set; }
     }
 }
