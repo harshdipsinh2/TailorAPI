@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using TailorAPI.Models;
 
 namespace TailorAPI.DTOs.Response
 {
@@ -13,5 +14,7 @@ namespace TailorAPI.DTOs.Response
         [Required]
         [DataType(DataType.Date)] // Ensures date-only format in Swagger UI
         public string CompletionDate { get; set; }  // ✅ Accept CompletionDate as string (date only)
+        public int AssignedTo { get; set; }
+        public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
     }
 }

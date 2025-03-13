@@ -14,5 +14,8 @@ namespace TailorAPI.Models
         public decimal MakingPrice { get; set; }  // Tailoring work price (excluding fabric cost)
 
         public bool IsDeleted { get; set; } = false;  // Soft delete property
+        
+        // Navigation property for Orders
+        public ICollection<Order> Orders { get; set; }
     }
 }

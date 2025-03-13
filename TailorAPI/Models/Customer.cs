@@ -5,8 +5,8 @@ using TailorAPI.Models;
 
 public enum Gender
 {
-    Male = 1,
-    Female = 2
+    Male ,
+    Female
 }
 
 public class Customer

@@ -1,14 +1,23 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using TailorAPI.DTOs.Request;
-using TailorAPI.DTOs.Response;
-using TailorAPI.Models;
-using TailorAPI.Repositories;
-
+using System.Text.Json.Serialization;
 
 namespace TailorAPI.Models
 {
+    // Enums for OrderStatus and PaymentStatus
+    public enum OrderStatus
+    {
+        Pending,
+        Completed
+    }
+
+    public enum PaymentStatus
+    {
+        Pending,
+        Completed
+    }
+
     public class Order
     {
         [Key]
@@ -31,21 +40,32 @@ namespace TailorAPI.Models
         public decimal FabricLength { get; set; }
 
         [Required]
-        public int Quantity { get; set; } // ✅ Added Quantity for multiple item tracking
+        public int Quantity { get; set; }
 
         [Required]
         public decimal TotalPrice { get; set; }
 
-        [Required]
-        [Column(TypeName = "date")]
-        public DateTime OrderDate { get; set; } = DateTime.Now.Date; // Auto-generated date-only format
+        public int AssignedTo { get; set; }
+
+        [ForeignKey("AssignedTo")]
+        public User Assigned { get; set; }
 
         [Required]
         [Column(TypeName = "date")]
-        public DateTime CompletionDate { get; set; } // Entered manually by the user
+        public DateTime OrderDate { get; set; } = DateTime.Now.Date;
 
-        public bool IsDeleted { get; set; } = false;  // Soft delete flag
+        [Required]
+        [Column(TypeName = "date")]
+        public DateTime? CompletionDate { get; set; }
 
+        [Column(TypeName = "nvarchar(10)")] // ✅ Stored as string in SQL
+        [JsonConverter(typeof(JsonStringEnumConverter))] // ✅ Displayed as string in JSON
+        public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
 
+        [Column(TypeName = "nvarchar(10)")] // ✅ Stored as string in SQL
+        [JsonConverter(typeof(JsonStringEnumConverter))] // ✅ Displayed as string in JSON
+        public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
+
+        public bool IsDeleted { get; set; } = false;
     }
 }
