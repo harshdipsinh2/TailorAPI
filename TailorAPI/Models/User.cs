@@ -30,4 +30,7 @@ public class User
     [Column(TypeName = "nvarchar(10)")] // ✅ Stored as string in SQL
     [JsonConverter(typeof(JsonStringEnumConverter))] // ✅ Displayed as string in JSON
     public UserStatus UserStatus { get; set; } = UserStatus.Available; // Default value
+
+    public bool IsDeleted { get; set; } = false;
+
 }
