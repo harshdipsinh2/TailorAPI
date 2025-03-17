@@ -20,52 +20,54 @@
             await _context.SaveChangesAsync();
             return user;
         }
+
         public async Task<Role> GetRoleByNameAsync(string roleName)
         {
             return await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == roleName);
         }
 
-
-
-        // Get a user by ID
+        // Get a user by ID (Exclude deleted users)
         public async Task<User?> GetUserByIdAsync(int userId)
         {
-            return await _context.Users.Include(u => u.Role)
-                                       .FirstOrDefaultAsync(u => u.UserID == userId);
+            return await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.UserID == userId && !u.IsDeleted);
         }
 
-        // Get all users
+        // Get all users (Exclude deleted users)
         public async Task<List<User>> GetAllUsersAsync()
         {
-            return await _context.Users.Include(u => u.Role).ToListAsync();
+            return await _context.Users
+                .Include(u => u.Role)
+                .Where(u => !u.IsDeleted)
+                .ToListAsync();
         }
 
         // Update user
         public async Task<User?> UpdateUserAsync(User user)
         {
             var existingUser = await _context.Users.FindAsync(user.UserID);
-            if (existingUser == null) return null;
+            if (existingUser == null || existingUser.IsDeleted) return null;
 
             existingUser.Name = user.Name;
             existingUser.Email = user.Email;
             existingUser.MobileNo = user.MobileNo;
             existingUser.Address = user.Address;
-            existingUser.RoleID = user.RoleID; // Update Role
+            existingUser.RoleID = user.RoleID;
 
             await _context.SaveChangesAsync();
             return existingUser;
         }
 
-        // Delete user
+        // Soft delete user (Set IsDeleted = true)
         public async Task<bool> DeleteUserAsync(int userId)
         {
             var user = await _context.Users.FindAsync(userId);
-            if (user == null) return false;
+            if (user == null || user.IsDeleted) return false;
 
-            _context.Users.Remove(user);
+            user.IsDeleted = true; // Soft delete
             await _context.SaveChangesAsync();
             return true;
         }
     }
-
 }

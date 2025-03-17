@@ -1,75 +1,67 @@
-﻿namespace TailorAPI.Controllers
+﻿using Microsoft.AspNetCore.Mvc;
+using TailorAPI.DTO;
+using TailorAPI.Services.Interface;
+
+[Route("api/[controller]")]
+[ApiController]
+public class UserController : ControllerBase
 {
-    using Microsoft.AspNetCore.Mvc;
-    using TailorAPI.Models;
-    using System.Threading.Tasks;
-    using TailorAPI.Services.Interface;
-    using TailorAPI.DTO;
+    private readonly IUserService _userService;
 
-    [Route("api/[controller]")]
-    [ApiController]
-    public class UserController : ControllerBase
+    public UserController(IUserService userService)
     {
-        private readonly IUserService _userService;
+        _userService = userService;
+    }
 
-        public UserController(IUserService userService)
-        {
-            _userService = userService;
-        }
+    [HttpPost("Register")]
+    public async Task<IActionResult> RegisterUser([FromBody] UserRequestDto userrequestDto)
+    {
+        var user = await _userService.RegisterUserAsync(userrequestDto);
+        if (user == null) return BadRequest("User registration failed.");
 
-        [HttpPost("Register")]
-        public async Task<IActionResult> RegisterUser([FromBody] UserDto userDto)
-        {
-            var user = await _userService.RegisterUserAsync(userDto);
-            if (user == null) return BadRequest("User registration failed.");
+        return Ok(user);
+    }
 
-            return Ok(user);
-        }
+    [HttpPost("Login")]
+    public async Task<IActionResult> Authenticate(string email, string password)
+    {
+        var user = await _userService.AuthenticateUserAsync(email, password);
+        if (user == null) return Unauthorized("Invalid credentials.");
 
-        [HttpPost("Login")]
-        public async Task<IActionResult> Authenticate(string email, string password)
-        {
-            var user = await _userService.AuthenticateUserAsync(email, password);
-            if (user == null) return Unauthorized("Invalid credentials.");
+        return Ok(user);
+    }
 
-            return Ok(user);
-        }
+    [HttpGet("GetAll")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var users = await _userService.GetAllUsersAsync();
+        return Ok(users);
+    }
 
-        [HttpGet("GetAll")]
-        public async Task<IActionResult> GetAllUsers()
-        {
-            var users = await _userService.GetAllUsersAsync();
-            return Ok(users);
-        }
+    [HttpGet("GetById/{id}")]
+    public async Task<IActionResult> GetUserById(int id)
+    {
+        var user = await _userService.GetUserByIdAsync(id);
+        if (user == null) return NotFound("User not found.");
 
-        [HttpGet("Get/{id}")]
-        public async Task<IActionResult> GetUserById(int id)
-        {
-            var user = await _userService.GetUserByIdAsync(id);
-            if (user == null) return NotFound("User not found.");
+        return Ok(user);
+    }
 
-            return Ok(user);
-        }
+    [HttpDelete("Delete/{id}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var result = await _userService.DeleteUserAsync(id);
+        if (!result) return NotFound("User not found.");
 
-        [HttpPut("Update/{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
-        {
-            var updatedUser = await _userService.UpdateUserAsync(user);
-            if (updatedUser == null) return NotFound("User not found.");
+        return Ok("User deleted successfully.");
+    }
 
-            return Ok("User updated successfully.");
-        }
+    [HttpPut("Update/{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserRequestDto userDto)
+    {
+        var updatedUser = await _userService.UpdateUserAsync(id, userDto);
+        if (updatedUser == null) return NotFound("User not found.");
 
-        [HttpDelete("Delete/{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            var result = await _userService.DeleteUserAsync(id);
-            if (!result) return NotFound("User not found.");
-
-            return Ok("User deleted successfully.");
-        }
+        return Ok(updatedUser);
     }
 }
-
-
- 
