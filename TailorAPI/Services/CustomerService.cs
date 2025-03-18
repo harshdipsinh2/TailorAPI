@@ -18,6 +18,7 @@ public class CustomerService : ICustomerService
             .AsNoTracking()
             .Select(c => new CustomerDTO
             {
+                CustomerId = c.CustomerId,
                 FullName = c.FullName,
                 PhoneNumber = c.PhoneNumber,
                 Email = c.Email,
@@ -34,6 +35,7 @@ public class CustomerService : ICustomerService
 
         return new CustomerDTO
         {
+            CustomerId = customer.CustomerId,
             FullName = customer.FullName,
             PhoneNumber = customer.PhoneNumber,
             Email = customer.Email,
@@ -58,6 +60,7 @@ public class CustomerService : ICustomerService
 
         return new CustomerDTO
         {
+            CustomerId = customer.CustomerId,
             FullName = customer.FullName,
             PhoneNumber = customer.PhoneNumber,
             Email = customer.Email,

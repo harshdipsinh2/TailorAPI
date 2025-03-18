@@ -31,6 +31,7 @@ namespace TailorAPI.Services
             var fabrics = await _fabricRepository.GetAllFabrics();
             return fabrics.Select(f => new FabricResponseDTO
             {
+                FabricID = f.FabricID,
                 FabricName = f.FabricName,
                 PricePerMeter = f.PricePerMeter,
                 StockQuantity = f.StockQuantity
@@ -48,6 +49,7 @@ namespace TailorAPI.Services
 
             return new FabricResponseDTO
             {
+                FabricID = fabric.FabricID,
                 FabricName = fabric.FabricName,
                 PricePerMeter = fabric.PricePerMeter,
                 StockQuantity = fabric.StockQuantity
