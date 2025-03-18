@@ -24,12 +24,18 @@ namespace TailorAPI.Repositories
 
         public async Task<IEnumerable<Order>> GetAllOrdersAsync()
         {
-            return await _context.Orders.Include(o => o.Customer).Include(o => o.Product).Include(o => o.Fabric).ToListAsync();
+            return await _context.Orders
+                .Where(o => !o.IsDeleted) // Exclude soft-deleted orders
+                .Include(o => o.Customer)
+                .Include(o => o.Product)
+                .Include(o => o.Fabric)
+                .ToListAsync();
         }
 
         public async Task<Order> GetOrderByIdAsync(int id)
         {
             return await _context.Orders
+                .Where(o => !o.IsDeleted) // Exclude soft-deleted orders
                 .Include(o => o.Customer)
                 .Include(o => o.Product)
                 .Include(o => o.Fabric)

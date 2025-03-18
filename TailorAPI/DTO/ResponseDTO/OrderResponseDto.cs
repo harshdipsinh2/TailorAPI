@@ -5,15 +5,25 @@ namespace TailorAPI.DTOs.Response
 {
     public class OrderResponseDto
     {
-        public string CustomerName { get; set; }
-        public string ProductName { get; set; }
-        public string FabricName { get; set; }
+        public int CustomerID { get; set; }   // ✅ Added ID for reference
+        public int ProductID { get; set; }    // ✅ Added ID for reference
+        public int FabricID { get; set; }     // ✅ Added ID for reference
+
+        public string? CustomerName { get; set; } // Nullable in case data is missing
+        public string? ProductName { get; set; }
+        public string? FabricName { get; set; }
+
         public decimal FabricLength { get; set; }
-        public int Quantity { get; set; } // ✅ Added Quantity for multiple item tracking
+        public int Quantity { get; set; }
         public decimal TotalPrice { get; set; }
         [Required]
-        [DataType(DataType.Date)] // Ensures date-only format in Swagger UI
-        public string CompletionDate { get; set; }  // ✅ Accept CompletionDate as string (date only)
+        [DataType(DataType.Date)]
+        public string? OrderDate { get; set; }
+
+        [Required]
+        [DataType(DataType.Date)]
+        public string? CompletionDate { get; set; }
+
         public int AssignedTo { get; set; }
         public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
     }

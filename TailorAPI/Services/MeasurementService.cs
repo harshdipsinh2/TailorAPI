@@ -47,6 +47,7 @@ namespace TailorAPI.Services
 
             return new MeasurementResponseDTO
             {
+                CustomerId = measurement.CustomerId, // Include CustomerID in response
                 Chest = measurement.Chest,
                 Waist = measurement.Waist,
                 Hip = measurement.Hip,
@@ -75,6 +76,7 @@ namespace TailorAPI.Services
 
             return new MeasurementResponseDTO
             {
+                CustomerId = measurement.CustomerId,
                 Chest = measurement.Chest,
                 Waist = measurement.Waist,
                 Hip = measurement.Hip,
@@ -113,6 +115,7 @@ namespace TailorAPI.Services
                 .Where(m => !m.IsDeleted)
                 .Select(m => new MeasurementResponseDTO
                 {
+                    CustomerId = m.CustomerId,
                     Chest = m.Chest,
                     Waist = m.Waist,
                     Hip = m.Hip,

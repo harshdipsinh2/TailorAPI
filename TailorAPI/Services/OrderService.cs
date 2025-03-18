@@ -143,15 +143,22 @@ namespace TailorAPI.Services
 
             return new OrderResponseDto
             {
+                CustomerID = order.CustomerId,   // ✅ Added ID reference
+                ProductID = order.ProductID,     // ✅ Added ID reference
+                FabricID = order.FabricID,       // ✅ Added ID reference
+
                 CustomerName = order.Customer?.FullName,
                 ProductName = order.Product?.ProductName,
                 FabricName = order.Fabric?.FabricName,
+
                 FabricLength = order.FabricLength,
                 Quantity = order.Quantity,
                 TotalPrice = order.TotalPrice,
+                OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd")
             };
         }
+
 
         // ✅ Corrected for Non-null Values in List
         public async Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync()
@@ -164,15 +171,22 @@ namespace TailorAPI.Services
 
             return orders.Select(order => new OrderResponseDto
             {
+                CustomerID = order.CustomerId,
+                ProductID = order.ProductID,
+                FabricID = order.FabricID,
+
                 CustomerName = order.Customer?.FullName,
                 ProductName = order.Product?.ProductName,
                 FabricName = order.Fabric?.FabricName,
+
                 FabricLength = order.FabricLength,
                 Quantity = order.Quantity,
                 TotalPrice = order.TotalPrice,
+                OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd")
             }).ToList();
         }
+
     }
 }
     

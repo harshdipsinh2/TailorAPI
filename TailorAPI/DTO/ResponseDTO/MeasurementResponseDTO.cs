@@ -2,6 +2,8 @@
 {
     public class MeasurementResponseDTO
     {
+        public int CustomerId { get; set; }
+
         public float Chest { get; set; }
         public float Waist { get; set; }
         public float Hip { get; set; }
