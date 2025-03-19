@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using TailorAPI.DTOs.Request;
+using TailorAPI.DTOs.Response;
 using TailorAPI.Models;
 using TailorAPI.Repositories;
-using TailorAPI.Services.Interface;
 
 namespace TailorAPI.Services
 {
@@ -15,30 +14,65 @@ namespace TailorAPI.Services
             _productRepository = productRepository;
         }
 
-        public async Task<string> AddProduct(int productID, string productName, decimal makingPrice)
+        public async Task<ProductResponseDTO> AddProduct(ProductRequestDTO productDto)
         {
             var product = new Product
             {
-                ProductID = productID,
-                ProductName = productName,
-                MakingPrice = makingPrice
+                ProductName = productDto.ProductName,
+                MakingPrice = productDto.MakingPrice
             };
-            return await _productRepository.AddProduct(product);
+            var result = await _productRepository.AddProduct(product);
+            return new ProductResponseDTO
+            {
+                ProductName = result.ProductName,
+                MakingPrice = result.MakingPrice
+            };
         }
 
-        public async Task<List<Product>> GetProducts()
+        public async Task<ProductResponseDTO> UpdateProduct(int id, ProductRequestDTO productDto)
         {
-            return await _productRepository.GetProducts();
+            var product = await _productRepository.GetProductById(id);
+            if (product == null) return null;
+
+            product.ProductName = productDto.ProductName;
+            product.MakingPrice = productDto.MakingPrice;
+
+            var updatedProduct = await _productRepository.UpdateProduct(product);
+            return new ProductResponseDTO
+            {
+                ProductID = updatedProduct.ProductID,
+                ProductName = updatedProduct.ProductName,
+                MakingPrice = updatedProduct.MakingPrice
+            };
         }
 
-        public async Task<bool> DeleteProduct(int productId)
+        public async Task<bool> DeleteProduct(int id)
         {
-            return await _productRepository.DeleteProduct(productId);
-        }
-        public async Task<Product> GetProductById(int productId)
-        {
-            return await _productRepository.GetProductById(productId);
+            return await _productRepository.DeleteProduct(id);
         }
 
+        public async Task<ProductResponseDTO> GetProductById(int id)
+        {
+            var product = await _productRepository.GetProductById(id);
+            if (product == null) return null;
+
+            return new ProductResponseDTO
+            {
+                ProductID = product.ProductID,
+                ProductName = product.ProductName,
+                MakingPrice = product.MakingPrice
+            };
+        }
+
+        public async Task<IEnumerable<ProductResponseDTO>> GetAllProducts()
+        {
+            var products = await _productRepository.GetAllProducts();
+            return products.Select(product => new ProductResponseDTO
+            {
+                ProductID = product.ProductID,
+                ProductName = product.ProductName,
+                MakingPrice = product.MakingPrice
+            });
+        }
     }
 }

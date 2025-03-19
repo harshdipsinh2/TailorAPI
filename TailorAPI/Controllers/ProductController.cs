@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TailorAPI.Services.Interface;
+using TailorAPI.DTOs.Request;
+using TailorAPI.Services;
 
 namespace TailorAPI.Controllers
 {
-    [Route("api/product")]
+    [Route("api/[controller]")]
     [ApiController]
     public class ProductController : ControllerBase
     {
@@ -14,34 +15,42 @@ namespace TailorAPI.Controllers
             _productService = productService;
         }
 
-        [HttpPost("add-product")]
-        public async Task<IActionResult> AddProduct([FromQuery] int productID, [FromQuery] string productName, [FromQuery] decimal makingPrice)
+        [HttpPost]
+        public async Task<IActionResult> AddProduct([FromBody] ProductRequestDTO productDto)
         {
-            var result = await _productService.AddProduct(productID, productName, makingPrice);
+            var result = await _productService.AddProduct(productDto);
             return Ok(result);
         }
 
-        [HttpGet("get-products")]
-        public async Task<IActionResult> GetProducts()
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductRequestDTO productDto)
         {
-            var products = await _productService.GetProducts();
-            return Ok(products);
+            var result = await _productService.UpdateProduct(id, productDto);
+            if (result == null) return NotFound("Product not found.");
+            return Ok(result);
         }
 
-        [HttpDelete("delete/{productId}")]
-        public async Task<IActionResult> DeleteProduct(int productId)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProduct(int id)
         {
-            var result = await _productService.DeleteProduct(productId);
-            if (!result) return NotFound("Product not found or already deleted.");
-            return Ok("Product deleted successfully.");
-        }
-        [HttpGet("get-product/{productId}")]
-        public async Task<IActionResult> GetProductById(int productId)
-        {
-            var product = await _productService.GetProductById(productId);
-            if (product == null) return NotFound("Product not found.");
-            return Ok(product);
+            var success = await _productService.DeleteProduct(id);
+            if (!success) return NotFound("Product not found.");
+            return NoContent();
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProductById(int id)
+        {
+            var result = await _productService.GetProductById(id);
+            if (result == null) return NotFound("Product not found.");
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllProducts()
+        {
+            var result = await _productService.GetAllProducts();
+            return Ok(result);
+        }
     }
 }

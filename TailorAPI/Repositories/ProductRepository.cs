@@ -15,21 +15,17 @@ namespace TailorAPI.Repositories
             _context = context;
         }
 
-        public async Task<string> AddProduct(Product product)
+        // Correct return type for AddProduct
+        public async Task<Product> AddProduct(Product product)
         {
-            if (await _context.Products.AnyAsync(p => p.ProductID == product.ProductID))
-            {
-                return "Product ID already exists.";
-            }
-
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
-            return "Product added successfully.";
+            return product;  // Return the Product object instead of string
         }
-
-        public async Task<List<Product>> GetProducts()
+        public async Task<Product> GetProductById(int productId)
         {
-            return await _context.Products.Where(p => !p.IsDeleted).ToListAsync(); // Soft delete check
+            return await _context.Products
+                .FirstOrDefaultAsync(p => p.ProductID == productId && !p.IsDeleted);
         }
 
         public async Task<bool> DeleteProduct(int productId)
@@ -41,11 +37,21 @@ namespace TailorAPI.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
-        public async Task<Product> GetProductById(int productId)
+        // UpdateProduct Method
+        public async Task<Product> UpdateProduct(Product product)
         {
-            return await _context.Products.FindAsync(productId);
+            _context.Products.Update(product);
+            await _context.SaveChangesAsync();
+            return product;
         }
 
+        // GetAllProducts Method
+        public async Task<List<Product>> GetAllProducts()
+        {
+            return await _context.Products
+                .Where(p => !p.IsDeleted)
+                .ToListAsync();
+        }
 
     }
 }

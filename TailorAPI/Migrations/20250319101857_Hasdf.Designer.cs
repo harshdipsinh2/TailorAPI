@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    [Migration("20250312054744_AddNewMeasurementFields")]
-    partial class AddNewMeasurementFields
+    [Migration("20250319101857_Hasdf")]
+    partial class Hasdf
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -60,47 +60,33 @@ namespace TailorAPI.Migrations
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("Order", b =>
+            modelBuilder.Entity("TailorAPI.Models.Fabric", b =>
                 {
-                    b.Property<int>("OrderID")
+                    b.Property<int>("FabricID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FabricID"));
 
-                    b.Property<DateTime?>("CompletionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CustomerID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("OrderDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("OrderStatus")
+                    b.Property<string>("FabricName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PaymentStatus")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProductID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("TotalPrice")
+                    b.Property<decimal>("FabricUsed")
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasKey("OrderID");
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
-                    b.HasIndex("CustomerID");
+                    b.Property<decimal>("PricePerMeter")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.HasIndex("ProductID");
+                    b.Property<decimal?>("StockQuantity")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.ToTable("Orders");
+                    b.HasKey("FabricID");
+
+                    b.ToTable("Fabrics");
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Measurement", b =>
@@ -173,15 +159,77 @@ namespace TailorAPI.Migrations
                     b.ToTable("Measurements");
                 });
 
-            modelBuilder.Entity("TailorAPI.Models.Product", b =>
+            modelBuilder.Entity("TailorAPI.Models.Order", b =>
                 {
-                    b.Property<int>("ProductID")
+                    b.Property<int>("OrderID")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderID"));
+
+                    b.Property<int>("AssignedTo")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CompletionDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FabricID")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("FabricLength")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<decimal>("Price")
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("OrderStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("ProductID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("OrderID");
+
+                    b.HasIndex("AssignedTo");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("FabricID");
+
+                    b.HasIndex("ProductID");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("TailorAPI.Models.Product", b =>
+                {
+                    b.Property<int>("ProductID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductID"));
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("MakingPrice")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("ProductName")
@@ -243,6 +291,9 @@ namespace TailorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MobileNo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -258,6 +309,12 @@ namespace TailorAPI.Migrations
                     b.Property<int>("RoleID")
                         .HasColumnType("int");
 
+                    b.Property<string>("UserStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("Available");
+
                     b.HasKey("UserID");
 
                     b.HasIndex("RoleID");
@@ -265,34 +322,48 @@ namespace TailorAPI.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Order", b =>
-                {
-                    b.HasOne("Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("TailorAPI.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("TailorAPI.Models.Measurement", b =>
                 {
                     b.HasOne("Customer", "Customer")
                         .WithOne("Measurement")
-                        .HasForeignKey("TailorAPI.Models.Measurement", "CustomerId")
+                        .HasForeignKey("TailorAPI.Models.Measurement", "CustomerId");
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("TailorAPI.Models.Order", b =>
+                {
+                    b.HasOne("User", "Assigned")
+                        .WithMany()
+                        .HasForeignKey("AssignedTo")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TailorAPI.Models.Fabric", "Fabric")
+                        .WithMany("Orders")
+                        .HasForeignKey("FabricID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TailorAPI.Models.Product", "Product")
+                        .WithMany("Orders")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assigned");
+
                     b.Navigation("Customer");
+
+                    b.Navigation("Fabric");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("User", b =>
@@ -310,6 +381,16 @@ namespace TailorAPI.Migrations
                 {
                     b.Navigation("Measurement")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TailorAPI.Models.Fabric", b =>
+                {
+                    b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("TailorAPI.Models.Product", b =>
+                {
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Role", b =>

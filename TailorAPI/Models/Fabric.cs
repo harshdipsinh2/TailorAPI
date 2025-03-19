@@ -14,8 +14,11 @@ namespace TailorAPI.Models
 
         [Required]
         public decimal PricePerMeter { get; set; } // Fabric cost per meter
-
+        
         public decimal? StockQuantity { get; set; } // Optional for tracking inventory
+
+        [Required]
+        public decimal FabricUsed { get; set; } // Tracks the total fabric used
 
         public bool IsDeleted { get; set; } = false; // Soft delete flag
 

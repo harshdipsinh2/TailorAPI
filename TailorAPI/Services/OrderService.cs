@@ -107,6 +107,7 @@ namespace TailorAPI.Services
             await _orderRepository.UpdateOrderAsync(order);
             await _context.SaveChangesAsync();
             return true;
+
         }
 
         public async Task<bool> SoftDeleteOrderAsync(int id)
@@ -173,7 +174,7 @@ namespace TailorAPI.Services
             {
                 CustomerID = order.CustomerId,
                 ProductID = order.ProductID,
-                FabricID = order.FabricID,
+                FabricID = order.FabricID, 
 
                 CustomerName = order.Customer?.FullName,
                 ProductName = order.Product?.ProductName,

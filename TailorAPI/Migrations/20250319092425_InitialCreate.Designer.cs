@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    [Migration("20250317084035_AddSoftDeleteToUsers")]
-    partial class AddSoftDeleteToUsers
+    [Migration("20250319092425_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -218,7 +218,10 @@ namespace TailorAPI.Migrations
             modelBuilder.Entity("TailorAPI.Models.Product", b =>
                 {
                     b.Property<int>("ProductID")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductID"));
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
