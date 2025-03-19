@@ -69,6 +69,9 @@ namespace TailorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("FabricUsed")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -215,7 +218,10 @@ namespace TailorAPI.Migrations
             modelBuilder.Entity("TailorAPI.Models.Product", b =>
                 {
                     b.Property<int>("ProductID")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductID"));
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");

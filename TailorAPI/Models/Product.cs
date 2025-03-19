@@ -1,11 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TailorAPI.Models
 {
     public class Product
     {
         [Key]
-        public int ProductID { get; set; }  // Manually assigned ProductID
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ProductID { get; set; }  
 
         [Required]
         public string ProductName { get; set; }

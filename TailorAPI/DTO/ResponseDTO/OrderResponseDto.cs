@@ -26,5 +26,7 @@ namespace TailorAPI.DTOs.Response
 
         public int AssignedTo { get; set; }
         public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
+
+        public PaymentStatus paymentStatus { get; set; } = PaymentStatus.Pending;
     }
 }

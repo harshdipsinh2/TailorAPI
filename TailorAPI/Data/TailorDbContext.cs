@@ -91,7 +91,6 @@ public class TailorDbContext : DbContext
         {
             entity.HasKey(p => p.ProductID);
             entity.Property(p => p.MakingPrice).HasColumnType("decimal(18,2)");
-            entity.Property(p => p.ProductID).ValueGeneratedNever(); // Manual ProductID assignment
         });
         // ✅ User Entity Configuration
         modelBuilder.Entity<User>(entity =>

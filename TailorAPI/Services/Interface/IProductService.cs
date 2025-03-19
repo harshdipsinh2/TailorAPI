@@ -1,14 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using TailorAPI.Models;
+﻿using TailorAPI.DTOs.Request;
+using TailorAPI.DTOs.Response;
 
-namespace TailorAPI.Services.Interface
+namespace TailorAPI.Services
 {
     public interface IProductService
     {
-        Task<string> AddProduct(int productID, string productName, decimal makingPrice);
-        Task<List<Product>> GetProducts();
-        Task<Product> GetProductById(int productId);  // New method
-        Task<bool> DeleteProduct(int productId);
+        Task<ProductResponseDTO> AddProduct(ProductRequestDTO productDto);
+        Task<ProductResponseDTO> UpdateProduct(int id, ProductRequestDTO productDto);
+        Task<bool> DeleteProduct(int id);
+        Task<ProductResponseDTO> GetProductById(int id);
+        Task<IEnumerable<ProductResponseDTO>> GetAllProducts();
     }
 }

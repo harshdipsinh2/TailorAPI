@@ -5,25 +5,25 @@
 namespace TailorAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSoftDeleteToUsers : Migration
+    public partial class Hasdf : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "IsDeleted",
-                table: "Users",
-                type: "bit",
+            migrationBuilder.AddColumn<decimal>(
+                name: "FabricUsed",
+                table: "Fabrics",
+                type: "decimal(18,2)",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: 0m);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "IsDeleted",
-                table: "Users");
+                name: "FabricUsed",
+                table: "Fabrics");
         }
     }
 }
