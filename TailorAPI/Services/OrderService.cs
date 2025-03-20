@@ -21,7 +21,7 @@ namespace TailorAPI.Services
         }
 
         // ✅ Create Order with Calculation Logic
-        public async Task<OrderResponseDto> CreateOrderAsync(int customerId, int productId, int fabricId, OrderRequestDto requestDto)
+        public async Task<OrderResponseDto> CreateOrderAsync(int customerId, int productId, int fabricId, int assignedTo, OrderRequestDto requestDto)
         {
             var product = await _context.Products.FindAsync(productId);
             var fabric = await _context.Fabrics.FindAsync(fabricId);
@@ -41,7 +41,7 @@ namespace TailorAPI.Services
                 CompletionDate = requestDto.CompletionDate,
                 FabricID = fabricId,
                 FabricLength = (decimal)requestDto.FabricLength,
-                AssignedTo = requestDto.AssignedTo,
+                AssignedTo = assignedTo, // Use the assignedTo parameter
                 OrderStatus = Enum.Parse<OrderStatus>("Pending"),
                 PaymentStatus = Enum.Parse<PaymentStatus>("Pending")
             };
@@ -50,7 +50,7 @@ namespace TailorAPI.Services
             await _context.SaveChangesAsync();
 
             // 🚨 Update UserStatus to "Busy"
-            var assignedUser = await _context.Users.FindAsync(requestDto.AssignedTo);
+            var assignedUser = await _context.Users.FindAsync(assignedTo);
             if (assignedUser != null)
             {
                 assignedUser.UserStatus = UserStatus.Busy;
@@ -67,7 +67,7 @@ namespace TailorAPI.Services
         }
 
         // ✅ Updated Order Logic with AssignedTo and CompletionDate Fix
-        public async Task<bool> UpdateOrderAsync(int id, int productId, int fabricId, OrderRequestDto request)
+        public async Task<bool> UpdateOrderAsync(int id, int productId, int fabricId, int assignedTo, OrderRequestDto request)
         {
             var order = await _orderRepository.GetOrderByIdAsync(id);
             if (order == null) return false;
@@ -81,8 +81,12 @@ namespace TailorAPI.Services
             order.TotalPrice = ((decimal)request.FabricLength * fabric.PricePerMeter)
                 + ((decimal)product.MakingPrice * (decimal)request.Quantity);
 
+            // ✅ Update OrderStatus and PaymentStatus
+            order.OrderStatus = request.OrderStatus;
+            order.PaymentStatus = request.paymentStatus;
+
             // ✅ Update AssignedTo and UserStatus
-            if (order.AssignedTo != request.AssignedTo)
+            if (order.AssignedTo != assignedTo)
             {
                 var previousUser = await _context.Users.FindAsync(order.AssignedTo);
                 if (previousUser != null)
@@ -91,24 +95,35 @@ namespace TailorAPI.Services
                     _context.Users.Update(previousUser);
                 }
 
-                var newAssignedUser = await _context.Users.FindAsync(request.AssignedTo);
+                var newAssignedUser = await _context.Users.FindAsync(assignedTo);
                 if (newAssignedUser != null)
                 {
                     newAssignedUser.UserStatus = UserStatus.Busy;
                     _context.Users.Update(newAssignedUser);
                 }
 
-                order.AssignedTo = request.AssignedTo;
+                order.AssignedTo = assignedTo;
             }
 
             // ✅ Update Completion Date
             order.CompletionDate = request.CompletionDate;
 
+            // ✅ If Order and Payment are Completed, set UserStatus to Available
+            if (order.OrderStatus == OrderStatus.Completed && order.PaymentStatus == PaymentStatus.Completed)
+            {
+                var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
+                if (assignedUser != null)
+                {
+                    assignedUser.UserStatus = UserStatus.Available;
+                    _context.Users.Update(assignedUser);
+                }
+            }
+
             await _orderRepository.UpdateOrderAsync(order);
             await _context.SaveChangesAsync();
             return true;
-
         }
+
 
         public async Task<bool> SoftDeleteOrderAsync(int id)
         {
@@ -132,33 +147,38 @@ namespace TailorAPI.Services
         }
 
         // ✅ Corrected Response to Display Non-null Values
-        public async Task<OrderResponseDto?> GetOrderByIdAsync(int id)
-        {
-            var order = await _context.Orders
-                .Include(o => o.Product)
-                .Include(o => o.Fabric)
-                .Include(o => o.Customer)
-                .FirstOrDefaultAsync(o => o.OrderID == id);
+public async Task<OrderResponseDto?> GetOrderByIdAsync(int id)
+{
+    var order = await _context.Orders
+        .Include(o => o.Product)
+        .Include(o => o.Fabric)
+        .Include(o => o.Customer)
+        .Include(o => o.Assigned) // Include the Assigned User
+        .FirstOrDefaultAsync(o => o.OrderID == id);
 
-            if (order == null) return null;
+    if (order == null) return null;
 
-            return new OrderResponseDto
-            {
-                CustomerID = order.CustomerId,   // ✅ Added ID reference
-                ProductID = order.ProductID,     // ✅ Added ID reference
-                FabricID = order.FabricID,       // ✅ Added ID reference
+    return new OrderResponseDto
+    {
+        CustomerID = order.CustomerId,   // ✅ Added ID reference
+        ProductID = order.ProductID,     // ✅ Added ID reference
+        FabricID = order.FabricID,       // ✅ Added ID reference
 
-                CustomerName = order.Customer?.FullName,
-                ProductName = order.Product?.ProductName,
-                FabricName = order.Fabric?.FabricName,
+        CustomerName = order.Customer?.FullName,
+        ProductName = order.Product?.ProductName,
+        FabricName = order.Fabric?.FabricName,
 
-                FabricLength = order.FabricLength,
-                Quantity = order.Quantity,
-                TotalPrice = order.TotalPrice,
-                OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
-                CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd")
-            };
-        }
+        FabricLength = order.FabricLength,
+        Quantity = order.Quantity,
+        TotalPrice = order.TotalPrice,
+        OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+        CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+        AssignedTo = order.AssignedTo,
+        AssignedToName = order.Assigned?.Name, // Map the Assigned User's Name
+        OrderStatus = order.OrderStatus,
+        PaymentStatus = order.PaymentStatus
+    };
+}
 
 
         // ✅ Corrected for Non-null Values in List
@@ -168,13 +188,14 @@ namespace TailorAPI.Services
                 .Include(o => o.Product)
                 .Include(o => o.Fabric)
                 .Include(o => o.Customer)
+                .Include(o => o.Assigned) // Include the Assigned User
                 .ToListAsync();
 
             return orders.Select(order => new OrderResponseDto
             {
                 CustomerID = order.CustomerId,
                 ProductID = order.ProductID,
-                FabricID = order.FabricID, 
+                FabricID = order.FabricID,
 
                 CustomerName = order.Customer?.FullName,
                 ProductName = order.Product?.ProductName,
@@ -184,7 +205,11 @@ namespace TailorAPI.Services
                 Quantity = order.Quantity,
                 TotalPrice = order.TotalPrice,
                 OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
-                CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd")
+                CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+                AssignedTo = order.AssignedTo,
+                AssignedToName = order.Assigned?.Name, // Map the Assigned User's Name
+                OrderStatus = order.OrderStatus,
+                PaymentStatus = order.PaymentStatus
             }).ToList();
         }
 
