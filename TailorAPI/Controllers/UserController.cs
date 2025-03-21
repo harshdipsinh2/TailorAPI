@@ -13,6 +13,15 @@ public class UserController : ControllerBase
         _userService = userService;
     }
 
+    [HttpPost("Login")]
+    public async Task<IActionResult> Authenticate(string email, string password)
+    {
+        var token = await _userService.AuthenticateUserAsync(email, password);
+        if (token == null) return Unauthorized("Invalid credentials.");
+
+        return Ok(new { Token = token });
+    }
+
     [HttpPost("Register")]
     public async Task<IActionResult> RegisterUser([FromBody] UserRequestDto userrequestDto)
     {
@@ -22,14 +31,7 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
-    [HttpPost("Login")]
-    public async Task<IActionResult> Authenticate(string email, string password)
-    {
-        var user = await _userService.AuthenticateUserAsync(email, password);
-        if (user == null) return Unauthorized("Invalid credentials.");
 
-        return Ok(user);
-    }
 
     [HttpGet("GetAll")]
     public async Task<IActionResult> GetAllUsers()

@@ -53,6 +53,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+
+
+
 // ✅ Register Services & Repositories
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IMeasurementService, MeasurementService>();
@@ -61,6 +64,10 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IFabricService, FabricService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<AdminRepository>();
+
+builder.Services.AddScoped<JwtService>(); // Register TokenService
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<UserRepository>();
