@@ -23,10 +23,11 @@ public class JwtService
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId),
-            new Claim(ClaimTypes.Role, role),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+        new Claim(JwtRegisteredClaimNames.Sub, userId),
+        new Claim(ClaimTypes.Role, role),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim("exp", DateTimeOffset.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiryInMinutes"])).ToUnixTimeSeconds().ToString())
+    };
 
         var token = new JwtSecurityToken(
             issuer: jwtSettings["Issuer"],
@@ -38,4 +39,5 @@ public class JwtService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 }

@@ -1,73 +1,54 @@
-﻿namespace TailorAPI.Controllers
-{
-    using Microsoft.AspNetCore.Mvc;
-    using System.Threading.Tasks;
-    using System.Collections.Generic;
-    using Microsoft.AspNetCore.Identity;
-    using TailorAPI.Services.Interface;
-    using TailorAPI.DTO;
-    using TailorAPI.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using TailorAPI.Models;
+using TailorAPI.Services;
 
+namespace TailorAPI.Controllers
+{
     [Route("api/[controller]")]
     [ApiController]
     public class RoleController : ControllerBase
     {
-        private readonly IRoleService _roleService;
+        private readonly RoleService _roleService;
 
-        public RoleController(IRoleService roleService)
+        public RoleController(RoleService roleService)
         {
             _roleService = roleService;
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateRole([FromBody] RoleDTO roleDto)
+     
+        // GET: api/Role
+        [HttpGet]
+        public async Task<IActionResult> GetAllRoles()
         {
-            if (string.IsNullOrEmpty(roleDto.RoleName))
-                return BadRequest("Role name is required.");
-
-            var result = await _roleService.CreateRoleAsync(roleDto.RoleName);
-            if (!result)
-                return BadRequest("Role already exists or could not be created.");
-
-            return Ok(new { message = "Role created successfully." });
+            var roles = await _roleService.GetAllRolesAsync();
+            return Ok(roles);
         }
 
-        [HttpGet("all")]
-        public async Task<ActionResult<List<Role>>> GetAllRoles()
+        // GET: api/Role/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetRoleById(int id)
         {
-            return Ok(await _roleService.GetAllRolesAsync());
-        }
-
-        [HttpGet("{roleId}")]
-        public async Task<ActionResult<Role>> GetRoleById(int roleId)
-        {
-            var role = await _roleService.GetRoleByIdAsync(roleId);
-            if (role == null)
-                return NotFound("Role not found.");
-
+            var role = await _roleService.GetRoleByIdAsync(id);
+            if (role == null) return NotFound("Role not found.");
             return Ok(role);
         }
 
-        [HttpPut("update/{roleId}")]
-        public async Task<IActionResult> UpdateRole(int roleId, [FromBody] string newRoleName)
+        // PUT: api/Role/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateRole(int id, [FromBody] string newRoleName)
         {
-            var result = await _roleService.UpdateRoleAsync(roleId, newRoleName);
-            if (!result)
-                return BadRequest("Role update failed.");
-
+            var result = await _roleService.UpdateRoleAsync(id, newRoleName);
+            if (!result) return NotFound("Role not found.");
             return Ok("Role updated successfully.");
         }
 
-        [HttpDelete("delete/{roleId}")]
-        public async Task<IActionResult> DeleteRole(int roleId)
+        // DELETE: api/Role/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRole(int id)
         {
-            var result = await _roleService.DeleteRoleAsync(roleId);
-            if (!result)
-                return BadRequest("Role deletion failed.");
-
+            var result = await _roleService.DeleteRoleAsync(id);
+            if (!result) return NotFound("Role not found.");
             return Ok("Role deleted successfully.");
         }
     }
-
-
 }

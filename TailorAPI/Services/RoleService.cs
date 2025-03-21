@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using TailorAPI.Models;
 using TailorAPI.Services.Interface;
 
@@ -15,27 +13,19 @@ namespace TailorAPI.Services
             _context = context;
         }
 
-        public async Task<bool> CreateRoleAsync(string roleName)
-        {
-            if (await _context.Roles.AnyAsync(r => r.RoleName == roleName))
-                return false; // Role already exists
-
-            var role = new Role { RoleName = roleName };
-            _context.Roles.Add(role);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
+        // Get All Roles
         public async Task<List<Role>> GetAllRolesAsync()
         {
             return await _context.Roles.ToListAsync();
         }
 
+        // Get Role by ID
         public async Task<Role?> GetRoleByIdAsync(int roleId)
         {
             return await _context.Roles.FindAsync(roleId);
         }
 
+        // Update Role
         public async Task<bool> UpdateRoleAsync(int roleId, string newRoleName)
         {
             var role = await _context.Roles.FindAsync(roleId);
@@ -46,8 +36,13 @@ namespace TailorAPI.Services
             return true;
         }
 
+        // Delete Role (Restrict deletion of seeded roles)
         public async Task<bool> DeleteRoleAsync(int roleId)
         {
+            // Prevent deletion of predefined roles
+            if (roleId == 1 || roleId == 2 || roleId == 3) 
+                return false; 
+
             var role = await _context.Roles.FindAsync(roleId);
             if (role == null) return false;
 

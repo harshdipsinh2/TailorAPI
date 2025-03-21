@@ -1,4 +1,5 @@
-﻿namespace TailorAPI.DTOs.Request
+﻿using System.ComponentModel.DataAnnotations;
+namespace TailorAPI.DTOs.Request
 {
     public class FabricRequestDTO
     {

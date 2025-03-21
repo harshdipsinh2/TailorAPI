@@ -11,12 +11,17 @@ public class UserService : IUserService
 {
     private readonly UserRepository _userRepository;
     private readonly PasswordHasher<User> _passwordHasher;
+    private readonly JwtService _JwtService;
 
-    public UserService(UserRepository userRepository)
+    public UserService(UserRepository userRepository,JwtService jwtService)
     {
         _userRepository = userRepository;
         _passwordHasher = new PasswordHasher<User>();
+        _JwtService = jwtService;
     }
+
+  
+
 
     public async Task<UserResponseDto?> RegisterUserAsync(UserRequestDto userDto)
     {

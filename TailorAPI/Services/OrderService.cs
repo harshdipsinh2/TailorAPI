@@ -29,6 +29,11 @@ namespace TailorAPI.Services
             if (product == null || fabric == null)
                 throw new Exception("Invalid Product or Fabric");
 
+            if (requestDto.FabricLength <= 0)
+                throw new Exception("Fabric length must be greater than zero.");
+
+
+
             var totalPrice = ((decimal)requestDto.FabricLength * fabric.PricePerMeter)
                            + ((decimal)product.MakingPrice * (decimal)requestDto.Quantity);
 
@@ -74,6 +79,8 @@ namespace TailorAPI.Services
 
             var product = await _context.Products.FindAsync(productId);
             var fabric = await _context.Fabrics.FindAsync(fabricId);
+
+
             if (product == null || fabric == null) throw new Exception("Invalid Product or Fabric");
 
             order.FabricLength = (decimal)request.FabricLength;
@@ -147,38 +154,38 @@ namespace TailorAPI.Services
         }
 
         // ✅ Corrected Response to Display Non-null Values
-public async Task<OrderResponseDto?> GetOrderByIdAsync(int id)
-{
-    var order = await _context.Orders
-        .Include(o => o.Product)
-        .Include(o => o.Fabric)
-        .Include(o => o.Customer)
-        .Include(o => o.Assigned) // Include the Assigned User
-        .FirstOrDefaultAsync(o => o.OrderID == id);
+        public async Task<OrderResponseDto?> GetOrderByIdAsync(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.Product)
+                .Include(o => o.Fabric)
+                .Include(o => o.Customer)
+                .Include(o => o.Assigned) // Include the Assigned User
+                .FirstOrDefaultAsync(o => o.OrderID == id);
 
-    if (order == null) return null;
+            if (order == null) return null;
 
-    return new OrderResponseDto
-    {
-        CustomerID = order.CustomerId,   // ✅ Added ID reference
-        ProductID = order.ProductID,     // ✅ Added ID reference
-        FabricID = order.FabricID,       // ✅ Added ID reference
+            return new OrderResponseDto
+            {
+                CustomerID = order.CustomerId,   // ✅ Added ID reference
+                ProductID = order.ProductID,     // ✅ Added ID reference
+                FabricID = order.FabricID,       // ✅ Added ID reference
 
-        CustomerName = order.Customer?.FullName,
-        ProductName = order.Product?.ProductName,
-        FabricName = order.Fabric?.FabricName,
+                CustomerName = order.Customer?.FullName,
+                ProductName = order.Product?.ProductName,
+                FabricName = order.Fabric?.FabricName ?? "N/A", // ✅ Display "N/A" if Fabric is missing
 
-        FabricLength = order.FabricLength,
-        Quantity = order.Quantity,
-        TotalPrice = order.TotalPrice,
-        OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
-        CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
-        AssignedTo = order.AssignedTo,
-        AssignedToName = order.Assigned?.Name, // Map the Assigned User's Name
-        OrderStatus = order.OrderStatus,
-        PaymentStatus = order.PaymentStatus
-    };
-}
+                FabricLength = order.FabricLength,
+                Quantity = order.Quantity,
+                TotalPrice = order.TotalPrice,
+                OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+                CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+                AssignedTo = order.AssignedTo,
+                AssignedToName = order.Assigned?.Name, // Map the Assigned User's Name
+                OrderStatus = order.OrderStatus,
+                PaymentStatus = order.PaymentStatus
+            };
+        }
 
 
         // ✅ Corrected for Non-null Values in List
@@ -199,7 +206,7 @@ public async Task<OrderResponseDto?> GetOrderByIdAsync(int id)
 
                 CustomerName = order.Customer?.FullName,
                 ProductName = order.Product?.ProductName,
-                FabricName = order.Fabric?.FabricName,
+                FabricName = order.Fabric?.FabricName ?? "N/A", // ✅ Display "N/A" if Fabric is missing
 
                 FabricLength = order.FabricLength,
                 Quantity = order.Quantity,

@@ -1,4 +1,4 @@
-﻿namespace TailorAPI.DTO
+﻿namespace TailorAPI.DTO.RequestDTO
 {
     public class LoginDTO
     {

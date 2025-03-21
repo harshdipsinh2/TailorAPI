@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    partial class TailorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250321103231_123456")]
+    partial class _123456
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -250,9 +253,6 @@ namespace TailorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("RoleType")
-                        .HasColumnType("int");
-
                     b.HasKey("RoleID");
 
                     b.ToTable("Roles");
@@ -261,20 +261,17 @@ namespace TailorAPI.Migrations
                         new
                         {
                             RoleID = 1,
-                            RoleName = "Admin",
-                            RoleType = 0
+                            RoleName = "Admin"
                         },
                         new
                         {
                             RoleID = 2,
-                            RoleName = "Tailor",
-                            RoleType = 0
+                            RoleName = "Tailor"
                         },
                         new
                         {
                             RoleID = 3,
-                            RoleName = "Manager",
-                            RoleType = 0
+                            RoleName = "Manager"
                         });
                 });
 
