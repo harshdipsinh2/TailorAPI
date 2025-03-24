@@ -65,6 +65,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IFabricService, FabricService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 builder.Services.AddScoped<AdminRepository>();
 
 builder.Services.AddScoped<JwtService>(); // Register TokenService
@@ -143,6 +145,8 @@ static void EnsureAdminExists(TailorDbContext context)
     if (adminRole == null)
     {
         adminRole = new Role { RoleName = "Admin" };
+
+
         context.Roles.Add(adminRole);
         context.SaveChanges();
     }
@@ -157,7 +161,7 @@ static void EnsureAdminExists(TailorDbContext context)
             Name = "Admin",
             Email = "admin@shop.com",
             MobileNo = "989898989",
-            PasswordHash = HashPassword("Admin@123"), // Secure password hashing
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", workFactor: 12),
             RoleID = adminRole.RoleID,
             Address = "Shop"
         };
@@ -175,7 +179,6 @@ static void EnsureAdminExists(TailorDbContext context)
 /// ✅ Securely Hash Passwords
 static string HashPassword(string password)
 {
-    using var sha256 = System.Security.Cryptography.SHA256.Create();
-    var hashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-    return Convert.ToBase64String(hashedBytes);
+    return BCrypt.Net.BCrypt.HashPassword(password);
 }
+

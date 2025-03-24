@@ -18,6 +18,8 @@ public class JwtService
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
 
+
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -38,6 +40,7 @@ public class JwtService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+
     }
 
 }

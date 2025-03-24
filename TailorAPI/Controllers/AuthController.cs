@@ -1,74 +1,42 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using TailorAPI.DTO.RequestDTO;
+using TailorAPI.DTO;
+using TailorAPI.Repositories;
+using TailorAPI.Services.Interface;
 
-[ApiController]
-[Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    private readonly TailorDbContext _context;
-    private readonly IConfiguration _configuration;
+    private readonly IAuthService _authService; // ✅ Depends on interface
+    private readonly UserRepository _userRepository;
 
-    public AuthController(TailorDbContext context, IConfiguration configuration)
+    public AuthController(IAuthService authService, UserRepository userRepository)
     {
-        _context = context;
-        _configuration = configuration;
+        _authService = authService;
+        _userRepository = userRepository;
     }
-
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] User newUser)
-    {
-        var userExists = await _context.Users.AnyAsync(u => u.Email == newUser.Email);
-        if (userExists)
-            return BadRequest("User already exists");
-
-        newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newUser.PasswordHash); // Hash password
-        _context.Users.Add(newUser);
-        await _context.SaveChangesAsync();
-
-        return Ok("User registered successfully");
-    }
-
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDTO model)
+    public async Task<IActionResult> Login(string email, string password)
     {
-        var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == model.Email);
-        if (user == null || !BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
-            return Unauthorized("Invalid email or password");
+        var token = await _authService.AuthenticateUserAsync(email, password);
+        if (token == null)
+        {
+            return Unauthorized();
+        }
 
-        var token = GenerateJwtToken(user);
         return Ok(new { Token = token });
     }
 
-    private string GenerateJwtToken(User user)
+    [HttpPost("register")]
+    public async Task<IActionResult> Register(UserRequestDto userDto)
     {
-        var jwtSettings = _configuration.GetSection("JwtSettings");
-        var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
-
-        var claims = new List<Claim>
+        var user = new User
         {
-            new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role.RoleName) // Get role name from Role table
+            Email = userDto.Email,
+            PasswordHash = _authService.HashPassword(userDto.Password),
+            // other user properties
         };
 
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiryInMinutes"])),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-            Issuer = jwtSettings["Issuer"],
-            Audience = jwtSettings["Audience"]
-        };
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-
-        return tokenHandler.WriteToken(token);
+        await _userRepository.CreateUserAsync(user);
+        return Ok();
     }
 }
