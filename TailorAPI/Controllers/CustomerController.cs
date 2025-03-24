@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.Services;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles ="AdminOnly")]
 public class CustomerController : ControllerBase
 {
     private readonly ICustomerService _customerService;
@@ -14,6 +16,8 @@ public class CustomerController : ControllerBase
     }
 
     [HttpGet("GetAllCustomers")]
+    [Authorize(Roles = "AdminOnly")]
+
     public async Task<ActionResult<List<CustomerDTO>>> GetAllCustomers()
     {
         var customers = await _customerService.GetAllCustomersAsync();
@@ -21,6 +25,8 @@ public class CustomerController : ControllerBase
     }
 
     [HttpGet("GetCustomer")]
+    [Authorize(Roles = "AdminOnly")]
+
     public async Task<ActionResult<CustomerDTO>> GetCustomerById([FromQuery] int customerId)
     {
         var customer = await _customerService.GetCustomerByIdAsync(customerId);
@@ -29,6 +35,8 @@ public class CustomerController : ControllerBase
     }
 
     [HttpPost("AddCustomer")]
+    [Authorize(Roles = "AdminOnly")]
+
     public async Task<ActionResult<CustomerDTO>> PostCustomer([FromBody] CustomerRequestDTO customerDto)
     {
         if (customerDto == null)
@@ -39,6 +47,8 @@ public class CustomerController : ControllerBase
     }
 
     [HttpPut("Edit")]
+    [Authorize(Roles = "AdminOnly")]
+
     public async Task<IActionResult> UpdateCustomer([FromQuery] int customerId, [FromBody] CustomerRequestDTO customerDto)
     {
         var updatedCustomer = await _customerService.UpdateCustomerAsync(customerId, customerDto);
@@ -47,6 +57,8 @@ public class CustomerController : ControllerBase
     }
 
     [HttpDelete("Delete")]
+    [Authorize(Roles = "AdminOnly")]
+
     public async Task<IActionResult> SoftDeleteCustomer([FromQuery] int customerId)
     {
         var result = await _customerService.SoftDeleteCustomerAsync(customerId);

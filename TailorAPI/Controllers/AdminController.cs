@@ -1,62 +1,98 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TailorAPI.DTO;
-using TailorAPI.Services.Interface;
+﻿//using Microsoft.AspNetCore.Authorization;
+//using Microsoft.AspNetCore.Mvc;
+//using TailorAPI.DTO.RequestDTO;
+//using TailorAPI.DTO.ResponseDTO;
+//using TailorAPI.Services.Interface;
 
-namespace TailorAPI.Controllers
-{
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AdminController : ControllerBase
-    {
-        private readonly IAdminService _adminService;
+//namespace TailorAPI.Controllers
+//{
+//    [Route("api/[controller]")]
+//    [ApiController]
+//    [Authorize(Roles = "Admin")]
+//    public class AdminController : ControllerBase
+//    {
+//        private readonly IAdminService _adminService;
 
-        public AdminController(IAdminService adminService)
-        {
-            _adminService = adminService;
-        }
+//        public AdminController(IAdminService adminService)
+//        {
+//            _adminService = adminService;
+//        }
 
-        // GET: api/Admin
-        [HttpGet]
-        public async Task<IActionResult> GetAllAdmins()
-        {
-            var admins = await _adminService.GetAllAdminsAsync();
-            return Ok(admins);
-        }
+//        // GET ALL CUSTOMERS
+//        [HttpGet("customers")]
+//        public async Task<IActionResult> GetAllCustomers()
+//        {
+//            var customers = await _adminService.GetAllCustomersAsync();
+//            return Ok(customers);
+//        }
 
-        // GET: api/Admin/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetAdminById(int id)
-        {
-            var admin = await _adminService.GetAdminByIdAsync(id);
-            if (admin == null) return NotFound("Admin not found.");
-            return Ok(admin);
-        }
+//        // GET CUSTOMER BY ID
+//        [HttpGet("customers/{id}")]
+//        public async Task<IActionResult> GetCustomerById(int id)
+//        {
+//            var customer = await _adminService.GetCustomerByIdAsync(id);
+//            if (customer == null) return NotFound("Customer not found.");
+//            return Ok(customer);
+//        }
 
-        // POST: api/Admin
-        [HttpPost]
-        public async Task<IActionResult> RegisterAdmin([FromBody] UserRequestDto adminDto)
-        {
-            var result = await _adminService.RegisterAdminAsync(adminDto);
-            if (!result) return BadRequest("Failed to register admin.");
-            return Ok("Admin registered successfully.");
-        }
+//        // ADD CUSTOMER
+//        [HttpPost("customers")]
+//        public async Task<IActionResult> AddCustomer([FromBody] CustomerRequestDTO customerDto)
+//        {
+//            var newCustomer = await _adminService.AddCustomerAsync(customerDto);
+//            return CreatedAtAction(nameof(GetCustomerById), new { id = newCustomer.CustomerId }, newCustomer);
+//        }
 
-        // PUT: api/Admin/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateAdmin(int id, [FromBody] UserRequestDto updatedAdminDto)
-        {
-            var result = await _adminService.UpdateAdminAsync(id, updatedAdminDto);
-            if (!result) return NotFound("Admin not found or update failed.");
-            return Ok("Admin updated successfully.");
-        }
+//        // UPDATE CUSTOMER
+//        [HttpPut("customers/{id}")]
+//        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] CustomerRequestDTO customerDto)
+//        {
+//            var updatedCustomer = await _adminService.UpdateCustomerAsync(id, customerDto);
+//            if (updatedCustomer == null) return NotFound("Customer not found.");
+//            return Ok(updatedCustomer);
+//        }
 
-        // DELETE: api/Admin/{id}
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAdmin(int id)
-        {
-            var result = await _adminService.DeleteAdminAsync(id);
-            if (!result) return NotFound("Admin not found or deletion failed.");
-            return Ok("Admin deleted successfully.");
-        }
-    }
-}
+//        // DELETE CUSTOMER (Soft Delete)
+//        [HttpDelete("customers/{id}")]
+//        public async Task<IActionResult> SoftDeleteCustomer(int id)
+//        {
+//            var success = await _adminService.SoftDeleteCustomerAsync(id);
+//            if (!success) return NotFound("Customer not found.");
+//            return Ok("Customer successfully deleted.");
+//        }
+
+//        // ADD MEASUREMENT
+//        [HttpPost("measurements/{customerId}")]
+//        public async Task<IActionResult> AddMeasurement(int customerId, [FromBody] MeasurementRequestDTO measurementDto)
+//        {
+//            var measurement = await _adminService.AddMeasurementAsync(customerId, measurementDto);
+//            return Ok(measurement);
+//        }
+
+//        // GET MEASUREMENT BY CUSTOMER ID
+//        [HttpGet("measurements/{customerId}")]
+//        public async Task<IActionResult> GetMeasurementByCustomerID(int customerId)
+//        {
+//            var measurement = await _adminService.GetMeasurementByCustomerIDAsync(customerId);
+//            if (measurement == null) return NotFound("Measurement not found.");
+//            return Ok(measurement);
+//        }
+
+//        // DELETE MEASUREMENT (Soft Delete)
+//        [HttpDelete("measurements/{measurementId}")]
+//        public async Task<IActionResult> SoftDeleteMeasurement(int measurementId)
+//        {
+//            var success = await _adminService.SoftDeleteMeasurementAsync(measurementId);
+//            if (!success) return NotFound("Measurement not found.");
+//            return Ok("Measurement successfully deleted.");
+//        }
+
+//        // GET ALL MEASUREMENTS
+//        [HttpGet("measurements")]
+//        public async Task<IActionResult> GetAllMeasurements()
+//        {
+//            var measurements = await _adminService.GetAllMeasurementsAsync();
+//            return Ok(measurements);
+//        }
+//    }
+//}

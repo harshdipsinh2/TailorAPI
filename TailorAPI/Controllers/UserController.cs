@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TailorAPI.DTO;
 using TailorAPI.Services.Interface;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "AdminOnly")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -11,15 +13,6 @@ public class UserController : ControllerBase
     public UserController(IUserService userService)
     {
         _userService = userService;
-    }
-
-    [HttpPost("Login")]
-    public async Task<IActionResult> Authenticate(string email, string password)
-    {
-        var token = await _userService.AuthenticateUserAsync(email, password);
-        if (token == null) return Unauthorized("Invalid credentials.");
-
-        return Ok(new { Token = token });
     }
 
     [HttpPost("Register")]
@@ -30,8 +23,6 @@ public class UserController : ControllerBase
 
         return Ok(user);
     }
-
-
 
     [HttpGet("GetAll")]
     public async Task<IActionResult> GetAllUsers()

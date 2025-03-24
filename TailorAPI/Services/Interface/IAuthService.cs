@@ -1,6 +1,8 @@
 ﻿namespace TailorAPI.Services.Interface
 {
-    public class IAuthService
+    public interface IAuthService
     {
+        Task<string?> AuthenticateUserAsync(string email, string password);
+        string HashPassword(string password); // ✅ Add this method
     }
 }
