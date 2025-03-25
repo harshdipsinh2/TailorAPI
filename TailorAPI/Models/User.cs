@@ -32,5 +32,5 @@ public class User
     public UserStatus UserStatus { get; set; } = UserStatus.Available; // Default value
 
     public bool IsDeleted { get; set; } = false;
-    public string Password { get; internal set; }
+    //public string Password { get; internal set; }
 }

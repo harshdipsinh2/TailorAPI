@@ -1,98 +1,201 @@
-﻿//using Microsoft.AspNetCore.Authorization;
-//using Microsoft.AspNetCore.Mvc;
-//using TailorAPI.DTO.RequestDTO;
-//using TailorAPI.DTO.ResponseDTO;
-//using TailorAPI.Services.Interface;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TailorAPI.DTO.RequestDTO;
+using TailorAPI.DTOs.Request;
+using TailorAPI.Services;
+using TailorAPI.Services.Interface;
 
-//namespace TailorAPI.Controllers
-//{
-//    [Route("api/[controller]")]
-//    [ApiController]
-//    [Authorize(Roles = "Admin")]
-//    public class AdminController : ControllerBase
-//    {
-//        private readonly IAdminService _adminService;
+namespace TailorAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize(Roles = "Admin,Manager")]  
+    public class AdminController : ControllerBase
+    {
+        private readonly IAdminService _adminService;
+        private readonly ICustomerService _customerService;
+        private readonly IMeasurementService _measurementService;
+        private readonly IProductService _productService;
 
-//        public AdminController(IAdminService adminService)
-//        {
-//            _adminService = adminService;
-//        }
 
-//        // GET ALL CUSTOMERS
-//        [HttpGet("customers")]
-//        public async Task<IActionResult> GetAllCustomers()
-//        {
-//            var customers = await _adminService.GetAllCustomersAsync();
-//            return Ok(customers);
-//        }
 
-//        // GET CUSTOMER BY ID
-//        [HttpGet("customers/{id}")]
-//        public async Task<IActionResult> GetCustomerById(int id)
-//        {
-//            var customer = await _adminService.GetCustomerByIdAsync(id);
-//            if (customer == null) return NotFound("Customer not found.");
-//            return Ok(customer);
-//        }
+        public AdminController(IAdminService adminService, 
+                               ICustomerService customerService, 
+                               IMeasurementService measurementService,
+                               IProductService productService)
 
-//        // ADD CUSTOMER
-//        [HttpPost("customers")]
-//        public async Task<IActionResult> AddCustomer([FromBody] CustomerRequestDTO customerDto)
-//        {
-//            var newCustomer = await _adminService.AddCustomerAsync(customerDto);
-//            return CreatedAtAction(nameof(GetCustomerById), new { id = newCustomer.CustomerId }, newCustomer);
-//        }
+            
+        {
+            _adminService = adminService;
+            _customerService = customerService;
+            _measurementService = measurementService;
+            _productService = productService;
+        }
 
-//        // UPDATE CUSTOMER
-//        [HttpPut("customers/{id}")]
-//        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] CustomerRequestDTO customerDto)
-//        {
-//            var updatedCustomer = await _adminService.UpdateCustomerAsync(id, customerDto);
-//            if (updatedCustomer == null) return NotFound("Customer not found.");
-//            return Ok(updatedCustomer);
-//        }
+        // ----------- Customer Endpoints -----------
 
-//        // DELETE CUSTOMER (Soft Delete)
-//        [HttpDelete("customers/{id}")]
-//        public async Task<IActionResult> SoftDeleteCustomer(int id)
-//        {
-//            var success = await _adminService.SoftDeleteCustomerAsync(id);
-//            if (!success) return NotFound("Customer not found.");
-//            return Ok("Customer successfully deleted.");
-//        }
+        
+        /// Get all customers. Available to Admin, Manager, 
+        [HttpGet("GetAllCustomers")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<ActionResult<List<CustomerDTO>>> GetAllCustomers()
+        {
+            var customers = await _customerService.GetAllCustomersAsync();
+            return Ok(customers);
+        }
 
-//        // ADD MEASUREMENT
-//        [HttpPost("measurements/{customerId}")]
-//        public async Task<IActionResult> AddMeasurement(int customerId, [FromBody] MeasurementRequestDTO measurementDto)
-//        {
-//            var measurement = await _adminService.AddMeasurementAsync(customerId, measurementDto);
-//            return Ok(measurement);
-//        }
+        /// Get customer details by ID. Available to Admin and Manager only.
+        [HttpGet("GetCustomer")]
+        [Authorize(Roles = "Admin,Manager")]
 
-//        // GET MEASUREMENT BY CUSTOMER ID
-//        [HttpGet("measurements/{customerId}")]
-//        public async Task<IActionResult> GetMeasurementByCustomerID(int customerId)
-//        {
-//            var measurement = await _adminService.GetMeasurementByCustomerIDAsync(customerId);
-//            if (measurement == null) return NotFound("Measurement not found.");
-//            return Ok(measurement);
-//        }
+        public async Task<ActionResult<CustomerDTO>> GetCustomerById([FromQuery] int customerId)
+        {
+            var customer = await _customerService.GetCustomerByIdAsync(customerId);
+            if (customer == null) return NotFound();
+            return Ok(customer);
+        }
 
-//        // DELETE MEASUREMENT (Soft Delete)
-//        [HttpDelete("measurements/{measurementId}")]
-//        public async Task<IActionResult> SoftDeleteMeasurement(int measurementId)
-//        {
-//            var success = await _adminService.SoftDeleteMeasurementAsync(measurementId);
-//            if (!success) return NotFound("Measurement not found.");
-//            return Ok("Measurement successfully deleted.");
-//        }
+        /// Add a new customer. Available to Admin and Manager only.
+        [HttpPost("AddCustomer")]
+        [Authorize(Roles = "Admin,Manager")]
 
-//        // GET ALL MEASUREMENTS
-//        [HttpGet("measurements")]
-//        public async Task<IActionResult> GetAllMeasurements()
-//        {
-//            var measurements = await _adminService.GetAllMeasurementsAsync();
-//            return Ok(measurements);
-//        }
-//    }
-//}
+        public async Task<ActionResult<CustomerDTO>> PostCustomer([FromBody] CustomerRequestDTO customerDto)
+        {
+            if (customerDto == null)
+                return BadRequest("Invalid customer data");
+
+            var createdCustomer = await _customerService.AddCustomerAsync(customerDto);
+            return CreatedAtAction(nameof(GetCustomerById), new { customerId = createdCustomer.FullName }, createdCustomer);
+        }
+
+        /// Update an existing customer. Available to Admin and Manager only.
+        [HttpPut("EditCustomer")]
+        [Authorize(Roles = "Admin,Manager")]
+
+        public async Task<IActionResult> UpdateCustomer([FromQuery] int customerId, [FromBody] CustomerRequestDTO customerDto)
+        {
+            var updatedCustomer = await _customerService.UpdateCustomerAsync(customerId, customerDto);
+            if (updatedCustomer == null) return NotFound();
+            return Ok(updatedCustomer);
+        }
+
+        /// Soft delete a customer. Available to Admin and Manager only.
+        [HttpDelete("DeleteCustomer")]
+        [Authorize(Roles = "Admin,Manager")]
+
+        public async Task<IActionResult> SoftDeleteCustomer([FromQuery] int customerId)
+        {
+            var result = await _customerService.SoftDeleteCustomerAsync(customerId);
+            if (!result) return NotFound("Customer not found.");
+            return NoContent();
+        }
+
+        // ----------- Measurement Endpoints -----------
+
+        /// Add a measurement for a customer. Available to Admin and Manager only.
+        [HttpPost("AddMeasurement")]
+        [Authorize(Roles = "Admin,Manager")]
+
+        public async Task<IActionResult> AddMeasurement([FromQuery] int customerId, [FromBody] MeasurementRequestDTO measurementDto)
+        {
+            try
+            {
+                var measurement = await _measurementService.AddMeasurementAsync(customerId, measurementDto);
+                return Ok(measurement);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        /// Get measurement details by customer ID. Available to Admin and Manager only.
+        [HttpGet("GetMeasurement")]
+        [Authorize(Roles = "Admin,Manager")]
+
+        public async Task<IActionResult> GetMeasurementByCustomerID([FromQuery] int customerId)
+        {
+            var measurement = await _measurementService.GetMeasurementByCustomerIDAsync(customerId);
+            if (measurement == null) return NotFound("Measurement not found.");
+            return Ok(measurement);
+        }
+
+        /// Soft delete a measurement. Available to Admin and Manager only.
+        [HttpDelete("DeleteMeasurement")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> SoftDeleteMeasurement([FromQuery] int measurementId)
+        {
+            var result = await _measurementService.SoftDeleteMeasurementAsync(measurementId);
+            if (!result) return NotFound("Measurement not found.");
+
+            return NoContent();
+        }
+
+        /// Get all measurements. Available to Admin and Manager only.
+        [HttpGet("GetAllMeasurements")]
+        [Authorize(Roles = "Admin,Manager")]
+
+        public async Task<IActionResult> GetAllMeasurements()
+        {
+            var measurements = await _measurementService.GetAllMeasurementsAsync();
+            if (measurements == null || measurements.Count == 0)
+                return NotFound("No measurements found.");
+
+            return Ok(measurements);
+
+        }
+
+        // ----------- Product Endpoints -----------
+
+        /// Add a new product. Available to Admin and Manager only.
+        [HttpPost("AddProduct")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> AddProduct([FromBody] ProductRequestDTO productDto)
+        {
+            var result = await _productService.AddProduct(productDto);
+            return Ok(result);
+        }
+
+        /// Update an existing product by ID. Available to Admin and Manager only.
+        [HttpPut("UpdateProduct/{id}")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductRequestDTO productDto)
+        {
+            var result = await _productService.UpdateProduct(id, productDto);
+            if (result == null) return NotFound("Product not found.");
+            return Ok(result);
+        }
+
+        /// Delete a product by ID. Available to Admin and Manager only.
+        [HttpDelete("DeleteProduct/{id}")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            var success = await _productService.DeleteProduct(id);
+            if (!success) return NotFound("Product not found.");
+            return NoContent();
+        }
+
+        /// Get product details by ID. Available to Admin, Manager, and Tailor.
+        [HttpGet("GetProduct/{id}")]
+        [Authorize(Roles = "Admin,Manager")]
+
+        public async Task<IActionResult> GetProductById(int id)
+        {
+            var result = await _productService.GetProductById(id);
+            if (result == null) return NotFound("Product not found.");
+            return Ok(result);
+        }
+
+        /// Get all products. Available to Admin, Manager, and Tailor.
+        [HttpGet("GetAllProducts")]
+        [Authorize(Roles = "Admin,Manager")]
+
+        public async Task<IActionResult> GetAllProducts()
+        {
+            var result = await _productService.GetAllProducts();
+            return Ok(result);
+        }
+
+    }
+}
