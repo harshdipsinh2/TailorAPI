@@ -15,7 +15,7 @@
 
         public async Task<string?> AuthenticateUserAsync(string email, string password)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.Password == password);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.PasswordHash == password);
             return user == null ? null : user.Name;
         }
         // Create a new user

@@ -9,37 +9,51 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ✅ Configure Services
-//builder.Services.AddControllers()
-//    .AddJsonOptions(options =>
-//    {
-//        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-//        options.JsonSerializerOptions.WriteIndented = true;
-//    });
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
-//builder.Services.AddControllers().AddNewtonsoftJson(options =>
-//{
-//    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-//});
-
-
-builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// ✅ Configure Swagger with JWT Authentication
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tailor API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter 'Bearer' followed by your JWT token."
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 
 // ✅ Configure Database
 builder.Services.AddDbContext<TailorDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
-
-
-builder.Services.AddControllers().AddJsonOptions(options =>
-{
-    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-});
 
 // ✅ Configure CORS
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
@@ -47,14 +61,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(MyAllowSpecificOrigins, policy =>
     {
-        policy.WithOrigins("http://localhost:3000") // Update with your frontend URL
+        policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
-
-
-
 
 // ✅ Register Services & Repositories
 builder.Services.AddScoped<ICustomerService, CustomerService>();
@@ -68,8 +79,7 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<AdminRepository>();
-
-builder.Services.AddScoped<JwtService>(); // Register TokenService
+builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<UserRepository>();
@@ -78,31 +88,29 @@ builder.Services.AddScoped<MeasurementRepository>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<MeasurementService>();
 builder.Services.AddScoped<FabricRepository>();
-//builder.Services.AddScoped<JwtService>();
 
-//builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
-
-// Add JWT Authentication
+// ✅ JWT Authentication Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
     {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = false,
-        ValidateAudience = false
-    };
-});
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])
+            )
+        };
+    });
+
+
 
 builder.Services.AddAuthorization(options =>
 {
@@ -135,33 +143,31 @@ app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
-
 static void EnsureAdminExists(TailorDbContext context)
 {
-    context.Database.Migrate(); // Ensure DB is up-to-date
+    context.Database.Migrate();
 
-    // ✅ Check if "Admin" Role Exists
     var adminRole = context.Roles.FirstOrDefault(r => r.RoleName == "Admin");
     if (adminRole == null)
     {
         adminRole = new Role { RoleName = "Admin" };
-
-
         context.Roles.Add(adminRole);
         context.SaveChanges();
     }
-
-    // ✅ Check if Admin User Exists
-    var adminUser = context.Users.FirstOrDefault(u => u.RoleID == adminRole.RoleID);
+     string HashPassword(string password)
+{
+    string salt = BCrypt.Net.BCrypt.GenerateSalt();
+    return BCrypt.Net.BCrypt.HashPassword(password, salt);
+}
+var adminUser = context.Users.FirstOrDefault(u => u.RoleID == adminRole.RoleID);
     if (adminUser == null)
     {
         var newAdmin = new User
         {
-           
             Name = "Admin",
             Email = "admin@shop.com",
             MobileNo = "989898989",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", workFactor: 12),
+            PasswordHash = HashPassword("Admin@1234"),
             RoleID = adminRole.RoleID,
             Address = "Shop"
         };
@@ -175,10 +181,3 @@ static void EnsureAdminExists(TailorDbContext context)
         Console.WriteLine("✅ Admin user already exists.");
     }
 }
-
-/// ✅ Securely Hash Passwords
-static string HashPassword(string password)
-{
-    return BCrypt.Net.BCrypt.HashPassword(password);
-}
-

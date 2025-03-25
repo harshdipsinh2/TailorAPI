@@ -5,7 +5,6 @@ using TailorAPI.Services.Interface;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "AdminOnly")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -25,6 +24,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("GetAll")]
+
     public async Task<IActionResult> GetAllUsers()
     {
         var users = await _userService.GetAllUsersAsync();
@@ -32,6 +32,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("GetById/{id}")]
+
     public async Task<IActionResult> GetUserById(int id)
     {
         var user = await _userService.GetUserByIdAsync(id);
@@ -41,6 +42,7 @@ public class UserController : ControllerBase
     }
 
     [HttpDelete("Delete/{id}")]
+
     public async Task<IActionResult> DeleteUser(int id)
     {
         var result = await _userService.DeleteUserAsync(id);
@@ -50,6 +52,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("Update/{id}")]
+
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UserRequestDto userDto)
     {
         var updatedUser = await _userService.UpdateUserAsync(id, userDto);

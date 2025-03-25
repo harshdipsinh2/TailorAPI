@@ -16,6 +16,9 @@ public class JwtService
 
     public string GenerateToken(string userId, string role)
     {
+
+        Console.WriteLine($"Role Assigned: {role}");
+
         var jwtSettings = _configuration.GetSection("JwtSettings");
 
 
@@ -26,7 +29,7 @@ public class JwtService
         var claims = new[]
         {
         new Claim(JwtRegisteredClaimNames.Sub, userId),
-        new Claim(ClaimTypes.Role, role),
+        new Claim("roles", role),
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         new Claim("exp", DateTimeOffset.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiryInMinutes"])).ToUnixTimeSeconds().ToString())
     };
