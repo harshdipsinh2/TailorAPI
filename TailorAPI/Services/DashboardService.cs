@@ -1,20 +1,22 @@
-﻿//using Microsoft.Data.SqlClient;
-//using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using TailorAPI.DTO.RequestDTO;
+using TailorAPI.Services.Interface;
 
-//public class DashboardService : IDashboardService
-//{
-//    private readonly ApplicationDbContext _context;
+public class DashboardService : IDashboardService
+{
+    private readonly TailorDbContext _context;
 
-//    public DashboardService(ApplicationDbContext context)
-//    {
-//        _context = context;
-//    }
+    public DashboardService(TailorDbContext context)
+    {
+        _context = context;
+    }
 
-//    public async Task<DashboardSummaryDTO> GetDashboardSummaryAsync()
-//    {
-//        var result = await _context.Database.SqlQueryRaw<DashboardSummaryDTO>(
-//            "EXEC sp_GetTotalCounts").ToListAsync();
+    public async Task<DashboardDTO> GetDashboardSummaryAsync()
+    {
+        var result = await _context.Database.SqlQueryRaw<DashboardDTO>(
+            "EXEC sp_GetTotalCounts").ToListAsync();
 
-//        return result.FirstOrDefault() ?? new DashboardSummaryDTO();
-//    }
-//}
+        return result.FirstOrDefault() ?? new DashboardDTO();
+    }
+}

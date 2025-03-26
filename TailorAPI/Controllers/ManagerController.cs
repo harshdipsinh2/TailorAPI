@@ -18,7 +18,6 @@ namespace TailorAPI.Controllers
         private readonly IProductService _productService;
 
 
-
         public ManagerController(ICustomerService customerService,
                                IMeasurementService measurementService,
                                IProductService productService)
