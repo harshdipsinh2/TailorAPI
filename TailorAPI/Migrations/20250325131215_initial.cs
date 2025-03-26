@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TailorAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -40,6 +40,7 @@ namespace TailorAPI.Migrations
                     FabricName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PricePerMeter = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     StockQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    FabricUsed = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -68,7 +69,8 @@ namespace TailorAPI.Migrations
                 {
                     RoleID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    RoleName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    RoleName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RoleType = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -186,12 +188,12 @@ namespace TailorAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "Roles",
-                columns: new[] { "RoleID", "RoleName" },
+                columns: new[] { "RoleID", "RoleName", "RoleType" },
                 values: new object[,]
                 {
-                    { 1, "Admin" },
-                    { 2, "Tailor" },
-                    { 3, "Manager" }
+                    { 1, "Admin", 0 },
+                    { 2, "Tailor", 0 },
+                    { 3, "Manager", 0 }
                 });
 
             migrationBuilder.CreateIndex(
