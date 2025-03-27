@@ -5,10 +5,13 @@ public class OrderResponseDto
 {
     public int CustomerID { get; set; }   // ✅ Added ID for reference
     public int ProductID { get; set; }    // ✅ Added ID for reference
-    public int FabricID { get; set; }     // ✅ Added ID for reference
 
+    //public int FabricID { get; set; }     // ✅ Added ID for reference
+    public int FabricTypeID { get; set; }
     public string? CustomerName { get; set; } // Nullable in case data is missing
     public string? ProductName { get; set; }
+
+    //public string? FabricName { get; set; }
     public string? FabricName { get; set; }
 
     public decimal FabricLength { get; set; }

@@ -21,21 +21,49 @@ namespace TailorAPI.Services
         }
 
         // ✅ Create Order with Calculation Logic
-        public async Task<OrderResponseDto> CreateOrderAsync(int customerId, int productId, int fabricId, int assignedTo, OrderRequestDto requestDto)
+        public async Task<OrderResponseDto> CreateOrderAsync(int customerId, int productId, int fabricTypeId, int assignedTo, OrderRequestDto requestDto)
         {
             var product = await _context.Products.FindAsync(productId);
-            var fabric = await _context.Fabrics.FindAsync(fabricId);
+            var fabricType = await _context.FabricTypes.FindAsync(fabricTypeId);
 
-            if (product == null || fabric == null)
-                throw new Exception("Invalid Product or Fabric");
+            if (product == null || fabricType == null)
+                throw new Exception("Invalid Product or Fabric Type");
 
             if (requestDto.FabricLength <= 0)
                 throw new Exception("Fabric length must be greater than zero.");
 
+            // 🚨 Calculate AvailableStock using FabricStock entries
+            var totalStockIn = await _context.FabricStocks
+                .Where(fs => fs.FabricTypeID == fabricTypeId)
+                .SumAsync(fs => fs.StockIn);
 
+            var totalStockUsed = await _context.FabricStocks
+                .Where(fs => fs.FabricTypeID == fabricTypeId)
+                .SumAsync(fs => fs.StockUse);
 
-            var totalPrice = ((decimal)requestDto.FabricLength * fabric.PricePerMeter)
-                           + ((decimal)product.MakingPrice * (decimal)requestDto.Quantity);
+            var availableStock = totalStockIn - totalStockUsed;
+
+            if (availableStock < (decimal)requestDto.FabricLength)
+                throw new Exception("Insufficient fabric stock.");
+
+            // 🚨 Create a new FabricStock entry for this order
+            var newFabricStockEntry = new FabricStock
+            {
+                FabricTypeID = fabricTypeId,
+                StockIn = 0, // No new stock added during order creation
+                StockUse = (decimal)requestDto.FabricLength * (decimal)requestDto.Quantity,
+                StockAddDate = DateTime.Now
+            };
+
+            _context.FabricStocks.Add(newFabricStockEntry);
+
+            // 🚨 Update AvailableStock in FabricType
+            fabricType.AvailableStock -= ((decimal)requestDto.FabricLength *(decimal)requestDto.Quantity);
+            _context.FabricTypes.Update(fabricType);
+
+            // 🚨 Order Calculation Logic
+            var totalPrice = ((decimal)requestDto.FabricLength * fabricType.PricePerMeter + (decimal)product.MakingPrice)
+                           * ( (decimal)requestDto.Quantity);
 
             var order = new Order
             {
@@ -44,15 +72,14 @@ namespace TailorAPI.Services
                 Quantity = requestDto.Quantity,
                 TotalPrice = totalPrice,
                 CompletionDate = requestDto.CompletionDate,
-                FabricID = fabricId,
+                FabricTypeID = fabricTypeId,
                 FabricLength = (decimal)requestDto.FabricLength,
-                AssignedTo = assignedTo, // Use the assignedTo parameter
+                AssignedTo = assignedTo,
                 OrderStatus = Enum.Parse<OrderStatus>("Pending"),
                 PaymentStatus = Enum.Parse<PaymentStatus>("Pending")
             };
 
             _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
 
             // 🚨 Update UserStatus to "Busy"
             var assignedUser = await _context.Users.FindAsync(assignedTo);
@@ -60,8 +87,9 @@ namespace TailorAPI.Services
             {
                 assignedUser.UserStatus = UserStatus.Busy;
                 _context.Users.Update(assignedUser);
-                await _context.SaveChangesAsync();
             }
+
+            await _context.SaveChangesAsync();
 
             return new OrderResponseDto
             {
@@ -72,27 +100,56 @@ namespace TailorAPI.Services
         }
 
         // ✅ Updated Order Logic with AssignedTo and CompletionDate Fix
-        public async Task<bool> UpdateOrderAsync(int id, int productId, int fabricId, int assignedTo, OrderRequestDto request)
+        public async Task<bool> UpdateOrderAsync(int id, int productId, int fabricTypeId, int assignedTo, OrderRequestDto request)
         {
             var order = await _orderRepository.GetOrderByIdAsync(id);
             if (order == null) return false;
 
             var product = await _context.Products.FindAsync(productId);
-            var fabric = await _context.Fabrics.FindAsync(fabricId);
+            var fabricType = await _context.FabricTypes.FindAsync(fabricTypeId);
 
+            if (product == null || fabricType == null)
+                throw new Exception("Invalid Product or Fabric Type");
 
-            if (product == null || fabric == null) throw new Exception("Invalid Product or Fabric");
+            // ✅ Fabric Stock Management
+            var totalStockIn = await _context.FabricStocks
+                .Where(fs => fs.FabricTypeID == fabricTypeId)
+                .SumAsync(fs => fs.StockIn);
 
+            var totalStockUsed = await _context.FabricStocks
+                .Where(fs => fs.FabricTypeID == fabricTypeId)
+                .SumAsync(fs => fs.StockUse);
+
+            var availableStock = totalStockIn - totalStockUsed;
+
+            if (availableStock < (decimal)request.FabricLength)
+                throw new Exception("Insufficient fabric stock.");
+
+            // ✅ Update Fabric Stock and Available Stock
+            var newFabricStockEntry = new FabricStock
+            {
+                FabricTypeID = fabricTypeId,
+                StockIn = 0,
+                StockUse = (decimal)request.FabricLength * (decimal)request.Quantity,
+                StockAddDate = DateTime.Now
+            };
+
+            _context.FabricStocks.Add(newFabricStockEntry);
+
+            fabricType.AvailableStock -= ((decimal)request.FabricLength * (decimal)request.Quantity);
+            _context.FabricTypes.Update(fabricType);
+
+            // ✅ Order Details Update
+            order.FabricTypeID = fabricTypeId;
             order.FabricLength = (decimal)request.FabricLength;
             order.Quantity = request.Quantity;
-            order.TotalPrice = ((decimal)request.FabricLength * fabric.PricePerMeter)
-                + ((decimal)product.MakingPrice * (decimal)request.Quantity);
+            order.TotalPrice = ((decimal)request.FabricLength * fabricType.PricePerMeter + (decimal)product.MakingPrice)
+                           * ((decimal)request.Quantity);
 
-            // ✅ Update OrderStatus and PaymentStatus
             order.OrderStatus = request.OrderStatus;
             order.PaymentStatus = request.paymentStatus;
 
-            // ✅ Update AssignedTo and UserStatus
+            // ✅ Assigned User Status Management
             if (order.AssignedTo != assignedTo)
             {
                 var previousUser = await _context.Users.FindAsync(order.AssignedTo);
@@ -112,10 +169,7 @@ namespace TailorAPI.Services
                 order.AssignedTo = assignedTo;
             }
 
-            // ✅ Update Completion Date
-            order.CompletionDate = request.CompletionDate;
-
-            // ✅ If Order and Payment are Completed, set UserStatus to Available
+            // ✅ Handle Order Completion
             if (order.OrderStatus == OrderStatus.Completed && order.PaymentStatus == PaymentStatus.Completed)
             {
                 var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
@@ -132,12 +186,14 @@ namespace TailorAPI.Services
         }
 
 
+
         public async Task<bool> SoftDeleteOrderAsync(int id)
         {
             var order = await _orderRepository.GetOrderByIdAsync(id);
             if (order == null) return false;
 
             order.IsDeleted = true;
+            
 
             // 🚨 Update UserStatus to "Available" when order is deleted
             var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
@@ -158,7 +214,7 @@ namespace TailorAPI.Services
         {
             var order = await _context.Orders
                 .Include(o => o.Product)
-                .Include(o => o.Fabric)
+                .Include(o => o.fabricType)
                 .Include(o => o.Customer)
                 .Include(o => o.Assigned) // Include the Assigned User
                 .FirstOrDefaultAsync(o => o.OrderID == id);
@@ -169,11 +225,11 @@ namespace TailorAPI.Services
             {
                 CustomerID = order.CustomerId,   // ✅ Added ID reference
                 ProductID = order.ProductID,     // ✅ Added ID reference
-                FabricID = order.FabricID,       // ✅ Added ID reference
+                FabricTypeID = order.FabricTypeID,       // ✅ Added ID reference
 
                 CustomerName = order.Customer?.FullName,
                 ProductName = order.Product?.ProductName,
-                FabricName = order.Fabric?.FabricName ?? "N/A", // ✅ Display "N/A" if Fabric is missing
+                FabricName = order.fabricType?.FabricName ?? "N/A", // ✅ Display "N/A" if Fabric is missing
 
                 FabricLength = order.FabricLength,
                 Quantity = order.Quantity,
@@ -193,7 +249,7 @@ namespace TailorAPI.Services
         {
             var orders = await _context.Orders
                 .Include(o => o.Product)
-                .Include(o => o.Fabric)
+                .Include(o => o.fabricType)
                 .Include(o => o.Customer)
                 .Include(o => o.Assigned) // Include the Assigned User
                 .ToListAsync();
@@ -202,11 +258,11 @@ namespace TailorAPI.Services
             {
                 CustomerID = order.CustomerId,
                 ProductID = order.ProductID,
-                FabricID = order.FabricID,
+                FabricTypeID = order.FabricTypeID,
 
                 CustomerName = order.Customer?.FullName,
                 ProductName = order.Product?.ProductName,
-                FabricName = order.Fabric?.FabricName ?? "N/A", // ✅ Display "N/A" if Fabric is missing
+                FabricName = order.fabricType?.FabricName ?? "N/A", // ✅ Display "N/A" if Fabric is missing
 
                 FabricLength = order.FabricLength,
                 Quantity = order.Quantity,

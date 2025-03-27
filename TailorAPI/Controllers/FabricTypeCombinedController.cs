@@ -1,76 +1,82 @@
-﻿//using Microsoft.AspNetCore.Mvc;
-//using TailorAPI.DTO.RequestDTO;
-//using TailorAPI.Services;
+﻿using Microsoft.AspNetCore.Mvc;
+using TailorAPI.DTO.RequestDTO;
+using TailorAPI.Services;
+using TailorAPI.Services.Interface;
+using System.Text.Json.Serialization;
+using System.Runtime.CompilerServices; // Add this namespace
 
-//namespace TailorAPI.Controllers
-//{
-//    [Route("api/[controller]")]
-//    [ApiController]
-//    public class FabricTypeCombinedController : ControllerBase
-//    {
-//        private readonly FabricCombinedService _FabricCombinedService;
 
-//        public FabricTypeCombinedController(FabricCombinedService fabricCombinedService)
-//        {
-//            _FabricCombinedService = fabricCombinedService;
-//        }
+namespace TailorAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class FabricTypeCombinedController : ControllerBase
+    {
+        private readonly IFabricCombinedService _fabricCombinedService;
 
-//        // FabricType Endpoints
-//        [HttpPost("AddFabricType")]
-//        public IActionResult AddFabricType([FromBody] FabricTypeRequestDTO requestDTO)
-//        {
-//            var result = _fabricService.AddFabricType(requestDTO);
-//            return Ok(result);
-//        }
+        public FabricTypeCombinedController(IFabricCombinedService fabricCombinedService)
+        {
+            _fabricCombinedService = fabricCombinedService;
+        }
 
-//        [HttpPut("UpdateFabricPrice")]
-//        public IActionResult UpdateFabricPrice(int id, decimal newPrice)
-//        {
-//            var result = _fabricService.UpdateFabricPrice(id, newPrice);
-//            return Ok(result);
-//        }
 
-//        [HttpGet("GetAllFabricTypes")]
-//        public IActionResult GetAllFabricTypes()
-//        {
-//            var result = _fabricService.GetAllFabricTypes();
-//            return Ok(result);
-//        }
+        // FabricType Endpoints
+        [HttpPost("AddFabricType")]
+        public async Task<IActionResult> AddFabricType([FromBody] FabricTypeRequestDTO requestDTO)
+        {
+            var result = await _fabricCombinedService.AddFabricTypeAsync(requestDTO);
+            return Ok(result);
+        }
 
-//        [HttpGet("GetFabricTypeById")]
-//        public IActionResult GetFabricTypeById(int id)
-//        {
-//            var result = _fabricService.GetFabricTypeById(id);
-//            return Ok(result);
-//        }
+        [HttpPut("UpdateFabricPrice")]
+        public async Task<IActionResult> UpdateFabricPrice(int id, decimal newPrice)
+        {
+            var result = await _fabricCombinedService.UpdateFabricTypePriceAsync(id, newPrice);
+            return Ok(result);
+        }
 
-//        [HttpDelete("SoftDeleteFabricType")]
-//        public IActionResult SoftDeleteFabricType(int id)
-//        {
-//            var result = _fabricService.SoftDeleteFabricType(id);
-//            return Ok(result);
-//        }
+        [HttpGet("GetAllFabricTypes")]
+        public async Task<IActionResult> GetAllFabricTypes()
+        {
+            var result = await _fabricCombinedService.GetAllFabricTypesAsync();
+            return Ok(result);
+        }
 
-//        // FabricStock Endpoints
-//        [HttpPost("AddFabricStock")]
-//        public IActionResult AddFabricStock([FromBody] FabricStockRequestDTO requestDTO)
-//        {
-//            var result = _fabricService.AddFabricStock(requestDTO);
-//            return Ok(result);
-//        }
+        [HttpGet("GetFabricTypeById")]
+        public async Task<IActionResult> GetFabricTypeById(int id)
+        {
+            var result = await _fabricCombinedService.GetFabricTypeByIdAsync(id);
+            return Ok(result);
+        }
 
-//        [HttpGet("GetAllFabricStocks")]
-//        public IActionResult GetAllFabricStocks()
-//        {
-//            var result = _fabricService.GetAllFabricStocks();
-//            return Ok(result);
-//        }
+        [HttpDelete("SoftDeleteFabricType")]
+        public async Task<IActionResult> SoftDeleteFabricType(int id)
+        {
+            var result = await _fabricCombinedService.SoftDeleteFabricTypeAsync(id);
+            return Ok(result);
+        }
 
-//        [HttpGet("GetFabricStockById")]
-//        public IActionResult GetFabricStockById(int id)
-//        {
-//            var result = _fabricService.GetFabricStockById(id);
-//            return Ok(result);
-//        }
-//    }
-//}
+
+        // FabricStock Endpoints
+        [HttpPost("AddFabricStock")]
+        public async Task <IActionResult>AddFabricStock([FromBody] FabricStockRequestDTO requestDTO)
+        {
+            var result = await _fabricCombinedService.AddFabricStockAsync(requestDTO);
+            return Ok(result);
+        }
+
+        [HttpGet("GetAllFabricStocks")]
+        public async Task <IActionResult>GetAllFabricStocks()
+        {
+            var result = await _fabricCombinedService.GetAllFabricStocksAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("GetFabricStockById")]
+        public async Task <IActionResult> GetFabricStockById(int id)
+        {
+            var result = await _fabricCombinedService.GetFabricStockByIdAsync(id);
+            return Ok(result);
+        }
+    }
+}

@@ -32,9 +32,13 @@ namespace TailorAPI.Models
         public int ProductID { get; set; }
         public Product Product { get; set; }
 
-        [ForeignKey("Fabric")]
-        public int FabricID { get; set; }
-        public Fabric Fabric { get; set; }
+        //[ForeignKey("Fabric")]
+        //public int FabricID { get; set; }
+        //public Fabric Fabric { get; set; }
+
+        [ForeignKey("FabricType")]
+        public int FabricTypeID { get; set; }
+        public FabricType fabricType { get; set; }
 
         [Required]
         public decimal FabricLength { get; set; }

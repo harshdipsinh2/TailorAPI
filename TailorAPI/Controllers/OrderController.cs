@@ -18,11 +18,11 @@ namespace TailorAPI.Controllers
         }
 
         [HttpPost("Create")]
-        public async Task<IActionResult> CreateOrder(int customerId, int productId, int fabricId, int assignedTo, [FromBody] OrderRequestDto request)
+        public async Task<IActionResult> CreateOrder(int customerId, int productId, int fabricTypeId, int assignedTo, [FromBody] OrderRequestDto request)
         {
             try
             {
-                var order = await _orderService.CreateOrderAsync(customerId, productId, fabricId, assignedTo, request);
+                var order = await _orderService.CreateOrderAsync(customerId, productId, fabricTypeId, assignedTo, request);
                 return Ok(order);
             }
             catch (Exception ex)
@@ -31,9 +31,9 @@ namespace TailorAPI.Controllers
             }
         }
         [HttpPut("Update/{id}")]
-        public async Task<IActionResult> UpdateOrder(int id, int productId, int fabricId, int assignedTo, [FromBody] OrderRequestDto request)
+        public async Task<IActionResult> UpdateOrder(int id, int productId, int fabricTypeId, int assignedTo, [FromBody] OrderRequestDto request)
         {
-            var result = await _orderService.UpdateOrderAsync(id, productId, fabricId, assignedTo, request);
+            var result = await _orderService.UpdateOrderAsync(id, productId, fabricTypeId, assignedTo, request);
             if (!result) return NotFound("Order not found.");
 
             return Ok("Order updated successfully.");
