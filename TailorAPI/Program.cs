@@ -13,6 +13,15 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy = null; // Optional: Maintain PascalCase for JSON
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles; // Prevents circular references
+});
+
+
 // ✅ Configure Services
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -78,7 +87,9 @@ builder.Services.AddScoped<IFabricService, FabricService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IFabricCombinedService, FabricCombinedService>();
 
+builder.Services.AddScoped<FabricTypeCombinedRepository>();
 builder.Services.AddScoped<AdminRepository>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ProductRepository>();

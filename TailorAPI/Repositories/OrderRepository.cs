@@ -28,7 +28,7 @@ namespace TailorAPI.Repositories
                 .Where(o => !o.IsDeleted) // Exclude soft-deleted orders
                 .Include(o => o.Customer)
                 .Include(o => o.Product)
-                .Include(o => o.Fabric)
+                .Include(o => o.fabricType)
                 .ToListAsync();
         }
 
@@ -38,7 +38,7 @@ namespace TailorAPI.Repositories
                 .Where(o => !o.IsDeleted) // Exclude soft-deleted orders
                 .Include(o => o.Customer)
                 .Include(o => o.Product)
-                .Include(o => o.Fabric)
+                .Include(o => o.fabricType)
                 .FirstOrDefaultAsync(o => o.OrderID == id);
         }
 

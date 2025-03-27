@@ -16,6 +16,8 @@ public class TailorDbContext : DbContext
     public DbSet<Fabric> Fabrics { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<FabricType> FabricTypes { get; set; }
+    public DbSet<FabricStock> FabricStocks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,9 +77,9 @@ public class TailorDbContext : DbContext
                        .HasForeignKey(o => o.ProductID)
                        .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(o => o.Fabric)
+            entity.HasOne(o => o.fabricType)
                 .WithMany(f => f.Orders)
-                .HasForeignKey(o => o.FabricID)
+                .HasForeignKey(o => o.FabricTypeID)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(o => o.Assigned)

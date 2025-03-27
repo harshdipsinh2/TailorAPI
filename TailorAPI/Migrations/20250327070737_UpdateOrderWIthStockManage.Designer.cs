@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    partial class TailorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250327070737_UpdateOrderWIthStockManage")]
+    partial class UpdateOrderWIthStockManage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -226,7 +229,7 @@ namespace TailorAPI.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("FabricID")
+                    b.Property<int>("FabricID")
                         .HasColumnType("int");
 
                     b.Property<decimal>("FabricLength")
@@ -417,9 +420,11 @@ namespace TailorAPI.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TailorAPI.Models.Fabric", null)
+                    b.HasOne("TailorAPI.Models.Fabric", "Fabric")
                         .WithMany("Orders")
-                        .HasForeignKey("FabricID");
+                        .HasForeignKey("FabricID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("TailorAPI.Models.FabricType", "fabricType")
                         .WithMany("Orders")
@@ -436,6 +441,8 @@ namespace TailorAPI.Migrations
                     b.Navigation("Assigned");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Fabric");
 
                     b.Navigation("Product");
 

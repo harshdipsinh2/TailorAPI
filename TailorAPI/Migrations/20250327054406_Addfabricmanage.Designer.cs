@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    partial class TailorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250327054406_Addfabricmanage")]
+    partial class Addfabricmanage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -226,13 +229,13 @@ namespace TailorAPI.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("FabricID")
+                    b.Property<int>("FabricID")
                         .HasColumnType("int");
 
                     b.Property<decimal>("FabricLength")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("FabricTypeID")
+                    b.Property<int?>("FabricTypeID")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
@@ -417,15 +420,15 @@ namespace TailorAPI.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TailorAPI.Models.Fabric", null)
+                    b.HasOne("TailorAPI.Models.Fabric", "Fabric")
                         .WithMany("Orders")
-                        .HasForeignKey("FabricID");
-
-                    b.HasOne("TailorAPI.Models.FabricType", "fabricType")
-                        .WithMany("Orders")
-                        .HasForeignKey("FabricTypeID")
+                        .HasForeignKey("FabricID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("TailorAPI.Models.FabricType", null)
+                        .WithMany("Orders")
+                        .HasForeignKey("FabricTypeID");
 
                     b.HasOne("TailorAPI.Models.Product", "Product")
                         .WithMany("Orders")
@@ -437,9 +440,9 @@ namespace TailorAPI.Migrations
 
                     b.Navigation("Customer");
 
-                    b.Navigation("Product");
+                    b.Navigation("Fabric");
 
-                    b.Navigation("fabricType");
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("User", b =>
