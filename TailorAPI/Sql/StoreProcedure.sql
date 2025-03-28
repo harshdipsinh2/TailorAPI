@@ -11,7 +11,8 @@ BEGIN
         (SELECT COUNT(*) FROM Customers) AS TotalCustomers,
         (SELECT COUNT(*) FROM Orders) AS TotalOrders,
         (SELECT COUNT(*) FROM Users) AS TotalUsers,
-        (SELECT COUNT(*) FROM Products) AS TotalProducts,
-        (SELECT COUNT(*) FROM Fabrics) AS TotalFabrics;
+        (SELECT COUNT(*) FROM Products) AS TotalProductsl,
+        (SELECT COUNT(*) FROM FabricTypes) AS TotalFabrics;
+
 END
 GO
