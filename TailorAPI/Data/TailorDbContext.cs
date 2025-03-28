@@ -13,7 +13,7 @@ public class TailorDbContext : DbContext
     public DbSet<Measurement> Measurements { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<Product> Products { get; set; }
-    public DbSet<Fabric> Fabrics { get; set; }
+    //public DbSet<Fabric> Fabrics { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<FabricType> FabricTypes { get; set; }
@@ -48,13 +48,11 @@ public class TailorDbContext : DbContext
          .HasForeignKey<Measurement>(m => m.CustomerId)
          .IsRequired(false); // Make it optional
 
-            modelBuilder.Entity<Fabric>()
+            modelBuilder.Entity<FabricType>()
     .Property(f => f.PricePerMeter)
     .HasColumnType("decimal(18,2)");
 
-            modelBuilder.Entity<Fabric>()
-                .Property(f => f.StockQuantity)
-                .HasColumnType("decimal(18,2)");
+ 
 
 
         });
@@ -105,7 +103,7 @@ public class TailorDbContext : DbContext
         // ✅ Soft Delete Filters
         modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
         modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
-        modelBuilder.Entity<Fabric>().HasQueryFilter(f => !f.IsDeleted);
+        modelBuilder.Entity<FabricType>().HasQueryFilter(f => !f.IsDeleted);
         modelBuilder.Entity<Order>().HasQueryFilter(o => !o.IsDeleted);
 
         // ✅ Seed Roles

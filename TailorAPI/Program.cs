@@ -83,7 +83,7 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IFabricService, FabricService>();
+//builder.Services.AddScoped<IFabricService, FabricService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -99,7 +99,7 @@ builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<MeasurementRepository>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<MeasurementService>();
-builder.Services.AddScoped<FabricRepository>();
+//builder.Services.AddScoped<FabricRepository>();
 
 // ✅ JWT Authentication Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
