@@ -1,6 +1,8 @@
-﻿namespace TailorAPI.Services.Interface
+﻿using TailorAPI.DTOs.Request;
+
+public interface IManagerService
 {
-    public class IManagerService
-    {
-    }
+
+    Task<OrderResponseDto?> GetOrderByIdAsync(int id);
+    Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync();
 }
