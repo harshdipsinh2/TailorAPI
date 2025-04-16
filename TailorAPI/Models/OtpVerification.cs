@@ -9,7 +9,7 @@ namespace TailorAPI.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // ✅ Auto-generate in SQL
         public int OtpId { get; set; }
 
-        [ForeignKey("FabricType")]
+        [ForeignKey("UserID")]
         public int UserID { get; set; }
         public User user { get; set; }
 
