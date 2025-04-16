@@ -88,7 +88,9 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IFabricCombinedService, FabricCombinedService>();
+builder.Services.AddScoped<IManagerService, ManagerService>();
 
+builder.Services.AddScoped<ManagerRepository>();
 builder.Services.AddScoped<FabricTypeCombinedRepository>();
 builder.Services.AddScoped<AdminRepository>();
 builder.Services.AddScoped<JwtService>();

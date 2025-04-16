@@ -18,7 +18,7 @@ public class TailorDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<FabricType> FabricTypes { get; set; }
     public DbSet<FabricStock> FabricStocks { get; set; }
-
+    public DbSet<OtpVerification> OtpVerifications { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -40,6 +40,7 @@ public class TailorDbContext : DbContext
             entity.Property(e => e.TrouserLength).HasColumnType("real");
             entity.Property(e => e.Waist).HasColumnType("real");
             entity.Property(e => e.IsDeleted).HasColumnType("bit");
+
 
             // ✅ Correct Foreign Key
             modelBuilder.Entity<Customer>()

@@ -18,6 +18,7 @@ namespace TailorAPI.Controllers
         private readonly IProductService _productService;
         private readonly IFabricCombinedService _fabricCombinedService;
         private readonly IOrderService _orderService;
+        private readonly IManagerService _managerService;
         private readonly IDashboardService _dashboardService;
 
 
@@ -28,6 +29,7 @@ namespace TailorAPI.Controllers
                                IProductService productService,
                                IFabricCombinedService fabricCombinedService,
                                IOrderService orderService,
+                               IManagerService managerService,
                                IDashboardService dashboardService)
 
         {
@@ -38,6 +40,7 @@ namespace TailorAPI.Controllers
             _productService = productService;
             _fabricCombinedService = fabricCombinedService;
             _orderService = orderService;
+            _managerService = managerService;
         }
         //-------------------Dashboard end points ---------------------
         [HttpGet("summary")]
@@ -296,7 +299,7 @@ namespace TailorAPI.Controllers
         [HttpGet("Get-Order/{id}")]
         public async Task<IActionResult> GetOrderById(int id)
         {
-            var order = await _orderService.GetOrderByIdAsync(id);
+            var order = await _managerService.GetOrderByIdAsync(id);
             if (order == null) return NotFound("Order not found.");
 
             return Ok(order);
@@ -305,7 +308,7 @@ namespace TailorAPI.Controllers
         [HttpGet("GetAll-Order")]
         public async Task<IActionResult> GetAllOrders()
         {
-            var orders = await _orderService.GetAllOrdersAsync();
+            var orders = await _managerService.GetAllOrdersAsync();
             return Ok(orders);
         }
 
