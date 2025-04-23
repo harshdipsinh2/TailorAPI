@@ -10,11 +10,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly UserRepository _userRepository;
+    private readonly IOtpVerificationService _otpVerificationService;
 
-    public AuthController(IAuthService authService, UserRepository userRepository)
+    public AuthController(IAuthService authService, UserRepository userRepository, IOtpVerificationService otpVerificationService)
     {
         _authService = authService;
         _userRepository = userRepository;
+        _otpVerificationService = otpVerificationService;
     }
 
     // Updated Login method to accept query parameters
@@ -59,5 +61,18 @@ public class AuthController : ControllerBase
         }
 
         return Ok(new { Message = "User registered successfully." });
+    }
+    [HttpPost("send")]
+    public async Task<IActionResult> SendOtp(string email)
+    {
+        var result = await _otpVerificationService.GenerateAndSendOtpAsync(email);
+        return result ? Ok("OTP sent.") : BadRequest("Failed to send OTP.");
+    }
+
+    [HttpPost("verify")]
+    public async Task<IActionResult> VerifyOtp([FromBody] OtpVerificationsRequestDTO dto)
+    {
+        var result = await _otpVerificationService.VerifyOtpAsync(dto);
+        return result ? Ok("OTP verified.") : BadRequest("Invalid or expired OTP.");
     }
 }
