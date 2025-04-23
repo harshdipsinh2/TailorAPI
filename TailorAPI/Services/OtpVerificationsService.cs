@@ -66,14 +66,24 @@ public class OtpVerificationService : IOtpVerificationService
 
     public async Task<bool> VerifyOtpAsync(OtpVerificationsRequestDTO dto)
     {
+        // 1️⃣ Find user by email
         var user = (await _userRepository.GetAllUsersAsync())
                     .FirstOrDefault(u => u.Email == dto.Email);
         if (user == null) return false;
 
+        // 2️⃣ Fetch latest OTP for that user
         var otpRecord = await _OtpVerificationRepository.GetLatestOtpAsync(user.UserID);
-        if (otpRecord == null || otpRecord.Otp != dto.Otp || otpRecord.OtpExpiry < DateTime.UtcNow)
+        if (otpRecord == null) return false;
+
+        // 3️⃣ Check if OTP is valid and not expired
+        if (otpRecord.Otp != dto.Otp || otpRecord.OtpExpiry < DateTime.UtcNow)
             return false;
+
+        // 4️⃣ OTP is valid — delete it from DB
+        _context.OtpVerifications.Remove(otpRecord);
+        await _context.SaveChangesAsync();
 
         return true;
     }
+
 }
