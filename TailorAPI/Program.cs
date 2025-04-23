@@ -17,16 +17,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-    options.JsonSerializerOptions.PropertyNamingPolicy = null; // Optional: Maintain PascalCase for JSON
-    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles; // Prevents circular references
-});
-
-
-// ✅ Configure Services
-builder.Services.AddControllers().AddJsonOptions(options =>
-{
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -89,7 +84,10 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IFabricCombinedService, FabricCombinedService>();
 builder.Services.AddScoped<IManagerService, ManagerService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IOtpVerificationService, OtpVerificationService>();
 
+builder.Services.AddScoped<OtpVerificationRepository>();
 builder.Services.AddScoped<ManagerRepository>();
 builder.Services.AddScoped<FabricTypeCombinedRepository>();
 builder.Services.AddScoped<AdminRepository>();
@@ -179,7 +177,7 @@ var adminUser = context.Users.FirstOrDefault(u => u.RoleID == adminRole.RoleID);
         var newAdmin = new User
         {
             Name = "Admin",
-            Email = "admin@shop.com",
+            Email = "adminshop@ptct.net",
             MobileNo = "989898989",
             PasswordHash = HashPassword("Admin@1234"),
             RoleID = adminRole.RoleID,
