@@ -79,6 +79,9 @@ public class OtpVerificationService : IOtpVerificationService
         if (otpRecord.Otp != dto.Otp || otpRecord.OtpExpiry < DateTime.UtcNow)
             return false;
 
+        user.IsVerified = true;
+        await _userRepository.UpdateUserAsync(user);
+
         // 4️⃣ OTP is valid — delete it from DB
         _context.OtpVerifications.Remove(otpRecord);
         await _context.SaveChangesAsync();
