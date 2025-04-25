@@ -51,7 +51,8 @@ public class UserService : IUserService
             MobileNo = user.MobileNo,
             Address = user.Address,
             RoleName = role.RoleName,
-            UserStatus = user.UserStatus.ToString()
+            UserStatus = user.UserStatus.ToString(),
+            IsVerified = false
         };
     }
 
@@ -72,7 +73,8 @@ public class UserService : IUserService
             MobileNo = user.MobileNo,
             Address = user.Address,
             RoleName = user.Role.RoleName,
-            UserStatus = user.UserStatus.ToString()
+            UserStatus = user.UserStatus.ToString(),
+            
         };
     }
 

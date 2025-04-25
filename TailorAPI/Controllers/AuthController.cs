@@ -60,7 +60,7 @@ public class AuthController : ControllerBase
             return Conflict(new { Message = "Email already exists or invalid role specified." });
         }
 
-        return Ok(new { Message = "User registered successfully." });
+        return Ok(new { Message = "User registered successfully , dont forget to get otp verification " });
     }
     [HttpPost("send")]
     public async Task<IActionResult> SendOtp(string email)

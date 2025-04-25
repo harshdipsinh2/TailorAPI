@@ -65,6 +65,8 @@ namespace TailorAPI.Services
             var totalPrice = ((decimal)requestDto.FabricLength * fabricType.PricePerMeter + (decimal)product.MakingPrice)
                            * ( (decimal)requestDto.Quantity);
 
+
+
             var order = new Order
             {
                 CustomerId = customerId,
@@ -81,13 +83,15 @@ namespace TailorAPI.Services
 
             _context.Orders.Add(order);
 
-            // 🚨 Update UserStatus to "Busy"
+            // 🚨 assigning user with verifing and busy 
             var assignedUser = await _context.Users.FindAsync(assignedTo);
-            if (assignedUser != null)
+            if (assignedUser == null || !assignedUser.IsVerified)
             {
-                assignedUser.UserStatus = UserStatus.Busy;
-                _context.Users.Update(assignedUser);
+                throw new Exception("Assigned user must be a verified tailor or manager.");
             }
+
+            assignedUser.UserStatus = UserStatus.Busy;
+            _context.Users.Update(assignedUser);
 
             await _context.SaveChangesAsync();
 
@@ -158,13 +162,14 @@ namespace TailorAPI.Services
                     previousUser.UserStatus = UserStatus.Available;
                     _context.Users.Update(previousUser);
                 }
-
                 var newAssignedUser = await _context.Users.FindAsync(assignedTo);
-                if (newAssignedUser != null)
+                if (newAssignedUser == null || !newAssignedUser.IsVerified)
                 {
-                    newAssignedUser.UserStatus = UserStatus.Busy;
-                    _context.Users.Update(newAssignedUser);
+                    throw new Exception("Assigned user must be a verified tailor or manager.");
                 }
+
+                newAssignedUser.UserStatus = UserStatus.Busy;
+                _context.Users.Update(newAssignedUser);
 
                 order.AssignedTo = assignedTo;
             }

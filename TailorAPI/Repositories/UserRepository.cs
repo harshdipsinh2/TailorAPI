@@ -60,6 +60,8 @@
             existingUser.Address = user.Address;
             existingUser.RoleID = user.RoleID;
 
+
+            _context.Users.Update(user);
             await _context.SaveChangesAsync();
             return existingUser;
         }
