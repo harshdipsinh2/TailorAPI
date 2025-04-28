@@ -6,6 +6,10 @@ using TailorAPI.Repositories;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using Stripe;
+using Stripe.Checkout;
+
+
 
 namespace TailorAPI.Services
 {
@@ -19,6 +23,47 @@ namespace TailorAPI.Services
             _orderRepository = orderRepository;
             _context = context;
         }
+
+
+
+        // ✅ Stripe Payment Session Creation
+        public async Task<string> CreateStripePaymentSessionAsync(decimal totalPrice)
+        {
+            Stripe.StripeConfiguration.ApiKey = "sk_test_your_secret_key"; // Replace with your actual Stripe Secret Key
+
+            var options = new Stripe.Checkout.SessionCreateOptions
+            {
+                PaymentMethodTypes = new List<string>
+        {
+            "card",
+        },
+                LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
+        {
+            new Stripe.Checkout.SessionLineItemOptions
+            {
+                PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
+                {
+                    Currency = "usd", // or change it to your currency like "inr" if needed
+                    UnitAmount = (long)(totalPrice * 100), // Stripe expects amount in cents (multiply by 100)
+                    ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
+                    {
+                        Name = "Order Payment",
+                    },
+                },
+                Quantity = 1,
+            },
+        },
+                Mode = "payment",
+                SuccessUrl = "https://yourdomain.com/success", // ✅ After payment success, redirect here
+                CancelUrl = "https://yourdomain.com/cancel",   // ✅ If payment canceled, redirect here
+            };
+
+            var service = new Stripe.Checkout.SessionService();
+            var session = await service.CreateAsync(options);
+
+            return session.Url; // ✅ Return Stripe Payment URL to frontend
+        }
+
 
         // ✅ Create Order with Calculation Logic
         public async Task<OrderResponseDto> CreateOrderAsync(int customerId, int productId, int fabricTypeId, int assignedTo, OrderRequestDto requestDto)
