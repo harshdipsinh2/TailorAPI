@@ -1,6 +1,6 @@
 ﻿
 -- Create the stored procedure
-CREATE PROCEDURE [dbo].[sp_GetTotalCounts]
+CREATE PROCEDURE [dbo].[sp_GetTotalCountss]
 AS
 BEGIN
     -- Error handling (recommended for stability)

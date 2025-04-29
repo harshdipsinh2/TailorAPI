@@ -44,8 +44,7 @@ public class OtpVerificationService : IOtpVerificationService
             await _OtpVerificationRepository.SaveOtpAsync(user.UserID, otp, expiry);
 
             // ✅ Step 4: Prepare Email Body
-            string verificationLink = $"http://localhost:7252/verify?otp={otp}&email={email}";
-            string emailBody = $"Your OTP is {otp}.\nClick to verify: {verificationLink}";
+            string emailBody = $"Your OTP is {otp}.\n Do not share with anyone ";
 
             // ✅ Step 5: Send email
             bool isSent = await _emailService.SendEmailAsync(email, "OTP Verification", emailBody);

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Stripe;
 using Stripe.Checkout;
+using TailorAPI.DTO.Request;
 
 
 
@@ -44,7 +45,7 @@ namespace TailorAPI.Services
                 PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
                 {
                     Currency = "usd", // or change it to your currency like "inr" if needed
-                    UnitAmount = (long)(totalPrice * 100), // Stripe expects amount in cents (multiply by 100)
+                    UnitAmount = (long)(totalPrice * 100), 
                     ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
                     {
                         Name = "Order Payment",
@@ -218,8 +219,24 @@ namespace TailorAPI.Services
 
                 order.AssignedTo = assignedTo;
             }
+            await _orderRepository.UpdateOrderAsync(order);
+            await _context.SaveChangesAsync();
 
-            // ✅ Handle Order Completion
+            return true;
+
+
+        }
+
+        public async Task<bool> UpdateOrderStatusAsync(int orderId, OrderStatusUpdateDto request)
+        {
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            if (order == null) return false;
+
+            // ✅ Update status fields
+            order.OrderStatus = request.OrderStatus;
+            order.PaymentStatus = request.PaymentStatus;
+
+            // ✅ Handle Assigned User Status if order completed
             if (order.OrderStatus == OrderStatus.Completed && order.PaymentStatus == PaymentStatus.Completed)
             {
                 var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
@@ -232,7 +249,12 @@ namespace TailorAPI.Services
 
             await _orderRepository.UpdateOrderAsync(order);
             await _context.SaveChangesAsync();
+
             return true;
+        }
+        public async Task<decimal> GetTotalRevenueAsync()
+        {
+            return await _orderRepository.GetTotalRevenueAsync();
         }
 
 
