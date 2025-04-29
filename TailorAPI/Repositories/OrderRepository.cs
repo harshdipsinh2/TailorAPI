@@ -50,6 +50,12 @@ namespace TailorAPI.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<decimal> GetTotalRevenueAsync()
+        {
+            return await _context.Orders
+                .Where(o => o.OrderStatus == OrderStatus.Completed && o.PaymentStatus == PaymentStatus.Completed)
+                .SumAsync(o => o.TotalPrice);
+        }
 
         public async Task<bool> SoftDeleteOrderAsync(int id)
         {

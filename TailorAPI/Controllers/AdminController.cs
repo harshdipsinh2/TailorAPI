@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TailorAPI.DTO.Request;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.DTOs.Request;
 using TailorAPI.Services;
@@ -284,6 +285,22 @@ namespace TailorAPI.Controllers
             if (!result) return NotFound("Order not found.");
 
             return Ok("Order updated successfully.");
+        }
+        [HttpPut("update-status/{orderId}")]
+        public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] OrderStatusUpdateDto statusDto)
+        {
+            var result = await _orderService.UpdateOrderStatusAsync(orderId, statusDto);
+            if (!result)
+                return NotFound("Order not found");
+
+            return Ok("Order status updated successfully.");
+        }
+
+        [HttpGet("revenue")]
+        public async Task<IActionResult> GetTotalRevenue()
+        {
+            var revenue = await _orderService.GetTotalRevenueAsync();
+            return Ok(revenue);
         }
 
 

@@ -1,5 +1,4 @@
-﻿// --- PaymentsController.cs ---
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Stripe;
@@ -12,7 +11,7 @@ namespace TailorAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin,Manager")]      // only Admins & Managers can call this
+    [Authorize(Roles = "Admin,Manager")]
     public class PaymentsController : ControllerBase
     {
         public PaymentsController(IConfiguration config)
@@ -49,11 +48,9 @@ namespace TailorAPI.Controllers
                 CancelUrl = dto.CancelUrl
             };
 
-            // 2) Create the Checkout Session
             var service = new SessionService();
             Session session = await service.CreateAsync(options);
 
-            // 3) Return the URL that the frontend will redirect the user to
             return Ok(new { url = session.Url });
         }
     }

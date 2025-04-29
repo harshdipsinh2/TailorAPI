@@ -12,7 +12,6 @@ namespace TailorAPI.Controllers
     [Authorize(Roles = "Manager")]
     public class ManagerController : ControllerBase
     {
-        private readonly IAdminService _adminService;
         private readonly ICustomerService _customerService;
         private readonly IMeasurementService _measurementService;
         private readonly IProductService _productService;
@@ -23,7 +22,7 @@ namespace TailorAPI.Controllers
 
 
 
-        public ManagerController(IAdminService adminService,
+        public ManagerController(
                                ICustomerService customerService,
                                IMeasurementService measurementService,
                                IProductService productService,
@@ -34,7 +33,6 @@ namespace TailorAPI.Controllers
 
         {
             _dashboardService = dashboardService;
-            _adminService = adminService;
             _customerService = customerService;
             _measurementService = measurementService;
             _productService = productService;
@@ -156,49 +154,49 @@ namespace TailorAPI.Controllers
         // ----------- Product Endpoints -----------
 
         /// Add a new product. Available to Admin and Manager only.
-        [HttpPost("AddProduct")]
-        public async Task<IActionResult> AddProduct([FromBody] ProductRequestDTO productDto)
-        {
-            var result = await _productService.AddProduct(productDto);
-            return Ok(result);
-        }
+        //[HttpPost("AddProduct")]
+        //public async Task<IActionResult> AddProduct([FromBody] ProductRequestDTO productDto)
+        //{
+        //    var result = await _productService.AddProduct(productDto);
+        //    return Ok(result);
+        //}
 
-        /// Update an existing product by ID. Available to Admin and Manager only.
-        [HttpPut("UpdateProduct/{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductRequestDTO productDto)
-        {
-            var result = await _productService.UpdateProduct(id, productDto);
-            if (result == null) return NotFound("Product not found.");
-            return Ok(result);
-        }
+        ///// Update an existing product by ID. Available to Admin and Manager only.
+        //[HttpPut("UpdateProduct/{id}")]
+        //public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductRequestDTO productDto)
+        //{
+        //    var result = await _productService.UpdateProduct(id, productDto);
+        //    if (result == null) return NotFound("Product not found.");
+        //    return Ok(result);
+        //}
 
-        /// Delete a product by ID. Available to Admin and Manager only.
-        [HttpDelete("DeleteProduct/{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
-        {
-            var success = await _productService.DeleteProduct(id);
-            if (!success) return NotFound("Product not found.");
-            return NoContent();
-        }
+        ///// Delete a product by ID. Available to Admin and Manager only.
+        //[HttpDelete("DeleteProduct/{id}")]
+        //public async Task<IActionResult> DeleteProduct(int id)
+        //{
+        //    var success = await _productService.DeleteProduct(id);
+        //    if (!success) return NotFound("Product not found.");
+        //    return NoContent();
+        //}
 
-        /// Get product details by ID. Available to Admin, Manager, and Tailor.
-        [HttpGet("GetProduct/{id}")]
+        ///// Get product details by ID. Available to Admin, Manager, and Tailor.
+        //[HttpGet("GetProduct/{id}")]
 
-        public async Task<IActionResult> GetProductById(int id)
-        {
-            var result = await _productService.GetProductById(id);
-            if (result == null) return NotFound("Product not found.");
-            return Ok(result);
-        }
+        //public async Task<IActionResult> GetProductById(int id)
+        //{
+        //    var result = await _productService.GetProductById(id);
+        //    if (result == null) return NotFound("Product not found.");
+        //    return Ok(result);
+        //}
 
-        /// Get all products. Available to Admin, Manager, and Tailor.
-        [HttpGet("GetAllProducts")]
+        ///// Get all products. Available to Admin, Manager, and Tailor.
+        //[HttpGet("GetAllProducts")]
 
-        public async Task<IActionResult> GetAllProducts()
-        {
-            var result = await _productService.GetAllProducts();
-            return Ok(result);
-        }
+        //public async Task<IActionResult> GetAllProducts()
+        //{
+        //    var result = await _productService.GetAllProducts();
+        //    return Ok(result);
+        //}
 
         //-------------------Fabric Endpoints ----------------------------------
 
