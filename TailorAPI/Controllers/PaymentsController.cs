@@ -5,7 +5,7 @@ using Stripe;
 using Stripe.Checkout;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using TailorAPI.DTOs.Request;
+using TailorAPI.Models; // Include your Order model namespace if needed
 
 namespace TailorAPI.Controllers
 {
@@ -14,16 +14,32 @@ namespace TailorAPI.Controllers
     [Authorize(Roles = "Admin,Manager")]
     public class PaymentsController : ControllerBase
     {
-        public PaymentsController(IConfiguration config)
+        private readonly IConfiguration _config;
+        private readonly TailorDbContext _context;
+
+        public PaymentsController(IConfiguration config, TailorDbContext context)
         {
-            // Pull your secret key from appsettings.json under "Stripe:SecretKey"
-            StripeConfiguration.ApiKey = config["Stripe:SecretKey"];
+            _config = config;
+            _context = context;
+
+            StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
         }
 
         [HttpPost("create-checkout-session")]
-        public async Task<IActionResult> CreateCheckoutSession([FromBody] CreatePaymentDto dto)
+        public async Task<IActionResult> CreateCheckoutSession ([FromQuery] int orderId)
+
         {
-            // 1) Build the line-item for Stripe Checkout
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null)
+                return NotFound("Order not found");
+
+            var totalPrice = order.TotalPrice;
+            var currency = "inr";
+            var description = "Tailor Order Payment";
+
+            var successUrl = "https://localhost:3000/payment-success";
+            var cancelUrl = "https://localhost:3000/payment-cancel";
+
             var options = new SessionCreateOptions
             {
                 PaymentMethodTypes = new List<string> { "card" },
@@ -33,23 +49,27 @@ namespace TailorAPI.Controllers
                     {
                         PriceData = new SessionLineItemPriceDataOptions
                         {
-                            Currency = dto.Currency,
-                            UnitAmount = (long)(dto.TotalAmount * 100),  // amount in cents
+                            Currency = currency,
+                            UnitAmount = (long)(totalPrice * 100), // Convert to paisa
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
-                                Name = dto.Description
+                                Name = description,
                             },
                         },
                         Quantity = 1,
                     }
                 },
                 Mode = "payment",
-                SuccessUrl = dto.SuccessUrl,
-                CancelUrl = dto.CancelUrl
+                SuccessUrl = string.IsNullOrEmpty(successUrl)
+                    ? "https://localhost:3000/payment-success"
+                    : successUrl,
+                CancelUrl = string.IsNullOrEmpty(cancelUrl)
+                    ? "https://localhost:3000/payment-cancel"
+                    : cancelUrl
             };
 
             var service = new SessionService();
-            Session session = await service.CreateAsync(options);
+            var session = await service.CreateAsync(options);
 
             return Ok(new { url = session.Url });
         }
