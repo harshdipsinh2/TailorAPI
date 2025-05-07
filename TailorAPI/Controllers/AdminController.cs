@@ -10,7 +10,7 @@ namespace TailorAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]  
+    [Authorize(Roles = "Admin,Manager,Tailor")]
     public class AdminController : ControllerBase
     {
         private readonly IAdminService _adminService;

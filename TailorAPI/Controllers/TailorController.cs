@@ -13,7 +13,7 @@ namespace TailorAPI.Controllers
     [Authorize(Roles = "Tailor")]
     public class TailorController : ControllerBase
     {
-        
+
         private readonly ICustomerService _customerService;
         private readonly IMeasurementService _measurementService;
         private readonly IProductService _productService;

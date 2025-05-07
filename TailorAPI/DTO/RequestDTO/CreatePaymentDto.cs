@@ -5,7 +5,7 @@
         public decimal TotalAmount { get; set; }
 
 
-        public string Currency { get; set; } = "usd";
+        public string Currency { get; set; } = "inr";
 
         public string Description { get; set; } = "Order Payment";
 

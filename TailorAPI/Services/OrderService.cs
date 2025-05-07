@@ -30,6 +30,8 @@ namespace TailorAPI.Services
         // ✅ Stripe Payment Session Creation
         public async Task<string> CreateStripePaymentSessionAsync(decimal totalPrice)
         {
+
+
             Stripe.StripeConfiguration.ApiKey = "sk_test_your_secret_key"; // Replace with your actual Stripe Secret Key
 
             var options = new Stripe.Checkout.SessionCreateOptions
