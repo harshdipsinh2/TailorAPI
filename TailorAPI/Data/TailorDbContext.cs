@@ -105,7 +105,7 @@ public class TailorDbContext : DbContext
         modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
         modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
         modelBuilder.Entity<FabricType>().HasQueryFilter(f => !f.IsDeleted);
-        modelBuilder.Entity<Order>().HasQueryFilter(o => !o.IsDeleted);
+        modelBuilder.Entity<Order>().HasQueryFilter(o => !o.IsDeleted); 
 
         // ✅ Seed Roles
         modelBuilder.Entity<Role>().HasData(

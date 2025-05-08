@@ -115,6 +115,9 @@ namespace TailorAPI.Services
                 .Where(m => !m.IsDeleted)
                 .Select(m => new MeasurementResponseDTO
                 {
+
+
+                    MeasurementID = m.MeasurementID,    
                     CustomerId = m.CustomerId,
                     Chest = m.Chest,
                     Waist = m.Waist,

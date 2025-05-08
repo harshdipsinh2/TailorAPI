@@ -2,7 +2,11 @@
 {
     public class MeasurementResponseDTO
     {
+
+        public int MeasurementID { get; set; }
+
         public int CustomerId { get; set; }
+
 
         public float Chest { get; set; }
         public float Waist { get; set; }

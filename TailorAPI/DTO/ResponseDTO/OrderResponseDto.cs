@@ -3,11 +3,15 @@ using TailorAPI.Models;
 
 public class OrderResponseDto
 {
+    public int OrderID { get; set; }
+
     public int CustomerID { get; set; }   // ✅ Added ID for reference
     public int ProductID { get; set; }    // ✅ Added ID for reference
 
     //public int FabricID { get; set; }     // ✅ Added ID for reference
     public int FabricTypeID { get; set; }
+
+
     public string? CustomerName { get; set; } // Nullable in case data is missing
     public string? ProductName { get; set; }
 

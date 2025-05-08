@@ -54,7 +54,7 @@ namespace TailorAPI.Migrations
 
                     b.HasKey("CustomerId");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("TailorAPI.Models.FabricStock", b =>
@@ -81,7 +81,7 @@ namespace TailorAPI.Migrations
 
                     b.HasIndex("FabricTypeID");
 
-                    b.ToTable("FabricStocks");
+                    b.ToTable("FabricStocks", (string)null);
                 });
 
             modelBuilder.Entity("TailorAPI.Models.FabricType", b =>
@@ -107,7 +107,7 @@ namespace TailorAPI.Migrations
 
                     b.HasKey("FabricTypeID");
 
-                    b.ToTable("FabricTypes");
+                    b.ToTable("FabricTypes", (string)null);
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Measurement", b =>
@@ -177,7 +177,7 @@ namespace TailorAPI.Migrations
                     b.HasIndex("CustomerId")
                         .IsUnique();
 
-                    b.ToTable("Measurements");
+                    b.ToTable("Measurements", (string)null);
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Order", b =>
@@ -236,7 +236,7 @@ namespace TailorAPI.Migrations
 
                     b.HasIndex("ProductID");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("TailorAPI.Models.OtpVerification", b =>
@@ -261,7 +261,7 @@ namespace TailorAPI.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("OtpVerifications");
+                    b.ToTable("OtpVerifications", (string)null);
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Product", b =>
@@ -284,7 +284,7 @@ namespace TailorAPI.Migrations
 
                     b.HasKey("ProductID");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Role", b =>
@@ -304,7 +304,7 @@ namespace TailorAPI.Migrations
 
                     b.HasKey("RoleID");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
 
                     b.HasData(
                         new
@@ -374,7 +374,7 @@ namespace TailorAPI.Migrations
 
                     b.HasIndex("RoleID");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("TailorAPI.Models.FabricStock", b =>
