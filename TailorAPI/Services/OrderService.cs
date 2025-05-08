@@ -322,17 +322,24 @@ namespace TailorAPI.Services
         public async Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync()
         {
             var orders = await _context.Orders
-                .Include(o => o.Product)
-                .Include(o => o.fabricType)
-                .Include(o => o.Customer)
-                .Include(o => o.Assigned) // Include the Assigned User
-                .ToListAsync();
+    .IgnoreQueryFilters() // 👈 Bypass the IsDeleted filter
+    .Include(o => o.Product)
+    .Include(o => o.fabricType)
+    .Include(o => o.Customer)
+    .Include(o => o.Assigned)
+    .ToListAsync();
 
+
+
+            Console.WriteLine($"Fetched orders: {orders.Count}");
             return orders.Select(order => new OrderResponseDto
             {
+                OrderID = order.OrderID,
                 CustomerID = order.CustomerId,
                 ProductID = order.ProductID,
                 FabricTypeID = order.FabricTypeID,
+
+
 
                 CustomerName = order.Customer?.FullName,
                 ProductName = order.Product?.ProductName,
