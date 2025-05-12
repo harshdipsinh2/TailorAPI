@@ -74,8 +74,8 @@ namespace TailorAPI.Services
             var product = await _context.Products.FindAsync(productId);
             var fabricType = await _context.FabricTypes.FindAsync(fabricTypeId);
 
-            if (product == null || fabricType == null)
-                throw new Exception("Invalid Product or Fabric Type");
+            //if (product == null || fabricType == null)
+            //    throw new Exception("Invalid Product or Fabric Type");
 
             if (requestDto.FabricLength <= 0)
                 throw new Exception("Fabric length must be greater than zero.");
@@ -93,6 +93,7 @@ namespace TailorAPI.Services
 
             if (availableStock < (decimal)requestDto.FabricLength)
                 throw new Exception("Insufficient fabric stock.");
+
 
             // 🚨 Create a new FabricStock entry for this order
             var newFabricStockEntry = new FabricStock

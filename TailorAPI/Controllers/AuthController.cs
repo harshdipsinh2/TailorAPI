@@ -62,6 +62,8 @@ public class AuthController : ControllerBase
 
         return Ok(new { Message = "User registered successfully , dont forget to get otp verification " });
     }
+
+
     [HttpPost("send")]
     public async Task<IActionResult> SendOtp(string email)
     {
