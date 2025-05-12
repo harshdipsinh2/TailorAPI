@@ -159,6 +159,7 @@ namespace TailorAPI.Controllers
 
         /// Add a new product. Available to Admin and Manager only.
         [HttpPost("AddProduct")]
+
         public async Task<IActionResult> AddProduct([FromBody] ProductRequestDTO productDto)
         {
             var result = await _productService.AddProduct(productDto);
