@@ -7,6 +7,8 @@
         public string ProductName { get; set; }
 
         public decimal MakingPrice { get; set; }  // Tailoring work price (excluding fabric cost)
+        public string? ImageUrl { get; set; }
+
 
     }
 }

@@ -12,10 +12,14 @@ namespace TailorAPI.Models
         [Required]
         public string ProductName { get; set; }
 
+
         [Required]
         public decimal MakingPrice { get; set; }  // Tailoring work price (excluding fabric cost)
 
+        public string?ImageUrl { get; set; }
+
         public bool IsDeleted { get; set; } = false;  // Soft delete property
+
         
         // Navigation property for Orders
         public ICollection<Order> Orders { get; set; }
