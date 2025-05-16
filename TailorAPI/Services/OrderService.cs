@@ -74,11 +74,30 @@ namespace TailorAPI.Services
             var product = await _context.Products.FindAsync(productId);
             var fabricType = await _context.FabricTypes.FindAsync(fabricTypeId);
 
-            //if (product == null || fabricType == null)
-            //    throw new Exception("Invalid Product or Fabric Type");
+            if (product == null || fabricType == null)
+                throw new Exception("Invalid Product or Fabric Type");
 
-            if (requestDto.FabricLength <= 0)
-                throw new Exception("Fabric length must be greater than zero.");
+            // 🚨 Fetch customer measurement
+            var measurement = await _context.Measurements.FirstOrDefaultAsync(m => m.CustomerId == customerId);
+            if (measurement == null)
+                throw new Exception("Customer does not have measurements. Please add measurements first.");
+
+            // 🚨 Auto-set FabricLength based on product type
+            if (string.Equals(product.ProductType.ToString(), "upper", StringComparison.OrdinalIgnoreCase))
+            {
+                requestDto.FabricLength = measurement.UpperBodyMeasurement;
+            }
+            else if (string.Equals(product.ProductType.ToString(), "lower", StringComparison.OrdinalIgnoreCase))
+            {
+                requestDto.FabricLength = measurement.LowerBodyMeasurement;
+            }
+            else
+            {
+                throw new Exception("Unknown product type. ProductType must be either 'upper' or 'lower'.");
+            }
+
+
+
 
             // 🚨 Calculate AvailableStock using FabricStock entries
             var totalStockIn = await _context.FabricStocks
@@ -91,30 +110,26 @@ namespace TailorAPI.Services
 
             var availableStock = totalStockIn - totalStockUsed;
 
-            if (availableStock < (decimal)requestDto.FabricLength)
+            if (availableStock < (decimal)requestDto.FabricLength * requestDto.Quantity)
                 throw new Exception("Insufficient fabric stock.");
 
-
-            // 🚨 Create a new FabricStock entry for this order
+            // 🚨 Create new fabric stock entry
             var newFabricStockEntry = new FabricStock
             {
                 FabricTypeID = fabricTypeId,
-                StockIn = 0, // No new stock added during order creation
-                StockUse = (decimal)requestDto.FabricLength * (decimal)requestDto.Quantity,
+                StockIn = 0,
+                StockUse = (decimal)requestDto.FabricLength * requestDto.Quantity,
                 StockAddDate = DateTime.Now
             };
 
             _context.FabricStocks.Add(newFabricStockEntry);
 
-            // 🚨 Update AvailableStock in FabricType
-            fabricType.AvailableStock -= ((decimal)requestDto.FabricLength *(decimal)requestDto.Quantity);
+            fabricType.AvailableStock -= ((decimal)requestDto.FabricLength * requestDto.Quantity);
             _context.FabricTypes.Update(fabricType);
 
             // 🚨 Order Calculation Logic
-            var totalPrice = ((decimal)requestDto.FabricLength * fabricType.PricePerMeter + (decimal)product.MakingPrice)
-                           * ( (decimal)requestDto.Quantity);
-
-
+            var totalPrice = ((decimal)requestDto.FabricLength * fabricType.PricePerMeter + product.MakingPrice)
+                           * requestDto.Quantity;
 
             var order = new Order
             {
@@ -132,7 +147,7 @@ namespace TailorAPI.Services
 
             _context.Orders.Add(order);
 
-            // 🚨 assigning user with verifing and busy 
+            // 🚨 Assign user and update status
             var assignedUser = await _context.Users.FindAsync(assignedTo);
             if (assignedUser == null || !assignedUser.IsVerified)
             {
@@ -151,6 +166,7 @@ namespace TailorAPI.Services
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd")
             };
         }
+
 
         // ✅ Updated Order Logic with AssignedTo and CompletionDate Fix
         public async Task<bool> UpdateOrderAsync(int id, int productId, int fabricTypeId, int assignedTo, OrderRequestDto request)
