@@ -24,5 +24,8 @@
         public float Wrist { get; set; }
         public float Ankle { get; set; }
         public float Calf { get; set; }
+        public float UpperBodyMeasurement { get; set; }
+        public float LowerBodyMeasurement { get; set; }
+
     }
 }

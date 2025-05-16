@@ -19,15 +19,21 @@ namespace TailorAPI.Services
             var product = new Product
             {
                 ProductName = productDto.ProductName,
-                MakingPrice = productDto.MakingPrice
+                MakingPrice = productDto.MakingPrice,
+                ProductType = productDto.ProductType
             };
+
             var result = await _productRepository.AddProduct(product);
+
             return new ProductResponseDTO
             {
+                ProductID = result.ProductID,
                 ProductName = result.ProductName,
-                MakingPrice = result.MakingPrice
+                MakingPrice = result.MakingPrice,
+                ProductType = result.ProductType
             };
         }
+
 
         public async Task<ProductResponseDTO> UpdateProduct(int id, ProductRequestDTO productDto)
         {
@@ -36,15 +42,19 @@ namespace TailorAPI.Services
 
             product.ProductName = productDto.ProductName;
             product.MakingPrice = productDto.MakingPrice;
+            product.ProductType = productDto.ProductType;
 
             var updatedProduct = await _productRepository.UpdateProduct(product);
+
             return new ProductResponseDTO
             {
                 ProductID = updatedProduct.ProductID,
                 ProductName = updatedProduct.ProductName,
-                MakingPrice = updatedProduct.MakingPrice
+                MakingPrice = updatedProduct.MakingPrice,
+                ProductType = updatedProduct.ProductType
             };
         }
+
 
         public async Task<bool> DeleteProduct(int id)
         {
@@ -60,7 +70,9 @@ namespace TailorAPI.Services
             {
                 ProductID = product.ProductID,
                 ProductName = product.ProductName,
-                MakingPrice = product.MakingPrice
+                MakingPrice = product.MakingPrice,
+                ProductType = product.ProductType
+
             };
         }
 
@@ -71,7 +83,9 @@ namespace TailorAPI.Services
             {
                 ProductID = product.ProductID,
                 ProductName = product.ProductName,
-                MakingPrice = product.MakingPrice
+                MakingPrice = product.MakingPrice,
+                ProductType = product.ProductType
+
             });
         }
     }

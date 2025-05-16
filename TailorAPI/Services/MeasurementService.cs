@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Diagnostics.Metrics;
+using Microsoft.EntityFrameworkCore;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.DTO.ResponseDTO;
 using TailorAPI.Models;
@@ -15,11 +16,26 @@ namespace TailorAPI.Services
             _context = context;
         }
 
+
+        private (float upper, float lower) CalculateBodyMeasurements(MeasurementRequestDTO dto)
+        {
+            float upper = dto.Chest + dto.Waist + dto.Shoulder + dto.SleeveLength + dto.Neck + dto.Sleeve + dto.Bicep + dto.Forearm;
+            float lower = dto.Hip + dto.TrouserLength + dto.Inseam + dto.Thigh + dto.Calf + dto.Ankle;
+
+            // Convert cm to meters if needed
+            upper = (float)Math.Round(upper / 100f, 2);
+            lower = (float)Math.Round(lower / 100f, 2);
+
+            return (upper, lower);
+        }
+
         public async Task<MeasurementResponseDTO> AddMeasurementAsync(int customerId, MeasurementRequestDTO measurementDto)
         {
             var existingCustomer = await _context.Customers.FindAsync(customerId);
             if (existingCustomer == null)
                 throw new ArgumentException("Customer does not exist.");
+
+            var (upper, lower) = CalculateBodyMeasurements(measurementDto);
 
             var measurement = new Measurement
             {
@@ -39,8 +55,11 @@ namespace TailorAPI.Services
                 Forearm = measurementDto.Forearm,
                 Wrist = measurementDto.Wrist,
                 Ankle = measurementDto.Ankle,
-                Calf = measurementDto.Calf
+                Calf = measurementDto.Calf,
+                UpperBodyMeasurement = upper,
+                LowerBodyMeasurement = lower
             };
+
 
             _context.Measurements.Add(measurement);
             await _context.SaveChangesAsync();
@@ -63,7 +82,10 @@ namespace TailorAPI.Services
                 Forearm = measurement.Forearm,
                 Wrist = measurement.Wrist,
                 Ankle = measurement.Ankle,
-                Calf = measurement.Calf
+                Calf = measurement.Calf,
+                UpperBodyMeasurement = upper,
+                LowerBodyMeasurement = lower
+
             };
         }
 
@@ -92,7 +114,10 @@ namespace TailorAPI.Services
                 Forearm = measurement.Forearm,
                 Wrist = measurement.Wrist,
                 Ankle = measurement.Ankle,
-                Calf = measurement.Calf
+                Calf = measurement.Calf,
+                UpperBodyMeasurement = measurement.UpperBodyMeasurement,
+                LowerBodyMeasurement = measurement.LowerBodyMeasurement
+
             };
         }
 
@@ -134,7 +159,10 @@ namespace TailorAPI.Services
                     Forearm = m.Forearm,
                     Wrist = m.Wrist,
                     Ankle = m.Ankle,
-                    Calf = m.Calf
+                    Calf = m.Calf,
+                    UpperBodyMeasurement = m.UpperBodyMeasurement,
+                    LowerBodyMeasurement = m.LowerBodyMeasurement
+
                 })
                 .ToListAsync();
 
