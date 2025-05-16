@@ -2,7 +2,16 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TailorAPI.Models
-{
+{ 
+
+
+        public enum ProductType
+    {
+        Upper,
+        Lower
+    }
+
+
     public class Product
     {
         [Key]
@@ -20,7 +29,10 @@ namespace TailorAPI.Models
 
         public bool IsDeleted { get; set; } = false;  // Soft delete property
 
-        
+        [Required]
+        public ProductType ProductType { get; set; } // New field
+
+
         // Navigation property for Orders
         public ICollection<Order> Orders { get; set; }
     }

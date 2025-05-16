@@ -53,7 +53,18 @@ public class TailorDbContext : DbContext
     .Property(f => f.PricePerMeter)
     .HasColumnType("decimal(18,2)");
 
- 
+
+            {
+                modelBuilder.Entity<Product>()
+                    .Property(p => p.ProductType)
+                    .HasConversion<string>(); // 👈 This stores the enum as string
+
+                // Optional: Set string length (VARCHAR size)
+                modelBuilder.Entity<Product>()
+                    .Property(p => p.ProductType)
+                    .HasMaxLength(20);
+            }
+
 
 
         });
