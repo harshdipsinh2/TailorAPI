@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TailorAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -32,20 +32,19 @@ namespace TailorAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Fabrics",
+                name: "FabricTypes",
                 columns: table => new
                 {
-                    FabricID = table.Column<int>(type: "int", nullable: false)
+                    FabricTypeID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FabricName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PricePerMeter = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    StockQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    FabricUsed = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AvailableStock = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Fabrics", x => x.FabricID);
+                    table.PrimaryKey("PK_FabricTypes", x => x.FabricTypeID);
                 });
 
             migrationBuilder.CreateTable(
@@ -56,7 +55,9 @@ namespace TailorAPI.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ProductName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     MakingPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    ProductType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -99,6 +100,8 @@ namespace TailorAPI.Migrations
                     Wrist = table.Column<float>(type: "real", nullable: false),
                     Ankle = table.Column<float>(type: "real", nullable: false),
                     Calf = table.Column<float>(type: "real", nullable: false),
+                    UpperBodyMeasurement = table.Column<float>(type: "real", nullable: false),
+                    LowerBodyMeasurement = table.Column<float>(type: "real", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CustomerId = table.Column<int>(type: "int", nullable: false)
                 },
@@ -110,6 +113,28 @@ namespace TailorAPI.Migrations
                         column: x => x.CustomerId,
                         principalTable: "Customers",
                         principalColumn: "CustomerId");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FabricStocks",
+                columns: table => new
+                {
+                    StockID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FabricTypeID = table.Column<int>(type: "int", nullable: false),
+                    StockIn = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StockUse = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StockAddDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FabricStocks", x => x.StockID);
+                    table.ForeignKey(
+                        name: "FK_FabricStocks_FabricTypes_FabricTypeID",
+                        column: x => x.FabricTypeID,
+                        principalTable: "FabricTypes",
+                        principalColumn: "FabricTypeID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -125,7 +150,8 @@ namespace TailorAPI.Migrations
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RoleID = table.Column<int>(type: "int", nullable: false),
                     UserStatus = table.Column<string>(type: "nvarchar(10)", nullable: false, defaultValue: "Available"),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    IsVerified = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -146,7 +172,7 @@ namespace TailorAPI.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CustomerId = table.Column<int>(type: "int", nullable: false),
                     ProductID = table.Column<int>(type: "int", nullable: false),
-                    FabricID = table.Column<int>(type: "int", nullable: false),
+                    FabricTypeID = table.Column<int>(type: "int", nullable: false),
                     FabricLength = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -167,10 +193,10 @@ namespace TailorAPI.Migrations
                         principalColumn: "CustomerId",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Orders_Fabrics_FabricID",
-                        column: x => x.FabricID,
-                        principalTable: "Fabrics",
-                        principalColumn: "FabricID",
+                        name: "FK_Orders_FabricTypes_FabricTypeID",
+                        column: x => x.FabricTypeID,
+                        principalTable: "FabricTypes",
+                        principalColumn: "FabricTypeID",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Orders_Products_ProductID",
@@ -186,6 +212,27 @@ namespace TailorAPI.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "OtpVerifications",
+                columns: table => new
+                {
+                    OtpId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserID = table.Column<int>(type: "int", nullable: false),
+                    Otp = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OtpExpiry = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OtpVerifications", x => x.OtpId);
+                    table.ForeignKey(
+                        name: "FK_OtpVerifications_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Roles",
                 columns: new[] { "RoleID", "RoleName", "RoleType" },
@@ -195,6 +242,11 @@ namespace TailorAPI.Migrations
                     { 2, "Tailor", 0 },
                     { 3, "Manager", 0 }
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FabricStocks_FabricTypeID",
+                table: "FabricStocks",
+                column: "FabricTypeID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Measurements_CustomerId",
@@ -213,14 +265,19 @@ namespace TailorAPI.Migrations
                 column: "CustomerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Orders_FabricID",
+                name: "IX_Orders_FabricTypeID",
                 table: "Orders",
-                column: "FabricID");
+                column: "FabricTypeID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_ProductID",
                 table: "Orders",
                 column: "ProductID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OtpVerifications_UserID",
+                table: "OtpVerifications",
+                column: "UserID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_RoleID",
@@ -232,16 +289,22 @@ namespace TailorAPI.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "FabricStocks");
+
+            migrationBuilder.DropTable(
                 name: "Measurements");
 
             migrationBuilder.DropTable(
                 name: "Orders");
 
             migrationBuilder.DropTable(
+                name: "OtpVerifications");
+
+            migrationBuilder.DropTable(
                 name: "Customers");
 
             migrationBuilder.DropTable(
-                name: "Fabrics");
+                name: "FabricTypes");
 
             migrationBuilder.DropTable(
                 name: "Products");
