@@ -83,6 +83,7 @@ public class UserService : IUserService
         var users = await _userRepository.GetAllUsersAsync();
         return users.Select(user => new UserResponseDto
         {
+            UserID = user.UserID,
             Name = user.Name,
             Email = user.Email,
             MobileNo = user.MobileNo,

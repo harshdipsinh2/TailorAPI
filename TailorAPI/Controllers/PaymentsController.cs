@@ -37,7 +37,7 @@ namespace TailorAPI.Controllers
             var currency = "inr";
             var description = "Tailor Order Payment";
 
-            var successUrl = "https://localhost:3000/payment-success";
+            var successUrl = "http://localhost:3000/payment-success";
             var cancelUrl = "https://localhost:3000/payment-cancel";
 
             var options = new SessionCreateOptions

@@ -95,10 +95,6 @@ namespace TailorAPI.Services
             {
                 throw new Exception("Unknown product type. ProductType must be either 'upper' or 'lower'.");
             }
-
-
-
-
             // 🚨 Calculate AvailableStock using FabricStock entries
             var totalStockIn = await _context.FabricStocks
                 .Where(fs => fs.FabricTypeID == fabricTypeId)
@@ -136,14 +132,15 @@ namespace TailorAPI.Services
                 CustomerId = customerId,
                 ProductID = productId,
                 Quantity = requestDto.Quantity,
+                FabricLength = (decimal)requestDto.FabricLength,
                 TotalPrice = totalPrice,
                 CompletionDate = requestDto.CompletionDate,
                 FabricTypeID = fabricTypeId,
-                FabricLength = (decimal)requestDto.FabricLength,
                 AssignedTo = assignedTo,
                 OrderStatus = Enum.Parse<OrderStatus>("Pending"),
                 PaymentStatus = Enum.Parse<PaymentStatus>("Pending")
             };
+
 
             _context.Orders.Add(order);
 
@@ -355,7 +352,7 @@ namespace TailorAPI.Services
                 CustomerID = order.CustomerId,
                 ProductID = order.ProductID,
                 FabricTypeID = order.FabricTypeID,
-
+                    
 
 
                 CustomerName = order.Customer?.FullName,
