@@ -9,6 +9,7 @@ using System.Linq;
 using Stripe;
 using Stripe.Checkout;
 using TailorAPI.DTO.Request;
+using TailorAPI.DTO.RequestDTO;
 
 
 
@@ -47,7 +48,7 @@ namespace TailorAPI.Services
                 PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
                 {
                     Currency = "usd", // or change it to your currency like "inr" if needed
-                    UnitAmount = (long)(totalPrice * 100), 
+                    UnitAmount = (long)(totalPrice * 100),
                     ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
                     {
                         Name = "Order Payment",
@@ -138,7 +139,8 @@ namespace TailorAPI.Services
                 FabricTypeID = fabricTypeId,
                 AssignedTo = assignedTo,
                 OrderStatus = Enum.Parse<OrderStatus>("Pending"),
-                PaymentStatus = Enum.Parse<PaymentStatus>("Pending")
+                PaymentStatus = Enum.Parse<PaymentStatus>("Pending"),
+                ApprovalStatus = Enum.Parse<OrderApprovalStatus>("Pending"),
             };
 
 
@@ -162,6 +164,33 @@ namespace TailorAPI.Services
                 OrderStatus = order.OrderStatus,
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd")
             };
+        }
+
+        // Add this new method for approval/rejection
+        public async Task<bool> UpdateOrderApprovalAsync(int orderId, OrderApprovalUpdateDTO RequestDTO)
+        {
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            if (order == null) return false;
+
+            // Only allow the assigned tailor to approve/reject
+            if (order.AssignedTo != RequestDTO.UserID)
+            {
+                throw new UnauthorizedAccessException("You can only approve/reject orders assigned to you");
+            }
+
+            order.ApprovalStatus = RequestDTO.ApprovalStatus;
+            order.RejectionReason = RequestDTO.ApprovalStatus == OrderApprovalStatus.Rejected ?
+                RequestDTO.RejectionReason : null;
+
+            if (RequestDTO.ApprovalStatus == OrderApprovalStatus.Approved)
+            {
+                order.OrderStatus = OrderStatus.Pending; // Ready for work
+            }
+
+            await _orderRepository.UpdateOrderAsync(order);
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
 
@@ -281,7 +310,7 @@ namespace TailorAPI.Services
             if (order == null) return false;
 
             order.IsDeleted = true;
-            
+
 
             // 🚨 Update UserStatus to "Available" when order is deleted
             var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
@@ -333,44 +362,44 @@ namespace TailorAPI.Services
 
 
         // ✅ Corrected for Non-null Values in List
-        public async Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync()
+        public async Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync(int userId, string role)
         {
-            var orders = await _context.Orders
-    .IgnoreQueryFilters() // 👈 Bypass the IsDeleted filter
-    .Include(o => o.Product)
-    .Include(o => o.fabricType)
-    .Include(o => o.Customer)
-    .Include(o => o.Assigned)
-    .ToListAsync();
+            var query = _context.Orders
+                .IgnoreQueryFilters()
+                .Include(o => o.Product)
+                .Include(o => o.fabricType)
+                .Include(o => o.Customer)
+                .Include(o => o.Assigned)
+                .AsQueryable();
 
+            if (role == "Tailor")
+            {
+                query = query.Where(o => o.AssignedTo == userId);
+            }
 
+            var orders = await query.ToListAsync();
 
-            Console.WriteLine($"Fetched orders: {orders.Count}");
             return orders.Select(order => new OrderResponseDto
             {
                 OrderID = order.OrderID,
                 CustomerID = order.CustomerId,
                 ProductID = order.ProductID,
                 FabricTypeID = order.FabricTypeID,
-                    
-
-
                 CustomerName = order.Customer?.FullName,
                 ProductName = order.Product?.ProductName,
-                FabricName = order.fabricType?.FabricName ?? "N/A", // ✅ Display "N/A" if Fabric is missing
-
+                FabricName = order.fabricType?.FabricName ?? "N/A",
                 FabricLength = order.FabricLength,
                 Quantity = order.Quantity,
                 TotalPrice = order.TotalPrice,
                 OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
                 AssignedTo = order.AssignedTo,
-                AssignedToName = order.Assigned?.Name, // Map the Assigned User's Name
+                AssignedToName = order.Assigned?.Name,
                 OrderStatus = order.OrderStatus,
                 PaymentStatus = order.PaymentStatus
             }).ToList();
         }
+    }
 
     }
-}
     

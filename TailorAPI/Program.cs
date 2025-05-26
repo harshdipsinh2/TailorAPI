@@ -1,20 +1,19 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using TailorAPI.Models;
-using TailorAPI.Repositories;
-using TailorAPI.Services;
-using TailorAPI.Services.Interface;
+using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
-using Microsoft.OpenApi.Models;
+using TailorAPI.Models;
+using TailorAPI.Repositories;
+using TailorAPI.Services;
+using TailorAPI.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
+// ✅ Add Controllers and JSON options (including enums as strings)
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.PropertyNamingPolicy = null;
@@ -22,14 +21,15 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-
+// ✅ Swagger + Enums inline + JWT Auth config
 builder.Services.AddEndpointsApiExplorer();
-
-// ✅ Configure Swagger with JWT Authentication
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(options =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tailor API", Version = "v1" });
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "TailorAPI", Version = "v1" });
+    options.UseInlineDefinitionsForEnums(); // ✅ Shows enums directly inside schema
+
+    // ✅ JWT Auth in Swagger UI
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
@@ -38,7 +38,8 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "Enter 'Bearer' followed by your JWT token."
     });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -49,36 +50,36 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
 
-// ✅ Configure Database
+// ✅ Configure DB
 builder.Services.AddDbContext<TailorDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// ✅ Configure CORS
+// ✅ CORS Policy
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(MyAllowSpecificOrigins, policy =>
-    {
-        policy.WithOrigins("http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          policy.WithOrigins("http://localhost:3000")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
 });
 
-// ✅ Register Services & Repositories
+// ✅ Register Services and Repositories
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IMeasurementService, MeasurementService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
-//builder.Services.AddScoped<IFabricService, FabricService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -99,9 +100,8 @@ builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<MeasurementRepository>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<MeasurementService>();
-//builder.Services.AddScoped<FabricRepository>();
 
-// ✅ JWT Authentication Configuration
+// ✅ JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
@@ -114,16 +114,13 @@ builder.Services.AddAuthentication("Bearer")
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])
-            )
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key)
         };
     });
 
-
-
+// ✅ Authorization Roles
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
@@ -131,17 +128,17 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ManagerOnly", policy => policy.RequireRole("Manager"));
 });
 
-// ✅ Build Application
+// ✅ Build App
 var app = builder.Build();
 
-// ✅ Seed Roles & Admin on Startup
+// ✅ Seed Roles and Admin User
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<TailorDbContext>();
     EnsureAdminExists(dbContext);
 }
 
-// ✅ Middleware Configuration
+// ✅ Middleware Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -150,12 +147,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(MyAllowSpecificOrigins);
-app.UseAuthentication();
 
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();
 
+// ✅ Admin Seeding Method
 static void EnsureAdminExists(TailorDbContext context)
 {
     context.Database.Migrate();
@@ -167,12 +166,14 @@ static void EnsureAdminExists(TailorDbContext context)
         context.Roles.Add(adminRole);
         context.SaveChanges();
     }
-     string HashPassword(string password)
-{
-    string salt = BCrypt.Net.BCrypt.GenerateSalt();
-    return BCrypt.Net.BCrypt.HashPassword(password, salt);
-}
-var adminUser = context.Users.FirstOrDefault(u => u.RoleID == adminRole.RoleID);
+
+    string HashPassword(string password)
+    {
+        string salt = BCrypt.Net.BCrypt.GenerateSalt();
+        return BCrypt.Net.BCrypt.HashPassword(password, salt);
+    }
+
+    var adminUser = context.Users.FirstOrDefault(u => u.RoleID == adminRole.RoleID);
     if (adminUser == null)
     {
         var newAdmin = new User

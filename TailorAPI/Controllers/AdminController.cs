@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TailorAPI.DTO.Request;
 using TailorAPI.DTO.RequestDTO;
@@ -379,14 +380,39 @@ namespace TailorAPI.Controllers
             return Ok(order);
         }
 
+        [HttpPut("{orderId}/approval")]
+
+        public async Task<IActionResult> UpdateOrderApproval(int orderId, [FromBody] OrderApprovalUpdateDTO RequestDTO)
+        {
+            try
+            {
+                var result = await _orderService.UpdateOrderApprovalAsync(orderId, RequestDTO);
+                if (!result) return NotFound();
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+        }
+
         [HttpGet("GetAll-Order")]
         [Authorize(Roles = "Admin,Manager,Tailor")]
-
         public async Task<IActionResult> GetAllOrders()
         {
-            var orders = await _orderService.GetAllOrdersAsync();
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserID" || c.Type == ClaimTypes.NameIdentifier);
+            var roleClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+
+            if (userIdClaim == null || roleClaim == null)
+                return Unauthorized("Missing claim information.");
+
+            int userId = int.Parse(userIdClaim.Value);
+            string role = roleClaim.Value;
+
+            var orders = await _orderService.GetAllOrdersAsync(userId, role);
             return Ok(orders);
         }
+
 
         //---------------------------------role -------------------------------------
         [HttpGet("GetAll-Role")]

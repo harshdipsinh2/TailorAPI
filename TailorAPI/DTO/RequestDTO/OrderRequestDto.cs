@@ -12,6 +12,7 @@ namespace TailorAPI.DTOs.Request
 
         public OrderStatus OrderStatus { get; set; }
         public PaymentStatus paymentStatus { get; set; }
+        public OrderApprovalStatus ApprovalStatus { get; set; }
 
     }
 }

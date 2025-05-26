@@ -34,4 +34,9 @@ public class OrderResponseDto
     public string? AssignedToName { get; set; } // New property for Assigned User's Name
     public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
+
+
+    public OrderApprovalStatus ApprovalStatus { get; set; }
+    public string? RejectionReason { get; set; }
 }
+

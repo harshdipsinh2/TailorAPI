@@ -17,7 +17,12 @@ namespace TailorAPI.Models
         Pending,
         Completed
     }
-
+    public enum OrderApprovalStatus
+    {
+        Pending,    // Waiting for approval
+        Approved,   // Ready for work
+        Rejected    // Tailor declined
+    }
     public class Order
     {
         [Key]
@@ -69,6 +74,12 @@ namespace TailorAPI.Models
         [Column(TypeName = "nvarchar(10)")] // ✅ Stored as string in SQL
         [JsonConverter(typeof(JsonStringEnumConverter))] // ✅ Displayed as string in JSON
         public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
+        [Column(TypeName = "nvarchar(200)")]
+        public string? RejectionReason { get; set; } // Required if rejected
+
+        [Column(TypeName = "nvarchar(20)")]
+        [JsonConverter(typeof(JsonStringEnumConverter))] // ✅ Displayed as string in JSON
+        public OrderApprovalStatus ApprovalStatus { get; set; } = OrderApprovalStatus.Pending;
 
         public bool IsDeleted { get; set; } = false;
     }
