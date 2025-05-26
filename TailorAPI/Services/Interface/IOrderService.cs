@@ -1,4 +1,5 @@
 ﻿using TailorAPI.DTO.Request;
+using TailorAPI.DTO.RequestDTO;
 using TailorAPI.DTOs.Request;
 
 public interface IOrderService
@@ -11,5 +12,6 @@ public interface IOrderService
 
     Task<decimal> GetTotalRevenueAsync();
     Task<OrderResponseDto?> GetOrderByIdAsync(int id);
-    Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync();
+    public Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync(int userId, string role);
+    Task<bool> UpdateOrderApprovalAsync(int orderId, OrderApprovalUpdateDTO RequestDTO);
 }
