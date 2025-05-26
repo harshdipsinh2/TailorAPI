@@ -254,7 +254,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("GetAllFabricTypes")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Tailor")]
 
         public async Task<IActionResult> GetAllFabricTypes()
         {
