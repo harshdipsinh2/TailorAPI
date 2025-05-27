@@ -381,13 +381,23 @@ namespace TailorAPI.Controllers
         }
 
         [HttpPut("{orderId}/approval")]
-
-        public async Task<IActionResult> UpdateOrderApproval(int orderId, [FromBody] OrderApprovalUpdateDTO RequestDTO)
+        [Authorize(Roles = "Tailor")]
+        public async Task<IActionResult> UpdateOrderApproval(int orderId, [FromBody] OrderApprovalUpdateDTO requestDto)
         {
             try
             {
-                var result = await _orderService.UpdateOrderApprovalAsync(orderId, RequestDTO);
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                {
+                    return Unauthorized("User ID claim missing");
+                }
+                        
+                int UserID = int.Parse(userIdClaim.Value);
+
+
+                var result = await _orderService.UpdateOrderApprovalAsync(orderId, UserID, requestDto);
                 if (!result) return NotFound();
+
                 return NoContent();
             }
             catch (UnauthorizedAccessException ex)
@@ -395,6 +405,7 @@ namespace TailorAPI.Controllers
                 return Unauthorized(ex.Message);
             }
         }
+    
 
         [HttpGet("GetAll-Order")]
         [Authorize(Roles = "Admin,Manager,Tailor")]
@@ -411,6 +422,23 @@ namespace TailorAPI.Controllers
 
             var orders = await _orderService.GetAllOrdersAsync(userId, role);
             return Ok(orders);
+        }
+
+        [HttpGet("rejected")]
+        [Authorize(Roles = "Admin,Manager,Tailor")]
+        public async Task<IActionResult> GetRejectedOrders()
+        {
+            var rejectedOrders = await _orderService.GetRejectedOrdersAsync();
+            return Ok(rejectedOrders);
+        }
+
+        [HttpPost("orders/{orderId}/reassign")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> ReassignRejectedOrder(int orderId, ReassignOrderDTO dto)
+        {
+            var result = await _orderService.ReassignRejectedOrderAsync(orderId, dto);
+            if (!result) return BadRequest("Order cannot be reassigned.");
+            return Ok("Order reassigned successfully.");
         }
 
 
