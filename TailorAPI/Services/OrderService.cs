@@ -166,23 +166,23 @@ namespace TailorAPI.Services
             };
         }
 
-        public async Task<bool> UpdateOrderApprovalAsync(int orderId, OrderApprovalUpdateDTO RequestDTO)
+        public async Task<bool> UpdateOrderApprovalAsync(int orderId, int userId, OrderApprovalUpdateDTO requestDto)
         {
             var order = await _orderRepository.GetOrderByIdAsync(orderId);
             if (order == null) return false;
 
-            if (order.AssignedTo != RequestDTO.UserID)
-            {
-                throw new UnauthorizedAccessException("You can only approve/reject orders assigned to you");
-            }
+            //if (order.AssignedTo != userId)
+            //{
+            //    throw new UnauthorizedAccessException("You can only approve/reject orders assigned to you");
+            //}
 
-            order.ApprovalStatus = RequestDTO.ApprovalStatus;
-            order.RejectionReason = RequestDTO.ApprovalStatus == OrderApprovalStatus.Rejected ?
-                RequestDTO.RejectionReason : null;
+            order.ApprovalStatus = requestDto.ApprovalStatus;
+            order.RejectionReason = requestDto.ApprovalStatus == OrderApprovalStatus.Rejected ?
+                requestDto.RejectionReason : null;
 
-            if (RequestDTO.ApprovalStatus == OrderApprovalStatus.Approved)
+            if (requestDto.ApprovalStatus == OrderApprovalStatus.Approved)
             {
-                order.OrderStatus = OrderStatus.Pending; 
+                order.OrderStatus = OrderStatus.Pending;
             }
 
             await _orderRepository.UpdateOrderAsync(order);
@@ -190,6 +190,7 @@ namespace TailorAPI.Services
 
             return true;
         }
+
 
 
         // ✅ Updated Order Logic with AssignedTo and CompletionDate Fix
@@ -215,60 +216,63 @@ namespace TailorAPI.Services
 
             var availableStock = totalStockIn - totalStockUsed;
 
-            if (availableStock < (decimal)request.FabricLength)
+            if (availableStock < (decimal)request.FabricLength * request.Quantity)
                 throw new Exception("Insufficient fabric stock.");
 
-            // ✅ Update Fabric Stock and Available Stock
+            // ✅ Add new fabric usage entry
             var newFabricStockEntry = new FabricStock
             {
                 FabricTypeID = fabricTypeId,
                 StockIn = 0,
-                StockUse = (decimal)request.FabricLength * (decimal)request.Quantity,
+                StockUse = (decimal)request.FabricLength * request.Quantity,
                 StockAddDate = DateTime.Now
             };
 
             _context.FabricStocks.Add(newFabricStockEntry);
-
-            fabricType.AvailableStock -= ((decimal)request.FabricLength * (decimal)request.Quantity);
+            fabricType.AvailableStock -= ((decimal)request.FabricLength * request.Quantity);
             _context.FabricTypes.Update(fabricType);
 
-            // ✅ Order Details Update
+            // ✅ Update order details
+            order.ProductID = productId;
             order.FabricTypeID = fabricTypeId;
             order.FabricLength = (decimal)request.FabricLength;
             order.Quantity = request.Quantity;
-            order.TotalPrice = ((decimal)request.FabricLength * fabricType.PricePerMeter + (decimal)product.MakingPrice)
-                           * ((decimal)request.Quantity);
-
+            order.TotalPrice = ((decimal)request.FabricLength * fabricType.PricePerMeter + product.MakingPrice) * request.Quantity;
             order.OrderStatus = request.OrderStatus;
             order.PaymentStatus = request.paymentStatus;
 
-            // ✅ Assigned User Status Management
+            // ✅ Reassignment logic
             if (order.AssignedTo != assignedTo)
             {
+                // Set previous user to available
                 var previousUser = await _context.Users.FindAsync(order.AssignedTo);
                 if (previousUser != null)
                 {
                     previousUser.UserStatus = UserStatus.Available;
                     _context.Users.Update(previousUser);
                 }
+
+                // Assign new user
                 var newAssignedUser = await _context.Users.FindAsync(assignedTo);
                 if (newAssignedUser == null || !newAssignedUser.IsVerified)
-                {
                     throw new Exception("Assigned user must be a verified tailor or manager.");
-                }
 
                 newAssignedUser.UserStatus = UserStatus.Busy;
                 _context.Users.Update(newAssignedUser);
 
                 order.AssignedTo = assignedTo;
+
+                // ✅ Reset approval status if reassigned
+                order.ApprovalStatus = OrderApprovalStatus.Pending;
+                order.RejectionReason = null;
             }
+
             await _orderRepository.UpdateOrderAsync(order);
             await _context.SaveChangesAsync();
 
             return true;
-
-
         }
+
 
         public async Task<bool> UpdateOrderStatusAsync(int orderId, OrderStatusUpdateDto request)
         {
@@ -400,7 +404,70 @@ namespace TailorAPI.Services
 
             }).ToList();
         }
-    }
+    
+    public async Task<IEnumerable<OrderResponseDto>> GetRejectedOrdersAsync()
+        {
+            var orders = await _context.Orders
+                .Include(o => o.Product)
+                .Include(o => o.fabricType)
+                .Include(o => o.Customer)
+                .Include(o => o.Assigned)
+                .Where(o => o.ApprovalStatus == OrderApprovalStatus.Rejected && !o.IsDeleted)
+                .ToListAsync();
+
+            return orders.Select(order => new OrderResponseDto
+            {
+                OrderID = order.OrderID,
+                CustomerID = order.CustomerId,
+                ProductID = order.ProductID,
+                FabricTypeID = order.FabricTypeID,
+                CustomerName = order.Customer?.FullName,
+                ProductName = order.Product?.ProductName,
+                FabricName = order.fabricType?.FabricName ?? "N/A",
+                FabricLength = order.FabricLength,
+                Quantity = order.Quantity,
+                TotalPrice = order.TotalPrice,
+                OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+                CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+                AssignedTo = order.AssignedTo,
+                AssignedToName = order.Assigned?.Name,
+                OrderStatus = order.OrderStatus,
+                PaymentStatus = order.PaymentStatus,
+                ApprovalStatus = order.ApprovalStatus,
+                RejectionReason = order.RejectionReason // ✅ So admin sees why tailor rejected it
+            });
+        }
+        public async Task<bool> ReassignRejectedOrderAsync(int orderId, ReassignOrderDTO dto)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null || order.ApprovalStatus != OrderApprovalStatus.Rejected || order.IsDeleted)
+                return false;
+
+            var previousTailor = await _context.Users.FindAsync(order.AssignedTo);
+            if (previousTailor != null)
+            {
+                previousTailor.UserStatus = UserStatus.Available;
+                _context.Users.Update(previousTailor);
+            }
+
+            var newTailor = await _context.Users.FindAsync(dto.UserID);
+            if (newTailor == null || !newTailor.IsVerified)
+                throw new Exception("New tailor must be a verified user.");
+
+            // Update order
+            order.AssignedTo = dto.UserID;
+            order.ApprovalStatus = OrderApprovalStatus.Pending;
+            order.OrderStatus = OrderStatus.Pending;
+            order.RejectionReason = null;
+
+            newTailor.UserStatus = UserStatus.Busy;
+
+            _context.Users.Update(newTailor);
+            _context.Orders.Update(order);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
 
     }
-    
+}

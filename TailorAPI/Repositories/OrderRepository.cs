@@ -1,8 +1,5 @@
-﻿using TailorAPI.Models;
-using Microsoft.EntityFrameworkCore;
-using TailorAPI.DTOs.Request;
-using TailorAPI.DTOs.Response;
-using TailorAPI.Repositories;
+﻿using Microsoft.EntityFrameworkCore;
+using TailorAPI.Models;
 
 namespace TailorAPI.Repositories
 {
@@ -25,24 +22,23 @@ namespace TailorAPI.Repositories
         public async Task<IEnumerable<Order>> GetAllOrdersAsync()
         {
             return await _context.Orders
-                .Where(o => !o.IsDeleted) // Exclude soft-deleted orders
+                .Where(o => !o.IsDeleted)
                 .Include(o => o.Customer)
                 .Include(o => o.Product)
                 .Include(o => o.fabricType)
+                .Include(o => o.Assigned)
                 .ToListAsync();
         }
 
-        public async Task<Order> GetOrderByIdAsync(int id)
+        public async Task<Order?> GetOrderByIdAsync(int id)
         {
             return await _context.Orders
-                .Where(o => !o.IsDeleted) // Exclude soft-deleted orders
                 .Include(o => o.Customer)
                 .Include(o => o.Product)
                 .Include(o => o.fabricType)
-                .FirstOrDefaultAsync(o => o.OrderID == id);
+                .Include(o => o.Assigned)
+                .FirstOrDefaultAsync(o => o.OrderID == id && !o.IsDeleted);
         }
-
-
 
         public async Task<bool> UpdateOrderAsync(Order order)
         {
@@ -50,6 +46,7 @@ namespace TailorAPI.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
+
         public async Task<decimal> GetTotalRevenueAsync()
         {
             return await _context.Orders
@@ -63,8 +60,26 @@ namespace TailorAPI.Repositories
             if (order == null) return false;
 
             order.IsDeleted = true;
+            _context.Orders.Update(order);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<IEnumerable<Order>> GetRejectedOrdersAsync()
+        {
+            return await _context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.Product)
+                .Include(o => o.fabricType)
+                .Include(o => o.Assigned)
+                .Where(o => o.ApprovalStatus == OrderApprovalStatus.Rejected && !o.IsDeleted)
+                .ToListAsync();
+        }
+
+        public async Task<Order?> GetRawOrderByIdAsync(int id)
+        {
+            // Used for cases like reassignment where minimal data is needed
+            return await _context.Orders.FindAsync(id);
         }
     }
 }

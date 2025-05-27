@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+
 using System.Text;
 using System.Text.Json.Serialization;
 using TailorAPI.Models;
@@ -11,7 +13,7 @@ using TailorAPI.Repositories;
 using TailorAPI.Services;
 using TailorAPI.Services.Interface;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);   
 
 // ✅ Add Controllers and JSON options (including enums as strings)
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -116,9 +118,13 @@ builder.Services.AddAuthentication("Bearer")
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtSettings["Issuer"],
             ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(key)
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            //NameClaimType = JwtRegisteredClaimNames.Sub, // "sub"
+            //RoleClaimType = "roles"
         };
     });
+
+
 
 // ✅ Authorization Roles
 builder.Services.AddAuthorization(options =>

@@ -13,5 +13,7 @@ public interface IOrderService
     Task<decimal> GetTotalRevenueAsync();
     Task<OrderResponseDto?> GetOrderByIdAsync(int id);
     public Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync(int userId, string role);
-    Task<bool> UpdateOrderApprovalAsync(int orderId, OrderApprovalUpdateDTO RequestDTO);
+    Task<bool> UpdateOrderApprovalAsync(int orderId, int userId, OrderApprovalUpdateDTO requestDto);
+    Task<IEnumerable<OrderResponseDto>> GetRejectedOrdersAsync();
+    Task<bool> ReassignRejectedOrderAsync(int orderId, ReassignOrderDTO dto);
 }
