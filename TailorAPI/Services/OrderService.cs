@@ -166,13 +166,11 @@ namespace TailorAPI.Services
             };
         }
 
-        // Add this new method for approval/rejection
         public async Task<bool> UpdateOrderApprovalAsync(int orderId, OrderApprovalUpdateDTO RequestDTO)
         {
             var order = await _orderRepository.GetOrderByIdAsync(orderId);
             if (order == null) return false;
 
-            // Only allow the assigned tailor to approve/reject
             if (order.AssignedTo != RequestDTO.UserID)
             {
                 throw new UnauthorizedAccessException("You can only approve/reject orders assigned to you");
@@ -184,7 +182,7 @@ namespace TailorAPI.Services
 
             if (RequestDTO.ApprovalStatus == OrderApprovalStatus.Approved)
             {
-                order.OrderStatus = OrderStatus.Pending; // Ready for work
+                order.OrderStatus = OrderStatus.Pending; 
             }
 
             await _orderRepository.UpdateOrderAsync(order);
@@ -396,7 +394,10 @@ namespace TailorAPI.Services
                 AssignedTo = order.AssignedTo,
                 AssignedToName = order.Assigned?.Name,
                 OrderStatus = order.OrderStatus,
-                PaymentStatus = order.PaymentStatus
+                PaymentStatus = order.PaymentStatus,
+                ApprovalStatus = order.ApprovalStatus,
+                RejectionReason = order.RejectionReason
+
             }).ToList();
         }
     }
