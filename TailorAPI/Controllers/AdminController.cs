@@ -349,7 +349,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("revenue")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Tailor")]
 
         public async Task<IActionResult> GetTotalRevenue()
         {

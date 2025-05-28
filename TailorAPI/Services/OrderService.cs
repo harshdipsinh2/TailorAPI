@@ -393,8 +393,9 @@ namespace TailorAPI.Services
                 FabricLength = order.FabricLength,
                 Quantity = order.Quantity,
                 TotalPrice = order.TotalPrice,
-                OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+                OrderDate = order.OrderDate.ToString("yyyy-MM-dd"),
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+
                 AssignedTo = order.AssignedTo,
                 AssignedToName = order.Assigned?.Name,
                 OrderStatus = order.OrderStatus,
@@ -405,7 +406,7 @@ namespace TailorAPI.Services
             }).ToList();
         }
     
-    public async Task<IEnumerable<OrderResponseDto>> GetRejectedOrdersAsync()
+         public async Task<IEnumerable<OrderResponseDto>> GetRejectedOrdersAsync()
         {
             var orders = await _context.Orders
                 .Include(o => o.Product)
