@@ -4,8 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-
 using System.Text;
 using System.Text.Json.Serialization;
 using TailorAPI.Models;
@@ -13,7 +11,7 @@ using TailorAPI.Repositories;
 using TailorAPI.Services;
 using TailorAPI.Services.Interface;
 
-var builder = WebApplication.CreateBuilder(args);   
+var builder = WebApplication.CreateBuilder(args);
 
 // ✅ Add Controllers and JSON options (including enums as strings)
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -89,7 +87,9 @@ builder.Services.AddScoped<IFabricCombinedService, FabricCombinedService>();
 builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IOtpVerificationService, OtpVerificationService>();
+builder.Services.AddScoped<ITwilioService, TwilioService>();
 
+builder.Services.AddScoped<TwilioRepository>();
 builder.Services.AddScoped<OtpVerificationRepository>();
 builder.Services.AddScoped<ManagerRepository>();
 builder.Services.AddScoped<FabricTypeCombinedRepository>();
@@ -118,13 +118,9 @@ builder.Services.AddAuthentication("Bearer")
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtSettings["Issuer"],
             ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            //NameClaimType = JwtRegisteredClaimNames.Sub, // "sub"
-            //RoleClaimType = "roles"
+            IssuerSigningKey = new SymmetricSecurityKey(key)
         };
     });
-
-
 
 // ✅ Authorization Roles
 builder.Services.AddAuthorization(options =>
@@ -201,3 +197,4 @@ static void EnsureAdminExists(TailorDbContext context)
         Console.WriteLine("✅ Admin user already exists.");
     }
 }
+

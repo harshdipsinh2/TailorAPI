@@ -19,6 +19,8 @@ public class TailorDbContext : DbContext
     public DbSet<FabricType> FabricTypes { get; set; }
     public DbSet<FabricStock> FabricStocks { get; set; }
     public DbSet<OtpVerification> OtpVerifications { get; set; }
+
+    public DbSet<TwilioSms> TwilioSms { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -116,7 +118,7 @@ public class TailorDbContext : DbContext
         modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
         modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
         modelBuilder.Entity<FabricType>().HasQueryFilter(f => !f.IsDeleted);
-        modelBuilder.Entity<Order>().HasQueryFilter(o => !o.IsDeleted); 
+        modelBuilder.Entity<Order>().HasQueryFilter(o => !o.IsDeleted);
 
         // ✅ Seed Roles
         modelBuilder.Entity<Role>().HasData(
@@ -126,3 +128,7 @@ public class TailorDbContext : DbContext
         );
     }
 }
+
+
+
+
