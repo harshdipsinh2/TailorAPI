@@ -138,6 +138,7 @@ namespace TailorAPI.Services
                 CompletionDate = requestDto.CompletionDate,
                 FabricTypeID = fabricTypeId,
                 AssignedTo = assignedTo,
+                AssignedAt = DateTime.UtcNow, // 🚨 Set assigned time
                 OrderStatus = Enum.Parse<OrderStatus>("Pending"),
                 PaymentStatus = Enum.Parse<PaymentStatus>("Pending"),
                 ApprovalStatus = Enum.Parse<OrderApprovalStatus>("Pending"),
@@ -261,6 +262,7 @@ namespace TailorAPI.Services
                 _context.Users.Update(newAssignedUser);
 
                 order.AssignedTo = assignedTo;
+                order.AssignedAt = DateTime.UtcNow; // ✅ Update assigned time to now
 
                 // ✅ Reset approval status if reassigned
                 order.ApprovalStatus = OrderApprovalStatus.Pending;
@@ -468,6 +470,39 @@ namespace TailorAPI.Services
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<int> RejectUnapprovedOrdersAfter24HoursAsync()
+        {
+            var cutoffTime = DateTime.UtcNow.AddMinutes(-1);  // 1 minute ago, for quick test
+
+            var ordersToReject = await _context.Orders
+                .Where(o =>
+                    o.ApprovalStatus == OrderApprovalStatus.Pending &&
+                    o.AssignedAt != null &&
+                    o.AssignedAt <= cutoffTime &&
+                    !o.IsDeleted)
+                .ToListAsync();
+
+            foreach (var order in ordersToReject)
+            {
+                order.ApprovalStatus = OrderApprovalStatus.Rejected;
+                order.RejectionReason = "Automatically rejected due to no approval/rejection within 24 hours.";
+                order.OrderStatus = OrderStatus.Pending; // Optional, depends on your flow
+
+                // Free assigned user
+                var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
+                if (assignedUser != null)
+                {
+                    assignedUser.UserStatus = UserStatus.Available;
+                    _context.Users.Update(assignedUser);
+                }
+            }
+
+            _context.Orders.UpdateRange(ordersToReject);
+            await _context.SaveChangesAsync();
+
+            return ordersToReject.Count;
         }
 
     }

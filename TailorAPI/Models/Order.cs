@@ -59,6 +59,9 @@ namespace TailorAPI.Models
         [ForeignKey("AssignedTo")]
         public User Assigned { get; set; }
 
+        public DateTime? AssignedAt { get; set; }
+
+
         [Required]
         [Column(TypeName = "date")]
         public DateTime OrderDate { get; set; } = DateTime.Now.Date;

@@ -81,5 +81,23 @@ namespace TailorAPI.Repositories
             // Used for cases like reassignment where minimal data is needed
             return await _context.Orders.FindAsync(id);
         }
+
+        public async Task<List<Order>> GetOrdersToRejectAsync(DateTime cutoffTime)
+        {
+            return await _context.Orders
+                .Where(o =>
+                    o.ApprovalStatus == OrderApprovalStatus.Pending &&
+                    o.AssignedAt != null &&
+                    o.AssignedAt <= cutoffTime &&
+                    !o.IsDeleted)
+                .ToListAsync();
+        }
+
+        public async Task UpdateOrdersAsync(List<Order> orders)
+        {
+            _context.Orders.UpdateRange(orders);
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

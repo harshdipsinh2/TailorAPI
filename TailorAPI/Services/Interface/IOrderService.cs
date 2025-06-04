@@ -16,4 +16,5 @@ public interface IOrderService
     Task<bool> UpdateOrderApprovalAsync(int orderId, int userId, OrderApprovalUpdateDTO requestDto);
     Task<IEnumerable<OrderResponseDto>> GetRejectedOrdersAsync();
     Task<bool> ReassignRejectedOrderAsync(int orderId, ReassignOrderDTO dto);
+    Task<int> RejectUnapprovedOrdersAfter24HoursAsync();
 }
