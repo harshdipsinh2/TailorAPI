@@ -45,22 +45,15 @@ namespace TailorAPI.Controllers
 
         //-------------------Dashboard end points ---------------------
 
-        [HttpPost("auto-reject-test")]
+        //[HttpPost("auto-reject-test")]
 
-        public async Task<IActionResult> AutoRejectTest()
-        {
-            var result = await _orderService.RejectUnapprovedOrdersAfter24HoursAsync();
-            return Ok(new { message = $"{result} orders auto-rejected." });
-        }
+        //public async Task<IActionResult> AutoRejectTest()
+        //{
+        //    var result = await _orderService.RejectUnapprovedOrdersAfter24HoursAsync();
+        //    return Ok(new { message = $"{result} orders auto-rejected." });
+        //}
 
-
-
-
-
-
-
-
-
+  
         [HttpGet("summary")]
 
         [Authorize(Roles = "Admin,Manager,Tailor")]
@@ -355,7 +348,7 @@ namespace TailorAPI.Controllers
             return Ok("Order updated successfully.");
         }
         [HttpPut("update-status/{orderId}")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Tailor")]
 
         public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] OrderStatusUpdateDto statusDto)
         {

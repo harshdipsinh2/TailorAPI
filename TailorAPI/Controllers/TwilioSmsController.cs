@@ -1,5 +1,5 @@
-﻿// File: Controllers/TwilioSmsController.cs
-
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.Services;
@@ -23,11 +23,12 @@ namespace TailorAPI.Controllers
         // File: Controllers/TwilioSmsController.cs
 
         [HttpPost("send")]
+        [Authorize(Roles = "Admin.Manager")]
         public async Task<IActionResult> SendSms([FromQuery] string phoneNumber, [FromBody] TwilioRequestDTO dto)
         {
             string messageBody = dto.SmsType switch
             {
-                SmsType.PreCompletion => $"[Order {dto.OrderID}] Reminder: Your order is almost ready! We'll notify you once it's completed. Thank you for your patience!",
+                SmsType.PreCompletion => $"[Order {dto.OrderID}] Reminder: Your order is  ready before the completion date , please visit us or contact for delivery arrangements",
                 SmsType.Completion => $"[Order {dto.OrderID}] Good News: Your order is ready for pickup/delivery! Please visit us or contact for delivery arrangements.",
                 SmsType.Delayed => $"[Order {dto.OrderID}] Update: We're experiencing slight delays with your order. We appreciate your patience and will update you soon.",
                 _ => $"[Order {dto.OrderID}] Notification - Type: {dto.SmsType}"
@@ -57,7 +58,7 @@ namespace TailorAPI.Controllers
 
             return BadRequest(new { status = "failed", result = sendResult });
         }
-
+            
 
 
     }

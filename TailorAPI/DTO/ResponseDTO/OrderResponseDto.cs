@@ -11,6 +11,7 @@ public class OrderResponseDto
     //public int FabricID { get; set; }     // ✅ Added ID for reference
     public int FabricTypeID { get; set; }
 
+    public DateTime? AssignedAt { get; set; }
 
     public string? CustomerName { get; set; } // Nullable in case data is missing
     public string? ProductName { get; set; }

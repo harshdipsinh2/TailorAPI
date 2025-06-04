@@ -399,6 +399,7 @@ namespace TailorAPI.Services
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
 
                 AssignedTo = order.AssignedTo,
+                AssignedAt = order.AssignedAt,
                 AssignedToName = order.Assigned?.Name,
                 OrderStatus = order.OrderStatus,
                 PaymentStatus = order.PaymentStatus,
@@ -474,7 +475,7 @@ namespace TailorAPI.Services
 
         public async Task<int> RejectUnapprovedOrdersAfter24HoursAsync()
         {
-            var cutoffTime = DateTime.UtcNow.AddMinutes(-1);  // 1 minute ago, for quick test
+            var cutoffTime = DateTime.UtcNow.AddHours(-24);  // 1 minute ago, for quick test
 
             var ordersToReject = await _context.Orders
                 .Where(o =>
