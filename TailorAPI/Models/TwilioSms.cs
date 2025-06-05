@@ -26,6 +26,8 @@ namespace TailorAPI.Models
 
         public DateTime SentAt { get; set; } = DateTime.UtcNow;
 
+        [EnumDataType(typeof(SmsType))]
+        [Column(TypeName = "nvarchar(24)")]
         public SmsType SmsType { get; set; } = SmsType.Completion;
 
 

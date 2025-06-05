@@ -67,7 +67,13 @@ public class TailorDbContext : DbContext
                     .HasMaxLength(20);
             }
 
+            {
+                modelBuilder.Entity<TwilioSms>()
+                    .Property(e => e.SmsType)
+                    .HasConversion<string>();
 
+                base.OnModelCreating(modelBuilder);
+            }
 
         });
 
