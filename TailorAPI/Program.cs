@@ -89,6 +89,8 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IOtpVerificationService, OtpVerificationService>();
 builder.Services.AddScoped<ITwilioService, TwilioService>();
 builder.Services.AddHostedService<OrderAutoRejectService>();
+builder.Services.AddScoped<TwilioService>();
+
 
 
 builder.Services.AddScoped<TwilioRepository>();

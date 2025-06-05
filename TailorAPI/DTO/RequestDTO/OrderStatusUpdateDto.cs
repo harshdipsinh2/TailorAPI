@@ -6,5 +6,7 @@ namespace TailorAPI.DTO.Request
     {
         public OrderStatus OrderStatus { get; set; }
         public PaymentStatus PaymentStatus { get; set; }
+        public DateTime? CompletionDate { get; set; }
+
     }
 }

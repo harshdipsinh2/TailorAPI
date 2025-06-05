@@ -10,7 +10,7 @@ using Stripe;
 using Stripe.Checkout;
 using TailorAPI.DTO.Request;
 using TailorAPI.DTO.RequestDTO;
-
+using TailorAPI.Services;
 
 
 namespace TailorAPI.Services
@@ -19,11 +19,13 @@ namespace TailorAPI.Services
     {
         private readonly OrderRepository _orderRepository;
         private readonly TailorDbContext _context;
+        private readonly TwilioService _twilioService;
 
-        public OrderService(OrderRepository orderRepository, TailorDbContext context)
+        public OrderService(OrderRepository orderRepository, TailorDbContext context, TwilioService twilioService)
         {
             _orderRepository = orderRepository;
             _context = context;
+            _twilioService = twilioService;
         }
 
 
@@ -281,9 +283,19 @@ namespace TailorAPI.Services
             var order = await _orderRepository.GetOrderByIdAsync(orderId);
             if (order == null) return false;
 
+            // 🟡 Check if completion date is changing
+            var oldCompletionDate = order.CompletionDate;
+            var newCompletionDate = request.CompletionDate;
+
             // ✅ Update status fields
             order.OrderStatus = request.OrderStatus;
             order.PaymentStatus = request.PaymentStatus;
+
+            // ✅ Update completion date if provided
+            if (newCompletionDate.HasValue)
+            {
+                order.CompletionDate = newCompletionDate.Value;
+            }
 
             // ✅ Handle Assigned User Status if order completed
             if (order.OrderStatus == OrderStatus.Completed && order.PaymentStatus == PaymentStatus.Completed)
@@ -299,8 +311,62 @@ namespace TailorAPI.Services
             await _orderRepository.UpdateOrderAsync(order);
             await _context.SaveChangesAsync();
 
+            // ✅ After saving, decide and send SMS + WhatsApp
+            if (newCompletionDate.HasValue)
+            {
+                SmsType smsType;
+
+                if (oldCompletionDate == null)
+                {
+                    smsType = SmsType.Completion;
+                }
+                else if (newCompletionDate > oldCompletionDate)
+                {
+                    smsType = SmsType.Delayed;
+                }
+                else if (newCompletionDate < oldCompletionDate)
+                {
+                    smsType = SmsType.PreCompletion;
+                }
+                else
+                {
+                    // If date is the same → schedule 1-day-before notification
+                    var delay = newCompletionDate.Value.AddDays(-1) - DateTime.Now;
+                    if (delay.TotalMilliseconds > 0)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            await Task.Delay(delay);
+                            await _twilioService.SendWhatsappTemplateMessage(order.Customer.PhoneNumber, SmsType.Completion, order.OrderID);
+                            await _twilioService.SendSmsAsync(order.Customer.PhoneNumber, $"Your order #{order.OrderID} will be ready tomorrow!");
+                        });
+                    }
+
+                    return true;
+                }
+
+                // Get customer phone
+                var customer = await _context.Customers.FindAsync(order.CustomerId);
+                if (customer != null && !string.IsNullOrEmpty(customer.PhoneNumber))
+                {
+                    await _twilioService.SendWhatsappTemplateMessage(customer.PhoneNumber, smsType, order.OrderID);
+
+                    // Simple SMS content (or make dynamic based on type)
+                    string smsMessage = smsType switch
+                    {
+                        SmsType.Delayed => $"Dear {customer.FullName}, We're experiencing slight delays with your order. New delivery date: {newCompletionDate:yyyy-MM-dd}.",
+                        SmsType.PreCompletion => $"Good news, {customer.FullName}!  Your order is  ready before the completion date , please visit us or contact for delivery arrangements . New EarlierDate: {newCompletionDate:dd-MM-yyyy}",
+                        SmsType.Completion => $"Reminder: Dear {customer.FullName}, your order will be ready tomorrow. Please visit us or contact for delivery arrangements.",
+                        _ => "Order update."
+                    };
+
+                    await _twilioService.SendSmsAsync(customer.PhoneNumber, smsMessage);
+                }
+            }
+
             return true;
         }
+
         public async Task<decimal> GetTotalRevenueAsync()
         {
             return await _orderRepository.GetTotalRevenueAsync();

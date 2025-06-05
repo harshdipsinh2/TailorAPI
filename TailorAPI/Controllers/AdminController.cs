@@ -347,7 +347,7 @@ namespace TailorAPI.Controllers
 
             return Ok("Order updated successfully.");
         }
-        [HttpPut("update-status/{orderId}")]
+        [HttpPut("UpdateOrderStatus/{orderId}")]
         [Authorize(Roles = "Admin,Manager,Tailor")]
 
         public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] OrderStatusUpdateDto statusDto)
