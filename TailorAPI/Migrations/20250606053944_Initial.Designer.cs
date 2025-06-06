@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    [Migration("20250605052910_Twiliostringupdate")]
-    partial class Twiliostringupdate
+    [Migration("20250606053944_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -337,19 +337,25 @@ namespace TailorAPI.Migrations
                         new
                         {
                             RoleID = 1,
-                            RoleName = "Admin",
+                            RoleName = "SuperAdmin",
                             RoleType = 0
                         },
                         new
                         {
                             RoleID = 2,
-                            RoleName = "Tailor",
+                            RoleName = "Admin",
                             RoleType = 0
                         },
                         new
                         {
                             RoleID = 3,
                             RoleName = "Manager",
+                            RoleType = 0
+                        },
+                        new
+                        {
+                            RoleID = 4,
+                            RoleName = "Tailor",
                             RoleType = 0
                         });
                 });

@@ -334,19 +334,25 @@ namespace TailorAPI.Migrations
                         new
                         {
                             RoleID = 1,
-                            RoleName = "Admin",
+                            RoleName = "SuperAdmin",
                             RoleType = 0
                         },
                         new
                         {
                             RoleID = 2,
-                            RoleName = "Tailor",
+                            RoleName = "Admin",
                             RoleType = 0
                         },
                         new
                         {
                             RoleID = 3,
                             RoleName = "Manager",
+                            RoleType = 0
+                        },
+                        new
+                        {
+                            RoleID = 4,
+                            RoleName = "Tailor",
                             RoleType = 0
                         });
                 });

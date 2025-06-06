@@ -22,16 +22,14 @@ namespace TailorAPI.Controllers
         private readonly IDashboardService _dashboardService;
         private readonly IRoleService _roleService;
 
-
-        public AdminController(IAdminService adminService, 
-                               ICustomerService customerService, 
+        public AdminController(IAdminService adminService,
+                               ICustomerService customerService,
                                IMeasurementService measurementService,
-                               IProductService productService, 
+                               IProductService productService,
                                IFabricCombinedService fabricCombinedService,
                                IOrderService orderService,
                                IDashboardService dashboardService,
                                IRoleService roleService)
-
         {
             _dashboardService = dashboardService;
             _adminService = adminService;
@@ -45,19 +43,8 @@ namespace TailorAPI.Controllers
 
         //-------------------Dashboard end points ---------------------
 
-        //[HttpPost("auto-reject-test")]
-
-        //public async Task<IActionResult> AutoRejectTest()
-        //{
-        //    var result = await _orderService.RejectUnapprovedOrdersAfter24HoursAsync();
-        //    return Ok(new { message = $"{result} orders auto-rejected." });
-        //}
-
-  
         [HttpGet("summary")]
-
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetDashboardSummary()
         {
             var summary = await _dashboardService.GetDashboardSummaryAsync();
@@ -66,22 +53,16 @@ namespace TailorAPI.Controllers
 
         // ----------- Customer Endpoints -----------
 
-
-        /// Get all customers. Available to Admin, Manager, 
         [HttpGet("GetAllCustomers")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<ActionResult<List<CustomerDTO>>> GetAllCustomers()
         {
             var customers = await _customerService.GetAllCustomersAsync();
             return Ok(customers);
         }
 
-        /// Get customer details by ID. Available to Admin and Manager only.
         [HttpGet("GetCustomer")]
-        [Authorize(Roles = "Admin,Manager,")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<ActionResult<CustomerDTO>> GetCustomerById([FromQuery] int customerId)
         {
             var customer = await _customerService.GetCustomerByIdAsync(customerId);
@@ -89,11 +70,8 @@ namespace TailorAPI.Controllers
             return Ok(customer);
         }
 
-        /// Add a new customer. Available to Admin and Manager only.
         [HttpPost("AddCustomer")]
-        [Authorize(Roles = "Admin,Manager")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<ActionResult<CustomerDTO>> PostCustomer([FromBody] CustomerRequestDTO customerDto)
         {
             if (customerDto == null)
@@ -103,11 +81,8 @@ namespace TailorAPI.Controllers
             return CreatedAtAction(nameof(GetCustomerById), new { customerId = createdCustomer.FullName }, createdCustomer);
         }
 
-        /// Update an existing customer. Available to Admin and Manager only.
         [HttpPut("EditCustomer")]
-        [Authorize(Roles = "Admin,Manager")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> UpdateCustomer([FromQuery] int customerId, [FromBody] CustomerRequestDTO customerDto)
         {
             var updatedCustomer = await _customerService.UpdateCustomerAsync(customerId, customerDto);
@@ -115,11 +90,8 @@ namespace TailorAPI.Controllers
             return Ok(updatedCustomer);
         }
 
-        /// Soft delete a customer. Available to Admin and Manager only.
         [HttpDelete("DeleteCustomer")]
-        [Authorize(Roles = "Admin,Manager")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> SoftDeleteCustomer([FromQuery] int customerId)
         {
             var result = await _customerService.SoftDeleteCustomerAsync(customerId);
@@ -129,10 +101,8 @@ namespace TailorAPI.Controllers
 
         // ----------- Measurement Endpoints -----------
 
-        /// Add a measurement for a customer. Available to Admin and Manager only.
         [HttpPost("AddMeasurement")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> AddMeasurement([FromQuery] int customerId, [FromBody] MeasurementRequestDTO measurementDto)
         {
             try
@@ -146,11 +116,8 @@ namespace TailorAPI.Controllers
             }
         }
 
-        /// Get measurement details by customer ID. Available to Admin and Manager only.
         [HttpGet("GetMeasurement")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetMeasurementByCustomerID([FromQuery] int customerId)
         {
             var measurement = await _measurementService.GetMeasurementByCustomerIDAsync(customerId);
@@ -158,10 +125,8 @@ namespace TailorAPI.Controllers
             return Ok(measurement);
         }
 
-        /// Soft delete a measurement. Available to Admin and Manager only.
         [HttpDelete("DeleteMeasurement")]
-        [Authorize(Roles = "Admin,Manager")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> SoftDeleteMeasurement([FromQuery] int measurementId)
         {
             var result = await _measurementService.SoftDeleteMeasurementAsync(measurementId);
@@ -170,11 +135,8 @@ namespace TailorAPI.Controllers
             return NoContent();
         }
 
-        /// Get all measurements. Available to Admin and Manager only.
         [HttpGet("GetAllMeasurements")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetAllMeasurements()
         {
             var measurements = await _measurementService.GetAllMeasurementsAsync();
@@ -182,26 +144,20 @@ namespace TailorAPI.Controllers
                 return NotFound("No measurements found.");
 
             return Ok(measurements);
-
         }
 
         // ----------- Product Endpoints -----------
 
-        /// Add a new product. Available to Admin and Manager only.
         [HttpPost("AddProduct")]
-        [Authorize(Roles = "Admin,Manager")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> AddProduct([FromBody] ProductRequestDTO productDto)
         {
             var result = await _productService.AddProduct(productDto);
             return Ok(result);
         }
 
-        /// Update an existing product by ID. Available to Admin and Manager only.
         [HttpPut("UpdateProduct/{id}")]
-        [Authorize(Roles = "Admin,Manager")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductRequestDTO productDto)
         {
             var result = await _productService.UpdateProduct(id, productDto);
@@ -209,10 +165,8 @@ namespace TailorAPI.Controllers
             return Ok(result);
         }
 
-        /// Delete a product by ID. Available to Admin and Manager only.
         [HttpDelete("DeleteProduct/{id}")]
-        [Authorize(Roles = "Admin,Manager")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var success = await _productService.DeleteProduct(id);
@@ -220,11 +174,8 @@ namespace TailorAPI.Controllers
             return NoContent();
         }
 
-        /// Get product details by ID. Available to Admin, Manager, and Tailor.
         [HttpGet("GetProduct/{id}")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetProductById(int id)
         {
             var result = await _productService.GetProductById(id);
@@ -232,11 +183,8 @@ namespace TailorAPI.Controllers
             return Ok(result);
         }
 
-        /// Get all products. Available to Admin, Manager, and Tailor.
         [HttpGet("GetAllProducts")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetAllProducts()
         {
             var result = await _productService.GetAllProducts();
@@ -246,9 +194,7 @@ namespace TailorAPI.Controllers
         //-------------------Fabric Endpoints ----------------------------------
 
         [HttpPost("AddFabricType")]
-        [Authorize(Roles = "Admin,Manager")]
-
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> AddFabricType([FromBody] FabricTypeRequestDTO requestDTO)
         {
             var result = await _fabricCombinedService.AddFabricTypeAsync(requestDTO);
@@ -256,8 +202,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpPut("UpdateFabricPrice")]
-        [Authorize(Roles = "Admin,Manager")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> UpdateFabricPrice(int id, decimal newPrice)
         {
             var result = await _fabricCombinedService.UpdateFabricTypePriceAsync(id, newPrice);
@@ -265,8 +210,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("GetAllFabricTypes")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetAllFabricTypes()
         {
             var result = await _fabricCombinedService.GetAllFabricTypesAsync();
@@ -274,8 +218,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("GetFabricTypeById")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetFabricTypeById(int id)
         {
             var result = await _fabricCombinedService.GetFabricTypeByIdAsync(id);
@@ -283,8 +226,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpDelete("SoftDeleteFabricType")]
-        [Authorize(Roles = "Admin,Manager")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> SoftDeleteFabricType(int id)
         {
             var result = await _fabricCombinedService.SoftDeleteFabricTypeAsync(id);
@@ -294,8 +236,7 @@ namespace TailorAPI.Controllers
         //---------------------------------------------------------------------------------------
         // -----------------------------FabricStock Endpoints
         [HttpPost("AddFabricStock")]
-        [Authorize(Roles = "Admin,Manager")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> AddFabricStock([FromBody] FabricStockRequestDTO requestDTO)
         {
             var result = await _fabricCombinedService.AddFabricStockAsync(requestDTO);
@@ -303,8 +244,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("GetAllFabricStocks")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetAllFabricStocks()
         {
             var result = await _fabricCombinedService.GetAllFabricStocksAsync();
@@ -312,8 +252,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("GetFabricStockById")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetFabricStockById(int id)
         {
             var result = await _fabricCombinedService.GetFabricStockByIdAsync(id);
@@ -323,8 +262,7 @@ namespace TailorAPI.Controllers
         //---------------------------------order endpoints ---------------------------------------
 
         [HttpPost("Create-Order")]
-        [Authorize(Roles = "Admin,Manager")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> CreateOrder(int customerId, int productId, int fabricTypeId, int assignedTo, [FromBody] OrderRequestDto request)
         {
             try
@@ -337,9 +275,9 @@ namespace TailorAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        [HttpPut("Update-Order/{id}")]
-        [Authorize(Roles = "Admin,Manager")]
 
+        [HttpPut("Update-Order/{id}")]
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> UpdateOrder(int id, int productId, int fabricTypeId, int assignedTo, [FromBody] OrderRequestDto request)
         {
             var result = await _orderService.UpdateOrderAsync(id, productId, fabricTypeId, assignedTo, request);
@@ -347,9 +285,9 @@ namespace TailorAPI.Controllers
 
             return Ok("Order updated successfully.");
         }
-        [HttpPut("UpdateOrderStatus/{orderId}")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
 
+        [HttpPut("UpdateOrderStatus/{orderId}")]
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] OrderStatusUpdateDto statusDto)
         {
             var result = await _orderService.UpdateOrderStatusAsync(orderId, statusDto);
@@ -360,18 +298,15 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("revenue")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetTotalRevenue()
         {
             var revenue = await _orderService.GetTotalRevenueAsync();
             return Ok(revenue);
         }
 
-
         [HttpDelete("Delete-Order/{id}")]
-        [Authorize(Roles = "Admin,Manager")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
             var result = await _orderService.SoftDeleteOrderAsync(id);
@@ -381,8 +316,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("Get-Order/{id}")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
-
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetOrderById(int id)
         {
             var order = await _orderService.GetOrderByIdAsync(id);
@@ -392,7 +326,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpPut("{orderId}/approval")]
-        [Authorize(Roles = "Tailor")]
+        [Authorize(Roles = "SuperAdmin,Tailor")]
         public async Task<IActionResult> UpdateOrderApproval(int orderId, [FromBody] OrderApprovalUpdateDTO requestDto)
         {
             try
@@ -402,9 +336,8 @@ namespace TailorAPI.Controllers
                 {
                     return Unauthorized("User ID claim missing");
                 }
-                        
-                int UserID = int.Parse(userIdClaim.Value);
 
+                int UserID = int.Parse(userIdClaim.Value);
 
                 var result = await _orderService.UpdateOrderApprovalAsync(orderId, UserID, requestDto);
                 if (!result) return NotFound();
@@ -416,10 +349,9 @@ namespace TailorAPI.Controllers
                 return Unauthorized(ex.Message);
             }
         }
-    
 
         [HttpGet("GetAll-Order")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetAllOrders()
         {
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserID" || c.Type == ClaimTypes.NameIdentifier);
@@ -436,7 +368,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("rejected")]
-        [Authorize(Roles = "Admin,Manager,Tailor")]
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetRejectedOrders()
         {
             var rejectedOrders = await _orderService.GetRejectedOrdersAsync();
@@ -444,7 +376,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpPost("orders/{orderId}/reassign")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> ReassignRejectedOrder(int orderId, ReassignOrderDTO dto)
         {
             var result = await _orderService.ReassignRejectedOrderAsync(orderId, dto);
@@ -452,11 +384,9 @@ namespace TailorAPI.Controllers
             return Ok("Order reassigned successfully.");
         }
 
-
         //---------------------------------role -------------------------------------
         [HttpGet("GetAll-Role")]
-        [Authorize(Roles = "Admin")]
-
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> GetAllRoles()
         {
             var roles = await _roleService.GetAllRolesAsync();
@@ -464,8 +394,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("GetById-Role/{id}")]
-        [Authorize(Roles = "Admin")]
-
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> GetRoleById(int id)
         {
             var role = await _roleService.GetRoleByIdAsync(id);
@@ -474,8 +403,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpPut("Update-Role{id}")]
-        [Authorize(Roles = "Admin")]
-
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> UpdateRole(int id, [FromBody] string newRoleName)
         {
             var result = await _roleService.UpdateRoleAsync(id, newRoleName);
@@ -484,8 +412,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpDelete("Delete-Role{id}")]
-        [Authorize(Roles = "Admin")]
-
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> DeleteRole(int id)
         {
             var result = await _roleService.DeleteRoleAsync(id);

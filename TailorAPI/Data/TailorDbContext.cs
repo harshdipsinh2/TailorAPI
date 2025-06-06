@@ -56,6 +56,26 @@ public class TailorDbContext : DbContext
     .HasColumnType("decimal(18,2)");
 
 
+
+
+
+/////new added if not work 
+
+
+            modelBuilder.Entity<FabricStock>()
+    .Property(f => f.StockIn)
+    .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<FabricStock>()
+                .Property(f => f.StockUse)
+                .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<FabricType>()
+                .Property(f => f.AvailableStock)
+                .HasColumnType("decimal(18,2)");
+
+
+            ///// remove upeer one 
+
+
             {
                 modelBuilder.Entity<Product>()
                     .Property(p => p.ProductType)
@@ -128,9 +148,13 @@ public class TailorDbContext : DbContext
 
         // ✅ Seed Roles
         modelBuilder.Entity<Role>().HasData(
-            new Role { RoleID = 1, RoleName = "Admin" },
-            new Role { RoleID = 2, RoleName = "Tailor" },
-            new Role { RoleID = 3, RoleName = "Manager" }
+
+            new Role { RoleID = 1, RoleName = "SuperAdmin" },
+            new Role { RoleID = 2, RoleName = "Admin" },
+            new Role { RoleID = 3, RoleName = "Manager" },
+            new Role { RoleID = 4, RoleName = "Tailor" }
+
+
         );
     }
 }

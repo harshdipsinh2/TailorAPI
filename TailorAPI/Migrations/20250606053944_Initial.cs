@@ -177,10 +177,13 @@ namespace TailorAPI.Migrations
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     AssignedTo = table.Column<int>(type: "int", nullable: false),
+                    AssignedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     OrderDate = table.Column<DateTime>(type: "date", nullable: false),
                     CompletionDate = table.Column<DateTime>(type: "date", nullable: false),
                     OrderStatus = table.Column<string>(type: "nvarchar(10)", nullable: false),
                     PaymentStatus = table.Column<string>(type: "nvarchar(10)", nullable: false),
+                    RejectionReason = table.Column<string>(type: "nvarchar(200)", nullable: true),
+                    ApprovalStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -233,14 +236,37 @@ namespace TailorAPI.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "TwilioSms",
+                columns: table => new
+                {
+                    TwilioSmsID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderID = table.Column<int>(type: "int", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SentAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SmsType = table.Column<string>(type: "nvarchar(24)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TwilioSms", x => x.TwilioSmsID);
+                    table.ForeignKey(
+                        name: "FK_TwilioSms_Orders_OrderID",
+                        column: x => x.OrderID,
+                        principalTable: "Orders",
+                        principalColumn: "OrderID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Roles",
                 columns: new[] { "RoleID", "RoleName", "RoleType" },
                 values: new object[,]
                 {
-                    { 1, "Admin", 0 },
-                    { 2, "Tailor", 0 },
-                    { 3, "Manager", 0 }
+                    { 1, "SuperAdmin", 0 },
+                    { 2, "Admin", 0 },
+                    { 3, "Manager", 0 },
+                    { 4, "Tailor", 0 }
                 });
 
             migrationBuilder.CreateIndex(
@@ -280,6 +306,11 @@ namespace TailorAPI.Migrations
                 column: "UserID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TwilioSms_OrderID",
+                table: "TwilioSms",
+                column: "OrderID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_RoleID",
                 table: "Users",
                 column: "RoleID");
@@ -295,10 +326,13 @@ namespace TailorAPI.Migrations
                 name: "Measurements");
 
             migrationBuilder.DropTable(
-                name: "Orders");
+                name: "OtpVerifications");
 
             migrationBuilder.DropTable(
-                name: "OtpVerifications");
+                name: "TwilioSms");
+
+            migrationBuilder.DropTable(
+                name: "Orders");
 
             migrationBuilder.DropTable(
                 name: "Customers");

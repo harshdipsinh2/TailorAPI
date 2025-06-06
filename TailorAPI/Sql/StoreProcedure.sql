@@ -1,18 +1,15 @@
-﻿
--- Create the stored procedure
-CREATE PROCEDURE [dbo].[sp_GetTotalCountss]
+﻿CREATE PROCEDURE sp_GetTotalCounts123
+
 AS
 BEGIN
-    -- Error handling (recommended for stability)
     SET NOCOUNT ON;
 
-    -- Data retrieval logic
     SELECT 
         (SELECT COUNT(*) FROM Customers) AS TotalCustomers,
         (SELECT COUNT(*) FROM Orders) AS TotalOrders,
-        (SELECT COUNT(*) FROM Users) AS TotalUsers,
-        (SELECT COUNT(*) FROM Products) AS TotalProductsl,
-        (SELECT COUNT(*) FROM FabricTypes) AS TotalFabrics;
-
+        (SELECT COUNT(*) FROM Orders WHERE OrderStatus = 'Completed') AS CompletedOrders,
+        (SELECT COUNT(*) FROM Orders WHERE OrderStatus = 'Pending') AS PendingOrders,
+        (SELECT COUNT(*) FROM Users) AS TotalEmployees,
+        (SELECT COUNT(*) FROM Products) AS TotalProducts,
+        (SELECT COUNT(*) FROM FabricTypes) AS TotalFabrics -- <-- Add this line
 END
-GO

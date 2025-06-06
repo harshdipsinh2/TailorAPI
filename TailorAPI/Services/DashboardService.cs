@@ -15,7 +15,7 @@ public class DashboardService : IDashboardService
     public async Task<DashboardDTO> GetDashboardSummaryAsync()
     {
         var result = await _context.Database.SqlQueryRaw<DashboardDTO>(
-            "EXEC sp_GetTotalCounts").ToListAsync();
+            "EXEC sp_GetTotalCounts123").ToListAsync();
 
         return result.FirstOrDefault() ?? new DashboardDTO();
     }

@@ -129,10 +129,12 @@ builder.Services.AddAuthentication("Bearer")
 // ✅ Authorization Roles
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdmin"));
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.AddPolicy("TailorOnly", policy => policy.RequireRole("Tailor"));
     options.AddPolicy("ManagerOnly", policy => policy.RequireRole("Manager"));
 });
+
 
 // ✅ Build App
 var app = builder.Build();
@@ -141,7 +143,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<TailorDbContext>();
-    EnsureAdminExists(dbContext);
+    EnsureSuperAdminExists(dbContext);
 }
 
 // ✅ Middleware Pipeline
@@ -161,15 +163,16 @@ app.MapControllers();
 app.Run();
 
 // ✅ Admin Seeding Method
-static void EnsureAdminExists(TailorDbContext context)
+static void EnsureSuperAdminExists(TailorDbContext context)
 {
     context.Database.Migrate();
 
-    var adminRole = context.Roles.FirstOrDefault(r => r.RoleName == "Admin");
-    if (adminRole == null)
+    // Look for the SuperAdmin role (ID 1, seeded in OnModelCreating)
+    var superAdminRole = context.Roles.FirstOrDefault(r => r.RoleName == "SuperAdmin");
+    if (superAdminRole == null)
     {
-        adminRole = new Role { RoleName = "Admin" };
-        context.Roles.Add(adminRole);
+        superAdminRole = new Role { RoleID = 1, RoleName = "SuperAdmin" };
+        context.Roles.Add(superAdminRole);
         context.SaveChanges();
     }
 
@@ -179,26 +182,27 @@ static void EnsureAdminExists(TailorDbContext context)
         return BCrypt.Net.BCrypt.HashPassword(password, salt);
     }
 
-    var adminUser = context.Users.FirstOrDefault(u => u.RoleID == adminRole.RoleID);
-    if (adminUser == null)
+    var superAdminUser = context.Users.FirstOrDefault(u => u.RoleID == superAdminRole.RoleID);
+    if (superAdminUser == null)
     {
-        var newAdmin = new User
+        var newSuperAdmin = new User
         {
-            Name = "Admin",
-            Email = "adminshop@ptct.net",
-            MobileNo = "989898989",
-            PasswordHash = HashPassword("Admin@1234"),
-            RoleID = adminRole.RoleID,
+            Name = "SuperAdmin",
+            Email = "superadmin5358@punkproof.com",
+            MobileNo = "+918128303618",
+            PasswordHash = HashPassword("SuperAdmin@1234"),
+            RoleID = superAdminRole.RoleID,
             Address = "Shop"
         };
 
-        context.Users.Add(newAdmin);
+        context.Users.Add(newSuperAdmin);
         context.SaveChanges();
-        Console.WriteLine("✅ Admin user created.");
+        Console.WriteLine("✅ SuperAdmin user created.");
     }
     else
     {
-        Console.WriteLine("✅ Admin user already exists.");
+        Console.WriteLine("✅ SuperAdmin user already exists.");
     }
 }
+
 

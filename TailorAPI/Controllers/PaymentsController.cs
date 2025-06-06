@@ -11,7 +11,7 @@ namespace TailorAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "SuperAdmin,Admin,Manager")]
     public class PaymentsController : ControllerBase
     {
         private readonly IConfiguration _config;
