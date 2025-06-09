@@ -109,8 +109,8 @@ namespace TailorAPI.Services
 
             var availableStock = totalStockIn - totalStockUsed;
 
-            if (availableStock < (decimal)requestDto.FabricLength * requestDto.Quantity)
-                throw new Exception("Insufficient fabric stock.");
+            //if (availableStock < (decimal)requestDto.FabricLength * requestDto.Quantity)
+            //    throw new Exception("Insufficient fabric stock.");
 
             // 🚨 Create new fabric stock entry
             var newFabricStockEntry = new FabricStock
@@ -219,8 +219,8 @@ namespace TailorAPI.Services
 
             var availableStock = totalStockIn - totalStockUsed;
 
-            if (availableStock < (decimal)request.FabricLength * request.Quantity)
-                throw new Exception("Insufficient fabric stock.");
+            //if (availableStock < (decimal)request.FabricLength * request.Quantity)
+            //    throw new Exception("Insufficient fabric stock.");
 
             // ✅ Add new fabric usage entry
             var newFabricStockEntry = new FabricStock
