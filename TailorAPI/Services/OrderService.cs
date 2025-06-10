@@ -113,6 +113,10 @@ namespace TailorAPI.Services
             //    throw new Exception("Insufficient fabric stock.");
 
             // 🚨 Create new fabric stock entry
+
+
+
+            //Add FabricStock Entry for Usage
             var newFabricStockEntry = new FabricStock
             {
                 FabricTypeID = fabricTypeId,
@@ -123,6 +127,9 @@ namespace TailorAPI.Services
 
             _context.FabricStocks.Add(newFabricStockEntry);
 
+
+
+            //Update FabricType Stock
             fabricType.AvailableStock -= ((decimal)requestDto.FabricLength * requestDto.Quantity);
             _context.FabricTypes.Update(fabricType);
 
@@ -300,11 +307,21 @@ namespace TailorAPI.Services
             // ✅ Handle Assigned User Status if order completed
             if (order.OrderStatus == OrderStatus.Completed && order.PaymentStatus == PaymentStatus.Completed)
             {
-                var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
-                if (assignedUser != null)
+                // Check if the assigned user has any other active (not completed) orders
+                var hasOtherActiveOrders = await _context.Orders.AnyAsync(o =>
+                    o.AssignedTo == order.AssignedTo &&
+                    o.OrderStatus != OrderStatus.Completed &&
+                    !o.IsDeleted &&
+                    o.OrderID != order.OrderID);
+
+                if (!hasOtherActiveOrders)
                 {
-                    assignedUser.UserStatus = UserStatus.Available;
-                    _context.Users.Update(assignedUser);
+                    var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
+                    if (assignedUser != null)
+                    {
+                        assignedUser.UserStatus = UserStatus.Available;
+                        _context.Users.Update(assignedUser);
+                    }
                 }
             }
 
