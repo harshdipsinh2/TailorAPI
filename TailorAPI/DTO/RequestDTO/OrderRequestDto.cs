@@ -5,6 +5,13 @@ namespace TailorAPI.DTOs.Request
     public class OrderRequestDto
     {
         public double FabricLength { get; set; }
+
+
+
+        public string BranchName { get; set; }
+        public string ShopName { get; set; }
+
+
         public int Quantity { get; set; }
         public DateTime? CompletionDate { get; set; }
 

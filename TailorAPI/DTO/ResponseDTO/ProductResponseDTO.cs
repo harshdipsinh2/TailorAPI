@@ -9,6 +9,13 @@ namespace TailorAPI.DTOs.Response
 
         public string ProductName { get; set; }
 
+
+        public int BranchId { get; set; }
+        public string BranchName { get; set; }
+        public int ShopId { get; set; }
+        public string ShopName { get; set; }
+
+
         public decimal MakingPrice { get; set; }  // Tailoring work price (excluding fabric cost)
 
         public ProductType ProductType { get; set; } // New field

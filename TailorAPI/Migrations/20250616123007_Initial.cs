@@ -14,24 +14,6 @@ namespace TailorAPI.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Customers",
-                columns: table => new
-                {
-                    CustomerId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Gender = table.Column<string>(type: "nvarchar(10)", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Customers", x => x.CustomerId);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "FabricTypes",
                 columns: table => new
                 {
@@ -79,6 +61,134 @@ namespace TailorAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Shops",
+                columns: table => new
+                {
+                    ShopId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ShopName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Shops", x => x.ShopId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FabricStocks",
+                columns: table => new
+                {
+                    StockID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FabricTypeID = table.Column<int>(type: "int", nullable: false),
+                    StockIn = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StockUse = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StockAddDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FabricStocks", x => x.StockID);
+                    table.ForeignKey(
+                        name: "FK_FabricStocks_FabricTypes_FabricTypeID",
+                        column: x => x.FabricTypeID,
+                        principalTable: "FabricTypes",
+                        principalColumn: "FabricTypeID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Branches",
+                columns: table => new
+                {
+                    BranchId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BranchName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ShopId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Branches", x => x.BranchId);
+                    table.ForeignKey(
+                        name: "FK_Branches_Shops_ShopId",
+                        column: x => x.ShopId,
+                        principalTable: "Shops",
+                        principalColumn: "ShopId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Customers",
+                columns: table => new
+                {
+                    CustomerId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Gender = table.Column<string>(type: "nvarchar(10)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: true),
+                    ShopId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Customers", x => x.CustomerId);
+                    table.ForeignKey(
+                        name: "FK_Customers_Branches_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Branches",
+                        principalColumn: "BranchId");
+                    table.ForeignKey(
+                        name: "FK_Customers_Shops_ShopId",
+                        column: x => x.ShopId,
+                        principalTable: "Shops",
+                        principalColumn: "ShopId");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    UserID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MobileNo = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RoleID = table.Column<int>(type: "int", nullable: false),
+                    UserStatus = table.Column<string>(type: "nvarchar(10)", nullable: false, defaultValue: "Available"),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    IsVerified = table.Column<bool>(type: "bit", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: true),
+                    ShopId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.UserID);
+                    table.ForeignKey(
+                        name: "FK_Users_Branches_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Branches",
+                        principalColumn: "BranchId");
+                    table.ForeignKey(
+                        name: "FK_Users_Roles_RoleID",
+                        column: x => x.RoleID,
+                        principalTable: "Roles",
+                        principalColumn: "RoleID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Users_Shops_ShopId",
+                        column: x => x.ShopId,
+                        principalTable: "Shops",
+                        principalColumn: "ShopId");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Measurements",
                 columns: table => new
                 {
@@ -116,55 +226,6 @@ namespace TailorAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FabricStocks",
-                columns: table => new
-                {
-                    StockID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    FabricTypeID = table.Column<int>(type: "int", nullable: false),
-                    StockIn = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    StockUse = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    StockAddDate = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FabricStocks", x => x.StockID);
-                    table.ForeignKey(
-                        name: "FK_FabricStocks_FabricTypes_FabricTypeID",
-                        column: x => x.FabricTypeID,
-                        principalTable: "FabricTypes",
-                        principalColumn: "FabricTypeID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    UserID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MobileNo = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RoleID = table.Column<int>(type: "int", nullable: false),
-                    UserStatus = table.Column<string>(type: "nvarchar(10)", nullable: false, defaultValue: "Available"),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    IsVerified = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.UserID);
-                    table.ForeignKey(
-                        name: "FK_Users_Roles_RoleID",
-                        column: x => x.RoleID,
-                        principalTable: "Roles",
-                        principalColumn: "RoleID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Orders",
                 columns: table => new
                 {
@@ -184,11 +245,18 @@ namespace TailorAPI.Migrations
                     PaymentStatus = table.Column<string>(type: "nvarchar(10)", nullable: false),
                     RejectionReason = table.Column<string>(type: "nvarchar(200)", nullable: true),
                     ApprovalStatus = table.Column<string>(type: "nvarchar(20)", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: true),
+                    ShopId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Orders", x => x.OrderID);
+                    table.ForeignKey(
+                        name: "FK_Orders_Branches_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Branches",
+                        principalColumn: "BranchId");
                     table.ForeignKey(
                         name: "FK_Orders_Customers_CustomerId",
                         column: x => x.CustomerId,
@@ -207,6 +275,11 @@ namespace TailorAPI.Migrations
                         principalTable: "Products",
                         principalColumn: "ProductID",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Orders_Shops_ShopId",
+                        column: x => x.ShopId,
+                        principalTable: "Shops",
+                        principalColumn: "ShopId");
                     table.ForeignKey(
                         name: "FK_Orders_Users_AssignedTo",
                         column: x => x.AssignedTo,
@@ -270,6 +343,21 @@ namespace TailorAPI.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Branches_ShopId",
+                table: "Branches",
+                column: "ShopId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Customers_BranchId",
+                table: "Customers",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Customers_ShopId",
+                table: "Customers",
+                column: "ShopId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FabricStocks_FabricTypeID",
                 table: "FabricStocks",
                 column: "FabricTypeID");
@@ -284,6 +372,11 @@ namespace TailorAPI.Migrations
                 name: "IX_Orders_AssignedTo",
                 table: "Orders",
                 column: "AssignedTo");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_BranchId",
+                table: "Orders",
+                column: "BranchId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_CustomerId",
@@ -301,6 +394,11 @@ namespace TailorAPI.Migrations
                 column: "ProductID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_ShopId",
+                table: "Orders",
+                column: "ShopId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OtpVerifications_UserID",
                 table: "OtpVerifications",
                 column: "UserID");
@@ -311,9 +409,19 @@ namespace TailorAPI.Migrations
                 column: "OrderID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Users_BranchId",
+                table: "Users",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_RoleID",
                 table: "Users",
                 column: "RoleID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_ShopId",
+                table: "Users",
+                column: "ShopId");
         }
 
         /// <inheritdoc />
@@ -347,7 +455,13 @@ namespace TailorAPI.Migrations
                 name: "Users");
 
             migrationBuilder.DropTable(
+                name: "Branches");
+
+            migrationBuilder.DropTable(
                 name: "Roles");
+
+            migrationBuilder.DropTable(
+                name: "Shops");
         }
     }
 }

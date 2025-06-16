@@ -15,6 +15,17 @@ public class Customer
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // ✅ Auto-generate in SQL
     public int CustomerId { get; set; }
 
+
+
+    [ForeignKey("Branch")]
+    public int BranchId { get; set; } // ✅ Foreign key to Branch
+    public Branch Branch { get; set; } // Navigation property
+    [ForeignKey("Shop")]
+    public int ShopId { get; set; } // ✅ Foreign key to Shop
+    public Shop Shop { get; set; } // Navigation property
+
+
+
     [Required]
     public string FullName { get; set; }
 

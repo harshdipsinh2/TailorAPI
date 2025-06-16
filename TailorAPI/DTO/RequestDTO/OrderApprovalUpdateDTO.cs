@@ -7,7 +7,14 @@ namespace TailorAPI.DTO.RequestDTO
     {
             [Required]
             public OrderApprovalStatus ApprovalStatus { get; set; }
-            public string? RejectionReason { get; set; } // Required if rejected
+
+
+        public string BranchName { get; set; }
+        public string ShopName { get; set; }
+
+
+
+        public string? RejectionReason { get; set; } // Required if rejected
         
     }
 }

@@ -7,6 +7,7 @@ namespace TailorAPI.DTO.ResponseDTO
 
         public int OrderID { get; set; }
 
+
         public SmsType SmsType { get; set; }
         public string Message { get; set; }
 

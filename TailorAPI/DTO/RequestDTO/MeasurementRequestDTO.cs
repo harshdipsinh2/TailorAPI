@@ -2,6 +2,14 @@
 {
     public class MeasurementRequestDTO
     {
+
+
+
+        public string BranchName { get; set; }
+        public string ShopName { get; set; }
+
+
+
         public float Chest { get; set; }
         public float Waist { get; set; }
         public float Hip { get; set; }

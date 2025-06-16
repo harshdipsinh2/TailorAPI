@@ -11,6 +11,14 @@ public class OrderResponseDto
     //public int FabricID { get; set; }     // ✅ Added ID for reference
     public int FabricTypeID { get; set; }
 
+
+    public int BranchId { get; set; }
+    public string BranchName { get; set; }
+    public int ShopId { get; set; }
+    public string ShopName { get; set; }
+
+
+
     public DateTime? AssignedAt { get; set; }
 
     public string? CustomerName { get; set; } // Nullable in case data is missing

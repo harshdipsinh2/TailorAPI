@@ -3,6 +3,14 @@
     public class UserResponseDto
     {
         public int UserID { get; set; }
+
+
+        public int BranchId { get; set; }
+        public string BranchName { get; set; }
+        public int ShopId { get; set; }
+        public string ShopName { get; set; }
+
+
         public string Name { get; set; }
         public string Email { get; set; }
         public string MobileNo { get; set; }

@@ -8,6 +8,12 @@
         public int CustomerId { get; set; }
 
 
+        public int BranchId { get; set; }
+        public string BranchName { get; set; }
+        public int ShopId { get; set; }
+        public string ShopName { get; set; }
+
+
         public float Chest { get; set; }
         public float Waist { get; set; }
         public float Hip { get; set; }

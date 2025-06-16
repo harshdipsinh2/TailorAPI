@@ -20,6 +20,8 @@ public class TailorDbContext : DbContext
     public DbSet<FabricStock> FabricStocks { get; set; }
     public DbSet<OtpVerification> OtpVerifications { get; set; }
 
+    public DbSet<Branch> Branches { get; set; }
+    public DbSet<Shop> Shops { get; set; }
     public DbSet<TwilioSms> TwilioSms { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
