@@ -530,7 +530,7 @@ namespace TailorAPI.Migrations
                     b.HasOne("TailorAPI.Models.Shop", "Shop")
                         .WithMany("Customers")
                         .HasForeignKey("ShopId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Branch");

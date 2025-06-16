@@ -57,11 +57,28 @@ public class TailorDbContext : DbContext
     .Property(f => f.PricePerMeter)
     .HasColumnType("decimal(18,2)");
 
+                    
+
+            // ✅ Customer Foreign Keys (Fix multiple cascade paths)
+            modelBuilder.Entity<Customer>()
+                .HasOne(c => c.Shop)
+                .WithMany(s => s.Customers)
+                .HasForeignKey(c => c.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Customer>()
+                .HasOne(c => c.Branch)
+                .WithMany(b => b.Customers)
+                .HasForeignKey(c => c.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ✅ Soft Delete Filters
+            modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
 
 
 
 
-/////new added if not work 
+            /////new added if not work 
 
 
             modelBuilder.Entity<FabricStock>()

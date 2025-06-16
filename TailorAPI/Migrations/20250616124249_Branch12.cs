@@ -5,7 +5,7 @@
 namespace TailorAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class Branch : Migration
+    public partial class Branch12 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -52,7 +52,7 @@ namespace TailorAPI.Migrations
                 column: "ShopId",
                 principalTable: "Shops",
                 principalColumn: "ShopId",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
