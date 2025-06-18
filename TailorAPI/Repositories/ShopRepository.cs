@@ -23,6 +23,11 @@ namespace TailorAPI.Repositories
         {
             return await _context.Shops.FindAsync(shopId);
         }
+        public async Task<bool> UpdateShopAsync(Shop shop)
+        {
+            _context.Shops.Update(shop);
+            return await _context.SaveChangesAsync() > 0;
+        }
 
     }
 }

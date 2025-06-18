@@ -19,6 +19,16 @@ namespace TailorAPI.Repositories
             await _context.SaveChangesAsync();
             return branch;
         }
+        //public async Task<Branch?> GetBranchByIdAsync(int branchId)
+        //{
+        //    return await _context.Branches.FindAsync(branchId);
+        //}
+        public async Task<Branch?> GetBranchByIdAsync(int branchId)
+        {
+            return await _context.Branches
+                .Include(b => b.Shop)
+                .FirstOrDefaultAsync(b => b.BranchId == branchId);
+        }
 
     }
 }

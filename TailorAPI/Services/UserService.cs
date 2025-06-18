@@ -41,9 +41,7 @@ public class UserService : IUserService
         try
         {
             if (userDto == null) throw new ArgumentNullException(nameof(userDto));
-
-            if (string.IsNullOrEmpty(userDto.Email) || string.IsNullOrEmpty(userDto.Password))
-                return null;
+            if (string.IsNullOrEmpty(userDto.Email) || string.IsNullOrEmpty(userDto.Password)) return null;
 
             var users = await _userRepository.GetAllUsersAsync();
             if (users.Any(u => u.Email == userDto.Email)) return null;
@@ -51,7 +49,42 @@ public class UserService : IUserService
             var role = await _userRepository.GetRoleByNameAsync(userDto.RoleName);
             if (role == null) return null;
 
-            // Step 1: Create User without shop/branch
+            int shopId = 0;
+            int branchId = 0;
+
+            if (userDto.RoleName == "Admin")
+            {
+                if (string.IsNullOrEmpty(userDto.ShopName) || string.IsNullOrEmpty(userDto.ShopLocation)) return null;
+
+                var shop = new Shop
+                {
+                    ShopName = userDto.ShopName,
+                    Location = userDto.ShopLocation,
+                    CreatedByUserId = 0, // Will be updated after user is created
+                    CreatedByUserName = "" // Will be updated after user is created
+                };
+                await _shopRepository.CreateShopAsync(shop);
+                shopId = shop.ShopId;
+
+                var headBranch = await _branchService.CreateHeadBranchForShopAsync(shop);
+                branchId = headBranch.BranchId;
+            }
+            else
+            {
+                // Manager/Tailor
+                if (userDto.ShopId == null || userDto.BranchId == null) return null;
+
+                var shop = await _shopRepository.GetShopByIdAsync(userDto.ShopId.Value);
+                var branch = await _branchRepository.GetBranchByIdAsync(userDto.BranchId.Value);
+
+                if (shop == null || branch == null) return null;
+                if (branch.ShopId != shop.ShopId) return null;
+
+                shopId = shop.ShopId;
+                branchId = branch.BranchId;
+            }
+
+            // Only create user AFTER validation is passed
             var user = new User
             {
                 Name = userDto.Name,
@@ -59,37 +92,23 @@ public class UserService : IUserService
                 MobileNo = userDto.MobileNo,
                 Address = userDto.Address,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password),
-                RoleID = role.RoleID
+                RoleID = role.RoleID,
+                ShopId = shopId,
+                BranchId = branchId
             };
 
-            await _userRepository.CreateUserAsync(user); // Save to get user.UserID
+            await _userRepository.CreateUserAsync(user);
 
-            int shopId = 0;
-            int branchId = 0;
-
-            // Step 2: If Admin, create Shop and HEAD Branch
+            // If Admin, update Shop.CreatedBy
             if (userDto.RoleName == "Admin")
             {
-                if (string.IsNullOrEmpty(userDto.ShopName) || string.IsNullOrEmpty(userDto.ShopLocation))
-                    return null;
-
-                var shop = new Shop
+                var shop = await _shopRepository.GetShopByIdAsync(shopId);
+                if (shop != null)
                 {
-                    ShopName = userDto.ShopName,
-                    Location = userDto.ShopLocation,
-                    CreatedByUserId = user.UserID,
-                    CreatedByUserName = user.Name
-                };
-                await _shopRepository.CreateShopAsync(shop);
-                shopId = shop.ShopId;
-
-                var headBranch = await _branchService.CreateHeadBranchForShopAsync(shop);
-                branchId = headBranch.BranchId;
-
-                // Step 3: Update user with shop and branch info
-                user.ShopId = shopId;
-                user.BranchId = branchId;
-                await _userRepository.UpdateUserAsync(user);
+                    shop.CreatedByUserId = user.UserID;
+                    shop.CreatedByUserName = user.Name;
+                    await _shopRepository.UpdateShopAsync(shop);
+                }
             }
 
             return new UserResponseDto
@@ -105,10 +124,11 @@ public class UserService : IUserService
         }
         catch (Exception ex)
         {
-            // Log the error if needed
+            // Optional: log ex
             return null;
         }
     }
+
 
 
 
