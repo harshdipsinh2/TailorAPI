@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TailorAPI.Services.Interface;
+using TailorAPI.Services;
 
 
 public class UserService : IUserService
@@ -13,48 +14,103 @@ public class UserService : IUserService
     private readonly UserRepository _userRepository;
     private readonly PasswordHasher<User> _passwordHasher;
     private readonly JwtService _JwtService;
+    private readonly IShopService _shopService;
+    private readonly IBranchService _branchService;
+    private readonly BranchRepository _branchRepository;
+    private readonly ShopRepository _shopRepository;
 
-    public UserService(UserRepository userRepository,JwtService jwtService)
+
+
+    public UserService(UserRepository userRepository,JwtService jwtService,IShopService shopService, IBranchService branchService,BranchRepository branchRepository,ShopRepository shopRepository)
     {
         _userRepository = userRepository;
         _passwordHasher = new PasswordHasher<User>();
         _JwtService = jwtService;
+        _shopService = shopService;
+        _branchService = branchService;
+        _branchRepository = branchRepository;
+        _shopRepository = shopRepository;
+
     }
 
-  
+
 
 
     public async Task<UserResponseDto?> RegisterUserAsync(UserRequestDto userDto)
     {
-        var users = await _userRepository.GetAllUsersAsync();
-        if (users.Any(u => u.Email == userDto.Email)) return null;
-
-        var role = await _userRepository.GetRoleByNameAsync(userDto.RoleName);
-        if (role == null) return null;
-
-        var user = new User
+        try
         {
-            Name = userDto.Name,
-            Email = userDto.Email,
-            MobileNo = userDto.MobileNo,
-            Address = userDto.Address,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password),
-            RoleID = role.RoleID
-        };
+            if (userDto == null) throw new ArgumentNullException(nameof(userDto));
 
-        await _userRepository.CreateUserAsync(user);
+            if (string.IsNullOrEmpty(userDto.Email) || string.IsNullOrEmpty(userDto.Password))
+                return null;
 
-        return new UserResponseDto
+            var users = await _userRepository.GetAllUsersAsync();
+            if (users.Any(u => u.Email == userDto.Email)) return null;
+
+            var role = await _userRepository.GetRoleByNameAsync(userDto.RoleName);
+            if (role == null) return null;
+
+            // Step 1: Create User without shop/branch
+            var user = new User
+            {
+                Name = userDto.Name,
+                Email = userDto.Email,
+                MobileNo = userDto.MobileNo,
+                Address = userDto.Address,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password),
+                RoleID = role.RoleID
+            };
+
+            await _userRepository.CreateUserAsync(user); // Save to get user.UserID
+
+            int shopId = 0;
+            int branchId = 0;
+
+            // Step 2: If Admin, create Shop and HEAD Branch
+            if (userDto.RoleName == "Admin")
+            {
+                if (string.IsNullOrEmpty(userDto.ShopName) || string.IsNullOrEmpty(userDto.ShopLocation))
+                    return null;
+
+                var shop = new Shop
+                {
+                    ShopName = userDto.ShopName,
+                    Location = userDto.ShopLocation,
+                    CreatedByUserId = user.UserID,
+                    CreatedByUserName = user.Name
+                };
+                await _shopRepository.CreateShopAsync(shop);
+                shopId = shop.ShopId;
+
+                var headBranch = await _branchService.CreateHeadBranchForShopAsync(shop);
+                branchId = headBranch.BranchId;
+
+                // Step 3: Update user with shop and branch info
+                user.ShopId = shopId;
+                user.BranchId = branchId;
+                await _userRepository.UpdateUserAsync(user);
+            }
+
+            return new UserResponseDto
+            {
+                Name = user.Name,
+                Email = user.Email,
+                MobileNo = user.MobileNo,
+                Address = user.Address,
+                RoleName = role.RoleName,
+                UserStatus = user.UserStatus.ToString(),
+                IsVerified = user.IsVerified
+            };
+        }
+        catch (Exception ex)
         {
-            Name = user.Name,
-            Email = user.Email,
-            MobileNo = user.MobileNo,
-            Address = user.Address,
-            RoleName = role.RoleName,
-            UserStatus = user.UserStatus.ToString(),
-            IsVerified = false
-        };
+            // Log the error if needed
+            return null;
+        }
     }
+
+
 
     public async Task<UserResponseDto?> AuthenticateUserAsync(string email, string password)
     {

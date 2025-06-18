@@ -30,6 +30,7 @@ public class JwtService
         {
         new Claim(JwtRegisteredClaimNames.Sub, userId),
         new Claim("roles", role),
+
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         new Claim("exp", DateTimeOffset.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiryInMinutes"])).ToUnixTimeSeconds().ToString())
     };

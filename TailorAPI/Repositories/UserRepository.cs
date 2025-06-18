@@ -12,6 +12,13 @@
         {
             _context = context;
         }
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Email == email);
+        }
+
 
         public async Task<string?> AuthenticateUserAsync(string email, string password)
         {

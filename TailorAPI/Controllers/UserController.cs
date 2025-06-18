@@ -17,6 +17,10 @@ public class UserController : ControllerBase
     [HttpPost("Register")]
     public async Task<IActionResult> RegisterUser([FromBody] UserRequestDto userrequestDto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
         var user = await _userService.RegisterUserAsync(userrequestDto);
         if (user == null) return BadRequest("User registration failed.");
 

@@ -125,14 +125,14 @@ namespace TailorAPI.Migrations
                 {
                     CustomerId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
+                    ShopId = table.Column<int>(type: "int", nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Gender = table.Column<string>(type: "nvarchar(10)", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    BranchId = table.Column<int>(type: "int", nullable: true),
-                    ShopId = table.Column<int>(type: "int", nullable: true)
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -141,12 +141,14 @@ namespace TailorAPI.Migrations
                         name: "FK_Customers_Branches_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branches",
-                        principalColumn: "BranchId");
+                        principalColumn: "BranchId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Customers_Shops_ShopId",
                         column: x => x.ShopId,
                         principalTable: "Shops",
-                        principalColumn: "ShopId");
+                        principalColumn: "ShopId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -160,12 +162,12 @@ namespace TailorAPI.Migrations
                     MobileNo = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ShopId = table.Column<int>(type: "int", nullable: true),
+                    BranchId = table.Column<int>(type: "int", nullable: true),
                     RoleID = table.Column<int>(type: "int", nullable: false),
                     UserStatus = table.Column<string>(type: "nvarchar(10)", nullable: false, defaultValue: "Available"),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    IsVerified = table.Column<bool>(type: "bit", nullable: false),
-                    BranchId = table.Column<int>(type: "int", nullable: true),
-                    ShopId = table.Column<int>(type: "int", nullable: true)
+                    IsVerified = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -174,7 +176,8 @@ namespace TailorAPI.Migrations
                         name: "FK_Users_Branches_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branches",
-                        principalColumn: "BranchId");
+                        principalColumn: "BranchId",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Users_Roles_RoleID",
                         column: x => x.RoleID,
@@ -185,7 +188,8 @@ namespace TailorAPI.Migrations
                         name: "FK_Users_Shops_ShopId",
                         column: x => x.ShopId,
                         principalTable: "Shops",
-                        principalColumn: "ShopId");
+                        principalColumn: "ShopId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(

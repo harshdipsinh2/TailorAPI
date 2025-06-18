@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    [Migration("20250616124249_Branch12")]
-    partial class Branch12
+    [Migration("20250618053158_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -639,9 +639,10 @@ namespace TailorAPI.Migrations
 
             modelBuilder.Entity("User", b =>
                 {
-                    b.HasOne("TailorAPI.Models.Branch", null)
+                    b.HasOne("TailorAPI.Models.Branch", "Branch")
                         .WithMany("Users")
-                        .HasForeignKey("BranchId");
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TailorAPI.Models.Role", "Role")
                         .WithMany("Users")
@@ -649,11 +650,16 @@ namespace TailorAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TailorAPI.Models.Shop", null)
+                    b.HasOne("TailorAPI.Models.Shop", "Shop")
                         .WithMany("Users")
-                        .HasForeignKey("ShopId");
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Role");
+
+                    b.Navigation("Shop");
                 });
 
             modelBuilder.Entity("Customer", b =>

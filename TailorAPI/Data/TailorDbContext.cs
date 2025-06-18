@@ -57,7 +57,15 @@ public class TailorDbContext : DbContext
     .Property(f => f.PricePerMeter)
     .HasColumnType("decimal(18,2)");
 
-                    
+
+            modelBuilder.Entity<Shop>()
+    .HasOne(s => s.CreatedByUser)
+    .WithMany() // optional: or .WithMany(u => u.ShopsCreated)
+    .HasForeignKey(s => s.CreatedByUserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+
+
 
             // ✅ Customer Foreign Keys (Fix multiple cascade paths)
             modelBuilder.Entity<Customer>()
@@ -74,6 +82,21 @@ public class TailorDbContext : DbContext
 
             // ✅ Soft Delete Filters
             modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
+
+
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Branch)
+                .WithMany(b => b.Users)
+                .HasForeignKey(u => u.BranchId)
+                .OnDelete(DeleteBehavior.Restrict); // ✅ No CASCADE
+
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Shop)
+                .WithMany(s => s.Users)
+                .HasForeignKey(u => u.ShopId)
+                .OnDelete(DeleteBehavior.Restrict); // ✅ No CASCADE
+
+
 
 
 

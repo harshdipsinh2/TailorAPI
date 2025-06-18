@@ -90,9 +90,12 @@ builder.Services.AddScoped<IOtpVerificationService, OtpVerificationService>();
 builder.Services.AddScoped<ITwilioService, TwilioService>();
 builder.Services.AddHostedService<OrderAutoRejectService>();
 builder.Services.AddScoped<TwilioService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IShopService, ShopService>();
 
 
-
+builder.Services.AddScoped<BranchRepository>();
+builder.Services.AddScoped<ShopRepository>();
 builder.Services.AddScoped<TwilioRepository>();
 builder.Services.AddScoped<OtpVerificationRepository>();
 builder.Services.AddScoped<ManagerRepository>();

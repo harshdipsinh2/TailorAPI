@@ -10,16 +10,23 @@ namespace TailorAPI.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ShopId { get; set; }
-         
-        public string ShopName { get; set; }
 
+        public string ShopName { get; set; }
         public string Location { get; set; }
 
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow; // ✅ New field
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
+        public int? CreatedByUserId { get; set; }
+
+        [ForeignKey("CreatedByUserId")]
+        public User? CreatedByUser { get; set; }
+
+        public string? CreatedByUserName { get; set; }
 
         public ICollection<Branch> Branches { get; set; }
         public ICollection<User> Users { get; set; }
         public ICollection<Customer> Customers { get; set; }
         public ICollection<Order> Orders { get; set; }
     }
+
 }

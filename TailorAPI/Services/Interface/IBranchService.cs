@@ -1,6 +1,12 @@
-﻿namespace TailorAPI.Services.Interface
+﻿using TailorAPI.DTO.RequestDTO;
+using TailorAPI.DTO.ResponseDTO;
+using TailorAPI.Models;
+
+namespace TailorAPI.Services.Interface
 {
-    public class IBranchService
+    public interface IBranchService
     {
+        Task<Branch> CreateHeadBranchForShopAsync(Shop shop);
+        Task<BranchResponseDTO?> CreateBranchAsync(BranchRequestDTO dto);
     }
 }

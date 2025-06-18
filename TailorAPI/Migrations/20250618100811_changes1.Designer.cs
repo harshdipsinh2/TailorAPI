@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    [Migration("20250616123007_Initial")]
-    partial class Initial
+    [Migration("20250618100811_changes1")]
+    partial class changes1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -36,7 +36,7 @@ namespace TailorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("BranchId")
+                    b.Property<int>("BranchId")
                         .HasColumnType("int");
 
                     b.Property<string>("Email")
@@ -58,7 +58,7 @@ namespace TailorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ShopId")
+                    b.Property<int>("ShopId")
                         .HasColumnType("int");
 
                     b.HasKey("CustomerId");
@@ -417,6 +417,12 @@ namespace TailorAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShopId"));
 
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedByUserName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -429,6 +435,8 @@ namespace TailorAPI.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ShopId");
+
+                    b.HasIndex("CreatedByUserId");
 
                     b.ToTable("Shops");
                 });
@@ -524,13 +532,21 @@ namespace TailorAPI.Migrations
 
             modelBuilder.Entity("Customer", b =>
                 {
-                    b.HasOne("TailorAPI.Models.Branch", null)
+                    b.HasOne("TailorAPI.Models.Branch", "Branch")
                         .WithMany("Customers")
-                        .HasForeignKey("BranchId");
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasOne("TailorAPI.Models.Shop", null)
+                    b.HasOne("TailorAPI.Models.Shop", "Shop")
                         .WithMany("Customers")
-                        .HasForeignKey("ShopId");
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Shop");
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Branch", b =>
@@ -618,6 +634,16 @@ namespace TailorAPI.Migrations
                     b.Navigation("user");
                 });
 
+            modelBuilder.Entity("TailorAPI.Models.Shop", b =>
+                {
+                    b.HasOne("User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+                });
+
             modelBuilder.Entity("TailorAPI.Models.TwilioSms", b =>
                 {
                     b.HasOne("TailorAPI.Models.Order", "Order")
@@ -631,9 +657,10 @@ namespace TailorAPI.Migrations
 
             modelBuilder.Entity("User", b =>
                 {
-                    b.HasOne("TailorAPI.Models.Branch", null)
+                    b.HasOne("TailorAPI.Models.Branch", "Branch")
                         .WithMany("Users")
-                        .HasForeignKey("BranchId");
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TailorAPI.Models.Role", "Role")
                         .WithMany("Users")
@@ -641,11 +668,16 @@ namespace TailorAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TailorAPI.Models.Shop", null)
+                    b.HasOne("TailorAPI.Models.Shop", "Shop")
                         .WithMany("Users")
-                        .HasForeignKey("ShopId");
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Role");
+
+                    b.Navigation("Shop");
                 });
 
             modelBuilder.Entity("Customer", b =>

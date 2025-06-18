@@ -23,6 +23,17 @@ public class User
     public string PasswordHash { get; set; }
     public string Address { get; set; }
 
+    public int? ShopId { get; set; }
+    [ForeignKey("ShopId")]
+    public Shop Shop { get; set; }
+
+    public int? BranchId { get; set; }
+    [ForeignKey("BranchId")]
+    public Branch Branch { get; set; }
+
+
+
+
     public int RoleID { get; set; }
     [ForeignKey("RoleID")]
     public Role Role { get; set; }
