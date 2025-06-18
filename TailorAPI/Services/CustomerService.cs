@@ -1,14 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Runtime.CompilerServices;
+using Microsoft.EntityFrameworkCore;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.Services;
 
 public class CustomerService : ICustomerService
 {
     private readonly TailorDbContext _context;
-
-    public CustomerService(TailorDbContext context)
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    public CustomerService(TailorDbContext context , IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<List<CustomerDTO>> GetAllCustomersAsync()
@@ -46,13 +48,19 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDTO> AddCustomerAsync(CustomerRequestDTO customerDto)
     {
+
+        var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
+        var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
         var customer = new Customer
         {
             FullName = customerDto.FullName,
             PhoneNumber = customerDto.PhoneNumber,
             Email = customerDto.Email,
             Address = customerDto.Address,
-            Gender = customerDto.Gender
+            Gender = customerDto.Gender,
+            ShopId = shopId,
+            BranchId = branchId
         };
 
         _context.Customers.Add(customer);

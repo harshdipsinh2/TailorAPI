@@ -4,6 +4,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using TailorAPI.Models;
 
 public class JwtService
 {
@@ -14,7 +15,7 @@ public class JwtService
         _configuration = configuration;
     }
 
-    public string GenerateToken(string userId, string role)
+    public string GenerateToken(string userId, string role,int? shopId,int? branchId)
     {
 
         Console.WriteLine($"Role Assigned: {role}");
@@ -30,7 +31,8 @@ public class JwtService
         {
         new Claim(JwtRegisteredClaimNames.Sub, userId),
         new Claim("roles", role),
-
+        new Claim("shopId", shopId?.ToString() ?? "0"),
+        new Claim("branchId", branchId?.ToString() ?? "0"),
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         new Claim("exp", DateTimeOffset.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiryInMinutes"])).ToUnixTimeSeconds().ToString())
     };

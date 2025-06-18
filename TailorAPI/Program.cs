@@ -92,6 +92,7 @@ builder.Services.AddHostedService<OrderAutoRejectService>();
 builder.Services.AddScoped<TwilioService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<IShopService, ShopService>();
+builder.Services.AddHttpContextAccessor();
 
 
 builder.Services.AddScoped<BranchRepository>();

@@ -48,8 +48,16 @@ public class AuthService : IAuthService
         }
 
         Console.WriteLine($"User authenticated successfully: {email}");
-        return _jwtService.GenerateToken(user.UserID.ToString(), user.Role.RoleName);
+        return _jwtService.GenerateToken(
+            user.UserID.ToString(),
+            user.Role.RoleName,
+            user.ShopId ?? 0,
+            user.BranchId ?? 0
+        );
+
+
     }
+
 
 
     public string HashPassword(string password)
