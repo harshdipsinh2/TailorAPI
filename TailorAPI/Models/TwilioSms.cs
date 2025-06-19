@@ -31,6 +31,17 @@ namespace TailorAPI.Models
         public SmsType SmsType { get; set; } = SmsType.Completion;
 
 
+
+
+        [ForeignKey("Branch")]
+        public int BranchId { get; set; } // ✅ Foreign key to Branch
+        public Branch Branch { get; set; } // Navigation property
+        [ForeignKey("Shop")]
+        public int ShopId { get; set; } // ✅ Foreign key to Shop
+        public Shop Shop { get; set; } // Navigation property
+
+
+
     }
 }
 

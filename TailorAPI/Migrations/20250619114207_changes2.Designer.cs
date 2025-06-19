@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    [Migration("20250619072157_AddShopAndranchToOrder")]
-    partial class AddShopAndranchToOrder
+    [Migration("20250619114207_changes2")]
+    partial class changes2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -107,7 +107,13 @@ namespace TailorAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StockID"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<int>("FabricTypeID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShopId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("StockAddDate")
@@ -121,7 +127,11 @@ namespace TailorAPI.Migrations
 
                     b.HasKey("StockID");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("FabricTypeID");
+
+                    b.HasIndex("ShopId");
 
                     b.ToTable("FabricStocks");
                 });
@@ -137,6 +147,9 @@ namespace TailorAPI.Migrations
                     b.Property<decimal>("AvailableStock")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<string>("FabricName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -147,7 +160,14 @@ namespace TailorAPI.Migrations
                     b.Property<decimal>("PricePerMeter")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("ShopId")
+                        .HasColumnType("int");
+
                     b.HasKey("FabricTypeID");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("ShopId");
 
                     b.ToTable("FabricTypes");
                 });
@@ -168,6 +188,9 @@ namespace TailorAPI.Migrations
 
                     b.Property<float>("Bicep")
                         .HasColumnType("real");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<float>("Calf")
                         .HasColumnType("real");
@@ -196,6 +219,9 @@ namespace TailorAPI.Migrations
                     b.Property<float>("Neck")
                         .HasColumnType("real");
 
+                    b.Property<int>("ShopId")
+                        .HasColumnType("int");
+
                     b.Property<float>("Shoulder")
                         .HasColumnType("real");
 
@@ -222,8 +248,12 @@ namespace TailorAPI.Migrations
 
                     b.HasKey("MeasurementID");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CustomerId")
                         .IsUnique();
+
+                    b.HasIndex("ShopId");
 
                     b.ToTable("Measurements");
                 });
@@ -247,9 +277,6 @@ namespace TailorAPI.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("BranchId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("BranchId1")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CompletionDate")
@@ -290,9 +317,6 @@ namespace TailorAPI.Migrations
                     b.Property<int>("ShopId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ShopId1")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
 
@@ -302,8 +326,6 @@ namespace TailorAPI.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.HasIndex("BranchId1");
-
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("FabricTypeID");
@@ -311,8 +333,6 @@ namespace TailorAPI.Migrations
                     b.HasIndex("ProductID");
 
                     b.HasIndex("ShopId");
-
-                    b.HasIndex("ShopId1");
 
                     b.ToTable("Orders");
                 });
@@ -350,6 +370,9 @@ namespace TailorAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductID"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -368,7 +391,14 @@ namespace TailorAPI.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int>("ShopId")
+                        .HasColumnType("int");
+
                     b.HasKey("ProductID");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("ShopId");
 
                     b.ToTable("Products");
                 });
@@ -459,6 +489,9 @@ namespace TailorAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TwilioSmsID"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -469,13 +502,20 @@ namespace TailorAPI.Migrations
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ShopId")
+                        .HasColumnType("int");
+
                     b.Property<string>("SmsType")
                         .IsRequired()
                         .HasColumnType("nvarchar(24)");
 
                     b.HasKey("TwilioSmsID");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("OrderID");
+
+                    b.HasIndex("ShopId");
 
                     b.ToTable("TwilioSms");
                 });
@@ -545,7 +585,7 @@ namespace TailorAPI.Migrations
                     b.HasOne("TailorAPI.Models.Branch", "Branch")
                         .WithMany("Customers")
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("TailorAPI.Models.Shop", "Shop")
@@ -572,22 +612,73 @@ namespace TailorAPI.Migrations
 
             modelBuilder.Entity("TailorAPI.Models.FabricStock", b =>
                 {
+                    b.HasOne("TailorAPI.Models.Branch", "Branch")
+                        .WithMany("FabricStocks")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("TailorAPI.Models.FabricType", "FabricType")
                         .WithMany()
                         .HasForeignKey("FabricTypeID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TailorAPI.Models.Shop", "Shop")
+                        .WithMany("FabricStocks")
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
                     b.Navigation("FabricType");
+
+                    b.Navigation("Shop");
+                });
+
+            modelBuilder.Entity("TailorAPI.Models.FabricType", b =>
+                {
+                    b.HasOne("TailorAPI.Models.Branch", "Branch")
+                        .WithMany("FabricTypes")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TailorAPI.Models.Shop", "Shop")
+                        .WithMany("FabricTypes")
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Shop");
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Measurement", b =>
                 {
+                    b.HasOne("TailorAPI.Models.Branch", "Branch")
+                        .WithMany("Measurements")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Customer", "Customer")
                         .WithOne("Measurement")
                         .HasForeignKey("TailorAPI.Models.Measurement", "CustomerId");
 
+                    b.HasOne("TailorAPI.Models.Shop", "Shop")
+                        .WithMany("Measurements")
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
                     b.Navigation("Customer");
+
+                    b.Navigation("Shop");
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Order", b =>
@@ -599,14 +690,10 @@ namespace TailorAPI.Migrations
                         .IsRequired();
 
                     b.HasOne("TailorAPI.Models.Branch", "Branch")
-                        .WithMany()
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("TailorAPI.Models.Branch", null)
                         .WithMany("Orders")
-                        .HasForeignKey("BranchId1");
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Customer", "Customer")
                         .WithMany()
@@ -627,14 +714,10 @@ namespace TailorAPI.Migrations
                         .IsRequired();
 
                     b.HasOne("TailorAPI.Models.Shop", "Shop")
-                        .WithMany()
+                        .WithMany("Orders")
                         .HasForeignKey("ShopId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("TailorAPI.Models.Shop", null)
-                        .WithMany("Orders")
-                        .HasForeignKey("ShopId1");
 
                     b.Navigation("Assigned");
 
@@ -660,6 +743,25 @@ namespace TailorAPI.Migrations
                     b.Navigation("user");
                 });
 
+            modelBuilder.Entity("TailorAPI.Models.Product", b =>
+                {
+                    b.HasOne("TailorAPI.Models.Branch", "Branch")
+                        .WithMany("Products")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TailorAPI.Models.Shop", "Shop")
+                        .WithMany("Products")
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Shop");
+                });
+
             modelBuilder.Entity("TailorAPI.Models.Shop", b =>
                 {
                     b.HasOne("User", "CreatedByUser")
@@ -672,13 +774,29 @@ namespace TailorAPI.Migrations
 
             modelBuilder.Entity("TailorAPI.Models.TwilioSms", b =>
                 {
+                    b.HasOne("TailorAPI.Models.Branch", "Branch")
+                        .WithMany("TwilioSmss")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("TailorAPI.Models.Order", "Order")
                         .WithMany()
                         .HasForeignKey("OrderID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TailorAPI.Models.Shop", "Shop")
+                        .WithMany("TwilioSmss")
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
                     b.Navigation("Order");
+
+                    b.Navigation("Shop");
                 });
 
             modelBuilder.Entity("User", b =>
@@ -716,7 +834,17 @@ namespace TailorAPI.Migrations
                 {
                     b.Navigation("Customers");
 
+                    b.Navigation("FabricStocks");
+
+                    b.Navigation("FabricTypes");
+
+                    b.Navigation("Measurements");
+
                     b.Navigation("Orders");
+
+                    b.Navigation("Products");
+
+                    b.Navigation("TwilioSmss");
 
                     b.Navigation("Users");
                 });
@@ -742,7 +870,17 @@ namespace TailorAPI.Migrations
 
                     b.Navigation("Customers");
 
+                    b.Navigation("FabricStocks");
+
+                    b.Navigation("FabricTypes");
+
+                    b.Navigation("Measurements");
+
                     b.Navigation("Orders");
+
+                    b.Navigation("Products");
+
+                    b.Navigation("TwilioSmss");
 
                     b.Navigation("Users");
                 });

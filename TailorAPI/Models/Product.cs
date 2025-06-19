@@ -22,6 +22,8 @@ namespace TailorAPI.Models
         public string ProductName { get; set; }
 
 
+
+
         [Required]
         public decimal MakingPrice { get; set; }  // Tailoring work price (excluding fabric cost)
 
@@ -31,6 +33,19 @@ namespace TailorAPI.Models
 
         [Required]
         public ProductType ProductType { get; set; } // New field
+
+
+
+
+
+        [ForeignKey("Branch")]
+        public int BranchId { get; set; } // ✅ Foreign key to Branch
+        public Branch Branch { get; set; } // Navigation property
+        [ForeignKey("Shop")]
+        public int ShopId { get; set; } // ✅ Foreign key to Shop
+        public Shop Shop { get; set; } // Navigation property
+
+
 
 
         // Navigation property for Orders

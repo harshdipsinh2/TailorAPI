@@ -24,9 +24,15 @@ namespace TailorAPI.Models
         public string? CreatedByUserName { get; set; }
 
         public ICollection<Branch> Branches { get; set; }
+
         public ICollection<User> Users { get; set; }
         public ICollection<Customer> Customers { get; set; }
+        public ICollection<Product> Products { get; set; }
         public ICollection<Order> Orders { get; set; }
+        public ICollection<FabricStock> FabricStocks { get; set; }
+        public ICollection<FabricType> FabricTypes { get; set; }
+        public ICollection<Measurement> Measurements { get; set; }
+        public ICollection<TwilioSms> TwilioSmss { get; set; }
     }
 
 }

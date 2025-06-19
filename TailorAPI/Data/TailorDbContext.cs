@@ -65,37 +65,116 @@ public class TailorDbContext : DbContext
     .OnDelete(DeleteBehavior.Restrict);
 
 
-
+            //----------------------------------------------------------------for branch and shop connection-------------------------------------------------------------------------------
 
             // ✅ Customer Foreign Keys (Fix multiple cascade paths)
             modelBuilder.Entity<Customer>()
                 .HasOne(c => c.Shop)
-                .WithMany(s => s.Customers)
+                .WithMany(s => s.Customers)               //customer
                 .HasForeignKey(c => c.ShopId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Customer>()
                 .HasOne(c => c.Branch)
-                .WithMany(b => b.Customers)
+                .WithMany(b => b.Customers)              //customer
                 .HasForeignKey(c => c.BranchId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // ✅ Soft Delete Filters
-            modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
+            modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);     
 
+            modelBuilder.Entity<FabricType>().HasQueryFilter(c => !c.IsDeleted);         
+
+                  
+
+
+            
+            modelBuilder.Entity<FabricStock>()
+                .HasOne(c => c.Shop)
+                .WithMany(s => s.FabricStocks)               // fabricstock
+                .HasForeignKey(c => c.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<FabricStock>()
+                .HasOne(c => c.Branch)
+                .WithMany(b => b.FabricStocks)              // fabricstock
+                .HasForeignKey(c => c.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Order>()
+                .HasOne(c => c.Shop)
+                .WithMany(s => s.Orders)               // order
+                .HasForeignKey(c => c.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Order>()
+                .HasOne(c => c.Branch)
+                .WithMany(b => b.Orders)              // order
+                .HasForeignKey(c => c.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FabricType>()
+                .HasOne(c => c.Shop)
+                .WithMany(s => s.FabricTypes)               // fabrictype
+                .HasForeignKey(c => c.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<FabricType>()
+                .HasOne(c => c.Branch)
+                .WithMany(b => b.FabricTypes)               // fabrictype
+                .HasForeignKey(c => c.BranchId)
+                .OnDelete(DeleteBehavior.Restrict); 
+            
+            modelBuilder.Entity<Measurement>()
+                .HasOne(c => c.Shop)
+                .WithMany(s => s.Measurements)               // measurement
+                .HasForeignKey(c => c.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Measurement>()
+                .HasOne(c => c.Branch)
+                .WithMany(b => b.Measurements)               // measurement
+                .HasForeignKey(c => c.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            
+            modelBuilder.Entity<TwilioSms>()
+                .HasOne(c => c.Shop)
+                .WithMany(s => s.TwilioSmss)               // twilio
+                .HasForeignKey(c => c.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TwilioSms>()
+                .HasOne(c => c.Branch)
+                .WithMany(b => b.TwilioSmss)               // twilio
+                .HasForeignKey(c => c.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            
 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Branch)
-                .WithMany(b => b.Users)
+                .WithMany(b => b.Users)            //user
                 .HasForeignKey(u => u.BranchId)
-                .OnDelete(DeleteBehavior.Restrict); // ✅ No CASCADE
+                .OnDelete(DeleteBehavior.Restrict); 
 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Shop)
-                .WithMany(s => s.Users)
+                .WithMany(s => s.Users)                 //user
                 .HasForeignKey(u => u.ShopId)
-                .OnDelete(DeleteBehavior.Restrict); // ✅ No CASCADE
+                .OnDelete(DeleteBehavior.Restrict); 
 
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Shop)
+                .WithMany(s => s.Products)
+                .HasForeignKey(p => p.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);   //product
+
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Branch)
+                .WithMany(b => b.Products)
+                .HasForeignKey(p => p.BranchId)
+                .OnDelete(DeleteBehavior.Restrict); // product
 
 
 
