@@ -467,10 +467,16 @@ namespace TailorAPI.Services
                 .Include(o => o.fabricType)
                 .Include(o => o.Customer)
                 .Include(o => o.Assigned)
+                .Include(o => o.Branch)
+                .Include(o => o.Shop)
                 .AsQueryable();
 
             if (role == "Tailor")
             {
+                var user = _httpContextAccessor.HttpContext.User;
+                var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+                var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+
                 query = query.Where(o => o.AssignedTo == userId);
             }
 
@@ -490,6 +496,11 @@ namespace TailorAPI.Services
                 TotalPrice = order.TotalPrice,
                 OrderDate = order.OrderDate.ToString("yyyy-MM-dd"),
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+
+                BranchId = order.BranchId,
+                BranchName = order.Branch?.BranchName,   // ✅ Get Branch Name
+                ShopId = order.ShopId,
+                ShopName = order.Shop?.ShopName,
 
                 AssignedTo = order.AssignedTo,
                 AssignedAt = order.AssignedAt,

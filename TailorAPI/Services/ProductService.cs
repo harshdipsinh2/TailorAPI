@@ -85,13 +85,23 @@ namespace TailorAPI.Services
 
         public async Task<IEnumerable<ProductResponseDTO>> GetAllProducts()
         {
+
+            var user = _httpContextAccessor.HttpContext.User;
+            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+
+
             var products = await _productRepository.GetAllProducts();
             return products.Select(product => new ProductResponseDTO
             {
                 ProductID = product.ProductID,
                 ProductName = product.ProductName,
                 MakingPrice = product.MakingPrice,
-                ProductType = product.ProductType
+                ProductType = product.ProductType,
+                BranchId = product.BranchId,
+                BranchName = product.Branch?.BranchName,   // ✅ Get Branch Name
+                ShopId = product.ShopId,
+                ShopName = product.Shop?.ShopName,
 
             });
         }
