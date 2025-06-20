@@ -2,25 +2,48 @@
 using Microsoft.EntityFrameworkCore;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.Services;
+using TailorAPI.Services.Interface;
 
 public class CustomerService : ICustomerService
 {
     private readonly TailorDbContext _context;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    public CustomerService(TailorDbContext context , IHttpContextAccessor httpContextAccessor)
+    private readonly IAccessScopeService _accessScope;
+    public CustomerService(TailorDbContext context , IHttpContextAccessor httpContextAccessor, IAccessScopeService accessScope)
     {
         _context = context;
         _httpContextAccessor = httpContextAccessor;
+        _accessScope = accessScope;
     }
 
     public async Task<List<CustomerDTO>> GetAllCustomersAsync()
     {
+        var user = _httpContextAccessor.HttpContext.User;
+        var role = user.FindFirst("role")?.Value;
+        var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+        var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+
+        // Restrict access for Tailor role
+        if (role == "Tailor")
+        {
+            // Option 1: Return empty list (silent failure)
+            //return new List<CustomerDTO>();
+
+            // Option 2: Throw exception (visible failure)
+            throw new UnauthorizedAccessException("Tailor is not authorized to access customer data.");
+        }
         return await _context.Customers
-            .Where(c => !c.IsDeleted)
+            .Where(c => !c.IsDeleted && c.ShopId == shopId && c.BranchId == branchId)
+            .Include(c => c.Shop)
+            .Include(c => c.Branch)
             .AsNoTracking()
             .Select(c => new CustomerDTO
             {
                 CustomerId = c.CustomerId,
+                ShopId = c.ShopId,
+                BranchId = c.BranchId,
+                ShopName = c.Shop.ShopName,
+                BranchName = c.Branch.BranchName,
                 FullName = c.FullName,
                 PhoneNumber = c.PhoneNumber,
                 Email = c.Email,
@@ -28,7 +51,10 @@ public class CustomerService : ICustomerService
                 Gender = c.Gender
             })
             .ToListAsync();
+
     }
+
+
 
     public async Task<CustomerDTO> GetCustomerByIdAsync(int customerId)
     {

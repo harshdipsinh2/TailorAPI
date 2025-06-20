@@ -74,6 +74,7 @@ builder.Services.AddCors(options =>
 });
 
 // ✅ Register Services and Repositories
+builder.Services.AddScoped<IAccessScopeService, AccessScopeService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IMeasurementService, MeasurementService>();
 builder.Services.AddScoped<IProductService, ProductService>();
