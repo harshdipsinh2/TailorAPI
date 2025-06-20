@@ -32,16 +32,23 @@ public class AuthController : ControllerBase
         return Ok(new { Token = token });
     }
 
-    // Updated Register method to accept query parameters
     [HttpPost("register")]
     public async Task<IActionResult> RegisterUserAsync(
-        [FromQuery] string name,
-        [FromQuery] string email,
-        [FromQuery] string password,
-        [FromQuery] string mobileNo,
-        [FromQuery] string address,
-        [FromQuery] string roleName
-    )
+      [FromQuery] string name,
+      [FromQuery] string email,
+      [FromQuery] string password,
+      [FromQuery] string mobileNo,
+      [FromQuery] string address,
+      [FromQuery] string roleName,
+
+      // Optional for Admin
+      [FromQuery] string? shopName = null,
+      [FromQuery] string? shopLocation = null,
+
+      // Optional for Manager and Tailor
+      [FromQuery] int? shopId = null,
+      [FromQuery] int? branchId = null
+  )
     {
         var request = new UserRequestDto
         {
@@ -50,17 +57,26 @@ public class AuthController : ControllerBase
             Password = password,
             MobileNo = mobileNo,
             Address = address,
-            RoleName = roleName
+            RoleName = roleName,
+            ShopName = shopName,
+            ShopLocation = shopLocation,
+            ShopId = shopId,
+            BranchId = branchId
         };
 
         var result = await _authService.RegisterUserAsync(request);
 
-        if (result == null)
+        if (result is ConflictObjectResult conflictResult)
         {
-            return Conflict(new { Message = "Email already exists or invalid role specified." });
+            return conflictResult;
         }
 
-        return Ok(new { Message = "User registered successfully , dont forget to get otp verification " });
+        if (result is BadRequestObjectResult badRequestResult)
+        {
+            return badRequestResult;
+        }
+
+        return Ok(new { Message = "User registered successfully, don't forget to get OTP verification." });
     }
 
 

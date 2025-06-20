@@ -46,8 +46,12 @@ public class UserService : IUserService
             var users = await _userRepository.GetAllUsersAsync();
             if (users.Any(u => u.Email == userDto.Email)) return null;
 
+            Console.WriteLine("Failed: Email already exists");
+
+
             var role = await _userRepository.GetRoleByNameAsync(userDto.RoleName);
             if (role == null) return null;
+            Console.WriteLine("Failed : role not found");
 
             int shopId = 0;
             int branchId = 0;
@@ -68,7 +72,12 @@ public class UserService : IUserService
 
                 var headBranch = await _branchService.CreateHeadBranchForShopAsync(shop);
                 branchId = headBranch.BranchId;
+
+                Console.WriteLine("Failed: Shop or Branch not created");
+
             }
+
+
             else
             {
                 // Manager/Tailor
@@ -98,6 +107,9 @@ public class UserService : IUserService
             };
 
             await _userRepository.CreateUserAsync(user);
+
+            Console.WriteLine("Failed: faile to create user ");
+
 
             // If Admin, update Shop.CreatedBy
             if (userDto.RoleName == "Admin")

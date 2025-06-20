@@ -83,5 +83,11 @@
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task CreateShopAsync(Shop shop)
+        {
+            _context.Shops.Add(shop);
+            await _context.SaveChangesAsync();
+        }
     }
 }
