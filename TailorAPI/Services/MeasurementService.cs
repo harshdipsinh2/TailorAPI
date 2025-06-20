@@ -10,10 +10,13 @@ namespace TailorAPI.Services
     public class MeasurementService : IMeasurementService
     {
         private readonly TailorDbContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public MeasurementService(TailorDbContext context)
+        public MeasurementService(TailorDbContext context,IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
+
         }
 
 
@@ -31,6 +34,10 @@ namespace TailorAPI.Services
 
         public async Task<MeasurementResponseDTO> AddMeasurementAsync(int customerId, MeasurementRequestDTO measurementDto)
         {
+            var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
+
             var existingCustomer = await _context.Customers.FindAsync(customerId);
             if (existingCustomer == null)
                 throw new ArgumentException("Customer does not exist.");
@@ -40,6 +47,8 @@ namespace TailorAPI.Services
             var measurement = new Measurement
             {
                 CustomerId = customerId,
+                ShopId = shopId,
+                BranchId = branchId,
                 Chest = measurementDto.Chest,
                 Waist = measurementDto.Waist,
                 Hip = measurementDto.Hip,
@@ -61,12 +70,15 @@ namespace TailorAPI.Services
             };
 
 
+
+
             _context.Measurements.Add(measurement);
             await _context.SaveChangesAsync();
 
             return new MeasurementResponseDTO
             {
                 CustomerId = measurement.CustomerId, // Include CustomerID in response
+                
                 Chest = measurement.Chest,
                 Waist = measurement.Waist,
                 Hip = measurement.Hip,

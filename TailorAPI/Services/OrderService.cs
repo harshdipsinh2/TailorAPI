@@ -20,12 +20,14 @@ namespace TailorAPI.Services
         private readonly OrderRepository _orderRepository;
         private readonly TailorDbContext _context;
         private readonly TwilioService _twilioService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public OrderService(OrderRepository orderRepository, TailorDbContext context, TwilioService twilioService)
+        public OrderService(OrderRepository orderRepository, TailorDbContext context, TwilioService twilioService,IHttpContextAccessor httpContextAccessor)
         {
             _orderRepository = orderRepository;
             _context = context;
             _twilioService = twilioService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
 
@@ -74,6 +76,10 @@ namespace TailorAPI.Services
         // ✅ Create Order with Calculation Logic
         public async Task<OrderResponseDto> CreateOrderAsync(int customerId, int productId, int fabricTypeId, int assignedTo, OrderRequestDto requestDto)
         {
+            var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
+
             var product = await _context.Products.FindAsync(productId);
             var fabricType = await _context.FabricTypes.FindAsync(fabricTypeId);
 
@@ -120,6 +126,8 @@ namespace TailorAPI.Services
             var newFabricStockEntry = new FabricStock
             {
                 FabricTypeID = fabricTypeId,
+                ShopId = shopId,
+                BranchId = branchId,
                 StockIn = 0,
                 StockUse = (decimal)requestDto.FabricLength * requestDto.Quantity,
                 StockAddDate = DateTime.Now
@@ -141,6 +149,8 @@ namespace TailorAPI.Services
             {
                 CustomerId = customerId,
                 ProductID = productId,
+                ShopId = shopId,
+                BranchId = branchId,
                 Quantity = requestDto.Quantity,
                 FabricLength = (decimal)requestDto.FabricLength,
                 TotalPrice = totalPrice,

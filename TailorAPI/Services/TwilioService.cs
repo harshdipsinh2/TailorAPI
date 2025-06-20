@@ -20,8 +20,8 @@ namespace TailorAPI.Services
         private readonly string _preCompletionMessageSid;
         private readonly string _completionMessageSid;
         private readonly TailorDbContext _context;
-
-        public TwilioService(IConfiguration configuration, TailorDbContext context)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public TwilioService(IConfiguration configuration, TailorDbContext context,IHttpContextAccessor httpContextAccessor)
         {
             _accountSid = configuration["Twilio:AccountSid"] ?? throw new ArgumentNullException("Twilio:AccountSid");
             _authToken = configuration["Twilio:AuthToken"] ?? throw new ArgumentNullException("Twilio:AuthToken");
@@ -32,6 +32,7 @@ namespace TailorAPI.Services
             _completionMessageSid = configuration["Twilio:MessageSid"] ?? throw new ArgumentNullException("Twilio:MessageSid");
 
             _context = context; ///twilio done 
+            _httpContextAccessor = httpContextAccessor;
 
             TwilioClient.Init(_accountSid, _authToken);
         }
@@ -43,6 +44,7 @@ namespace TailorAPI.Services
                 from: new PhoneNumber(_fromPhone),
                 body: message
             );
+    
 
             return $"✅ SMS Sent. SID: {result.Sid}";
         }

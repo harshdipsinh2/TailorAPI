@@ -15,20 +15,27 @@ namespace TailorAPI.Services
     public class FabricCombinedService : IFabricCombinedService
     {
         private readonly TailorDbContext _context;
-
-        public FabricCombinedService(TailorDbContext context)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public FabricCombinedService(TailorDbContext context,IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // FabricType Methods
         public async Task<FabricTypeResponseDTO> AddFabricTypeAsync(FabricTypeRequestDTO request)
         {
+            var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
+
             var fabricType = new FabricType
             {
                 FabricName = request.FabricName,
                 PricePerMeter = request.PricePerMeter,
                 AvailableStock = request.AvailableStock,
+                ShopId = shopId,
+                BranchId = branchId,
                 IsDeleted = false
             };
 
@@ -107,6 +114,9 @@ namespace TailorAPI.Services
         // FabricStock Methods 
         public async Task<FabricStockResponseDTO> AddFabricStockAsync(FabricStockRequestDTO request)
         {
+            var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
             var fabricType = await _context.FabricTypes.FindAsync(request.FabricTypeID);
             if (fabricType == null || fabricType.IsDeleted)
                 throw new Exception("Fabric Type not found or deleted.");
@@ -115,6 +125,8 @@ namespace TailorAPI.Services
                 FabricTypeID = request.FabricTypeID,
                 StockIn = request.StockIn,
                 StockAddDate = request.StockAddDate,
+                ShopId = shopId,
+                BranchId = branchId,
                 StockUse = 0 // Default for new entries
             };
 

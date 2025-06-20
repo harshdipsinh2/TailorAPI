@@ -8,19 +8,26 @@ namespace TailorAPI.Services
     public class ProductService : IProductService
     {
         private readonly ProductRepository _productRepository;
-
-        public ProductService(ProductRepository productRepository)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ProductService(ProductRepository productRepository,IHttpContextAccessor httpContextAccessor)
         {
             _productRepository = productRepository;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<ProductResponseDTO> AddProduct(ProductRequestDTO productDto)
+
         {
+            var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
             var product = new Product
             {
                 ProductName = productDto.ProductName,
                 MakingPrice = productDto.MakingPrice,
-                ProductType = productDto.ProductType
+                ProductType = productDto.ProductType,
+                ShopId = shopId,
+                BranchId = branchId,
             };
 
             var result = await _productRepository.AddProduct(product);
