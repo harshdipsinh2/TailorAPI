@@ -19,78 +19,50 @@ public class AuthController : ControllerBase
         _otpVerificationService = otpVerificationService;
     }
 
-    // Updated Login method to accept query parameters
+    // ✅ Login with Email & Password
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromQuery] string email, [FromQuery] string password)
     {
         var token = await _authService.AuthenticateUserAsync(email, password);
-        /*if (token == null)
+        if (token == null)
         {
-            return Unauthorized();
-        }*/
+            return Unauthorized("Invalid credentials or account not verified.");
+        }
 
         return Ok(new { Token = token });
     }
 
+    // ✅ Updated Registration: Sends OTP to email
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterUserAsync(
-      [FromQuery] string name,
-      [FromQuery] string email,
-      [FromQuery] string password,
-      [FromQuery] string mobileNo,
-      [FromQuery] string address,
-      [FromQuery] string roleName,
-
-      // Optional for Admin
-      [FromQuery] string? shopName = null,
-      [FromQuery] string? shopLocation = null,
-
-      // Optional for Manager and Tailor
-      [FromQuery] int? shopId = null,
-      [FromQuery] int? branchId = null
-  )
+    public async Task<IActionResult> RegisterUserAsync([FromBody] UserRequestDto request)
     {
-        var request = new UserRequestDto
-        {
-            Name = name,
-            Email = email,
-            Password = password,
-            MobileNo = mobileNo,
-            Address = address,
-            RoleName = roleName,
-            ShopName = shopName,
-            ShopLocation = shopLocation,
-            ShopId = shopId,
-            BranchId = branchId
-        };
-
-        var result = await _authService.RegisterUserAsync(request);
-
-        if (result is ConflictObjectResult conflictResult)
-        {
-            return conflictResult;
-        }
-
-        if (result is BadRequestObjectResult badRequestResult)
-        {
-            return badRequestResult;
-        }
-
-        return Ok(new { Message = "User registered successfully, don't forget to get OTP verification." });
+        var result = await _authService.RegisterUserWithOtpAsync(request);
+        return result;
     }
 
-
-    [HttpPost("send")]
-    public async Task<IActionResult> SendOtp(string email)
+    // ✅ OTP Verification Endpoint (email + otp)
+    [HttpPost("verify-otp")]
+    public async Task<IActionResult> VerifyOtpAndActivate([FromBody] OtpVerificationsRequestDTO dto)
     {
-        var result = await _otpVerificationService.GenerateAndSendOtpAsync(email);
-        return result ? Ok("OTP sent.") : BadRequest("Failed to send OTP.");
+        var verified = await _authService.VerifyOtpAndActivateUserAsync(dto);
+        return verified
+            ? Ok("OTP verified and user activated.")
+            : BadRequest("Invalid or expired OTP.");
     }
 
-    [HttpPost("verify")]
-    public async Task<IActionResult> VerifyOtp([FromBody] OtpVerificationsRequestDTO dto)
-    {
-        var result = await _otpVerificationService.VerifyOtpAsync(dto);
-        return result ? Ok("OTP verified.") : BadRequest("Invalid or expired OTP.");
-    }
+    // ❌ [Deprecated] Old OTP Send Endpoint (can remove)
+    //[HttpPost("send")]
+    //public async Task<IActionResult> SendOtp(string email)
+    //{
+    //    var result = await _otpVerificationService.GenerateAndSendOtpAsync(email);
+    //    return result ? Ok("OTP sent.") : BadRequest("Failed to send OTP.");
+    //}
+
+    // ❌ [Deprecated] Old OTP Verify Endpoint (can remove)
+    //[HttpPost("verify")]
+    //public async Task<IActionResult> VerifyOtp([FromBody] OtpVerificationsRequestDTO dto)
+    //{
+    //    var result = await _otpVerificationService.VerifyOtpAsync(dto);
+    //    return result ? Ok("OTP verified.") : BadRequest("Invalid or expired OTP.");
+    //}
 }
