@@ -11,6 +11,10 @@ namespace TailorAPI.Repositories
             _context = context;
         }
 
+        public async Task<int> CountBranchesByShopIdAsync(int shopId)
+        {
+            return await _context.Branches.CountAsync(b => b.ShopId == shopId);
+        }
 
 
         public async Task<Branch> CreateBranchAsync(Branch branch)

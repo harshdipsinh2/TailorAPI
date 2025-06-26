@@ -45,6 +45,12 @@ namespace TailorAPI.Models
         public int FabricTypeID { get; set; }
         public FabricType fabricType { get; set; }
 
+        public int? PlanId { get; set; }
+
+        [ForeignKey("PlanId")]
+        public Plan? Plan { get; set; }
+
+
         [Required]
         public decimal FabricLength { get; set; }
 
@@ -69,6 +75,9 @@ namespace TailorAPI.Models
         [Required]
         [Column(TypeName = "date")]
         public DateTime? CompletionDate { get; set; }
+
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
 
         [Column(TypeName = "nvarchar(10)")] // ✅ Stored as string in SQL
         [JsonConverter(typeof(JsonStringEnumConverter))] // ✅ Displayed as string in JSON

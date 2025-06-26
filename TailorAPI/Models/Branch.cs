@@ -22,6 +22,14 @@ namespace TailorAPI.Models
 
         public Shop Shop { get; set; } // Navigation property
 
+        public int? PlanId { get; set; }
+
+        [ForeignKey("PlanId")]
+        public Plan? Plan { get; set; }
+
+        //public StaticPlanType PlanType { get; set; } 
+
+
         public ICollection<User> Users { get; set; }
         public ICollection<Customer> Customers { get; set; }
         public ICollection<Product> Products { get; set; }

@@ -51,11 +51,11 @@ public class AuthService : IAuthService
             return null;
         }
 
-        if (!user.IsVerified)
-        {
-            Console.WriteLine($"User not verified: {email}");
-            return null;
-        }
+        //if (!user.IsVerified)
+        //{
+        //    Console.WriteLine($"User not verified: {email}");
+        //    return null;
+        //}
 
         return _jwtService.GenerateToken(
             user.UserID.ToString(),

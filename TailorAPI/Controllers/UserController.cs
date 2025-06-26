@@ -1,67 +1,77 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using TailorAPI.DTO;
-using TailorAPI.Services.Interface;
+﻿//using Microsoft.AspNetCore.Authorization;
+//using Microsoft.AspNetCore.Mvc;
+//using TailorAPI.DTO;
+//using TailorAPI.Services.Interface;
 
-[Route("api/[controller]")]
-[ApiController]
-public class UserController : ControllerBase
-{
-    private readonly IUserService _userService;
+//[Route("api/[controller]")]
+//[ApiController]
+//[Authorize(Roles = "SuperAdmin,Admin,Manager")]
 
-    public UserController(IUserService userService)
-    {
-        _userService = userService;
-    }
+//public class UserController : ControllerBase
+//{
+//    private readonly IUserService _userService;
 
-    [HttpPost("Register")]
-    public async Task<IActionResult> RegisterUser([FromBody] UserRequestDto userrequestDto)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-        var user = await _userService.RegisterUserAsync(userrequestDto);
-        if (user == null) return BadRequest("User registration failed.");
+//    public UserController(IUserService userService)
+//    {
+//        _userService = userService;
+//    }
 
-        return Ok(user);
-    }
+//    [HttpPost("Register")]
+//    public async Task<IActionResult> RegisterUser([FromBody] UserRequestDto userrequestDto)
+//    {
+//        if (!ModelState.IsValid)
+//        {
+//            return BadRequest(ModelState);
+//        }
+//        var user = await _userService.RegisterUserAsync(userrequestDto);
+//        if (user == null) return BadRequest("User registration failed.");
 
-    [HttpGet("GetAll")]
+//        return Ok(user);
+//    }
 
-    public async Task<IActionResult> GetAllUsers()
-    {
-        var users = await _userService.GetAllUsersAsync();
-        return Ok(users);
-    }
+//    [HttpGet("GetAll")]
 
-    [HttpGet("GetById/{id}")]
+//    public async Task<IActionResult> GetAllUsers()
+//    {
+//        var users = await _userService.GetAllUsersAsync();
+//        return Ok(users);
+//    }
 
-    public async Task<IActionResult> GetUserById(int id)
-    {
-        var user = await _userService.GetUserByIdAsync(id);
-        if (user == null) return NotFound("User not found.");
+//    [HttpGet("GetAllTailor")]
+//    public async Task<IActionResult> GetAllTailors()
+//    {
+//        var tailors = await _userService.GetAllTailorsAsync();
+//        return Ok(tailors);
+//    }
 
-        return Ok(user);
-    }
 
-    [HttpDelete("Delete/{id}")]
+//    [HttpGet("GetById/{id}")]
 
-    public async Task<IActionResult> DeleteUser(int id)
-    {
-        var result = await _userService.DeleteUserAsync(id);
-        if (!result) return NotFound("User not found.");
+//    public async Task<IActionResult> GetUserById(int id)
+//    {
+//        var user = await _userService.GetUserByIdAsync(id);
+//        if (user == null) return NotFound("User not found.");
 
-        return Ok("User deleted successfully.");
-    }
+//        return Ok(user);
+//    }
 
-    [HttpPut("Update/{id}")]
+//    [HttpDelete("Delete/{id}")]
 
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserRequestDto userDto)
-    {
-        var updatedUser = await _userService.UpdateUserAsync(id, userDto);
-        if (updatedUser == null) return NotFound("User not found.");
+//    public async Task<IActionResult> DeleteUser(int id)
+//    {
+//        var result = await _userService.DeleteUserAsync(id);
+//        if (!result) return NotFound("User not found.");
 
-        return Ok(updatedUser);
-    }
-}
+//        return Ok("User deleted successfully.");
+//    }
+
+//    [HttpPut("Update/{id}")]
+
+//    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserRequestDto userDto)
+//    {
+//        var updatedUser = await _userService.UpdateUserAsync(id, userDto);
+//        if (updatedUser == null) return NotFound("User not found.");
+
+//        return Ok(updatedUser);
+//    }
+//}

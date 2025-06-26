@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TailorAPI.DTO;
 using TailorAPI.DTO.Request;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.DTOs.Request;
@@ -21,6 +22,9 @@ namespace TailorAPI.Controllers
         private readonly IOrderService _orderService;
         private readonly IDashboardService _dashboardService;
         private readonly IRoleService _roleService;
+        private readonly IBranchService _branchService;
+        private readonly IUserService _userService;
+
 
         public AdminController(IAdminService adminService,
                                ICustomerService customerService,
@@ -29,15 +33,19 @@ namespace TailorAPI.Controllers
                                IFabricCombinedService fabricCombinedService,
                                IOrderService orderService,
                                IDashboardService dashboardService,
+                                 IBranchService branchService,
+                                 IUserService userService,
                                IRoleService roleService)
         {
             _dashboardService = dashboardService;
+            _userService = userService;
             _adminService = adminService;
             _customerService = customerService;
             _measurementService = measurementService;
             _productService = productService;
             _fabricCombinedService = fabricCombinedService;
             _orderService = orderService;
+            _branchService = branchService;
             _roleService = roleService;
         }
 
@@ -419,5 +427,67 @@ namespace TailorAPI.Controllers
             if (!result) return NotFound("Role not found.");
             return Ok("Role deleted successfully.");
         }
+
+        // -----------------------------Branch Endpoints ---------------------------------------
+
+
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        [HttpPost("add-branch")]
+        public async Task<IActionResult> CreateBranch([FromBody] BranchRequestDTO dto)
+        {
+            var result = await _branchService.CreateBranchAsync(dto);
+            if (result == null)
+                return BadRequest("Invalid ShopId or failed to create branch.");
+
+            return Ok(result);
+        }
+
+        //----------------------------------sUser endpoints
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
+        [HttpGet("GetAll-User")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _userService.GetAllUsersAsync();
+            return Ok(users);
+        }
+        [Authorize(Roles = "SuperAdmin,Admi,Manager")]
+        [HttpGet("GetAllTailor-User")]
+        public async Task<IActionResult> GetAllTailors()
+        {
+            var tailors = await _userService.GetAllTailorsAsync();
+            return Ok(tailors);
+        }
+
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
+        [HttpGet("GetUserById/{id}")]
+
+        public async Task<IActionResult> GetUserById(int id)
+        {
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null) return NotFound("User not found.");
+
+            return Ok(user);
+        }
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
+        [HttpDelete("Delete-User/{id}")]
+
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var result = await _userService.DeleteUserAsync(id);
+            if (!result) return NotFound("User not found.");
+
+            return Ok("User deleted successfully.");
+        }
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
+        [HttpPut("Update-User/{id}")]
+
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserRequestDto userDto)
+        {
+            var updatedUser = await _userService.UpdateUserAsync(id, userDto);
+            if (updatedUser == null) return NotFound("User not found.");
+
+            return Ok(updatedUser);
+        }
     }
 }
+

@@ -18,10 +18,11 @@ public class UserService : IUserService
     private readonly IBranchService _branchService;
     private readonly BranchRepository _branchRepository;
     private readonly ShopRepository _shopRepository;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
 
-
-    public UserService(UserRepository userRepository,JwtService jwtService,IShopService shopService, IBranchService branchService,BranchRepository branchRepository,ShopRepository shopRepository)
+    public UserService(UserRepository userRepository,JwtService jwtService,IShopService shopService,IHttpContextAccessor httpContextAccessor,
+        IBranchService branchService,BranchRepository branchRepository,ShopRepository shopRepository)
     {
         _userRepository = userRepository;
         _passwordHasher = new PasswordHasher<User>();
@@ -30,6 +31,7 @@ public class UserService : IUserService
         _branchService = branchService;
         _branchRepository = branchRepository;
         _shopRepository = shopRepository;
+        _httpContextAccessor = httpContextAccessor;
 
     }
 
@@ -167,7 +169,12 @@ public class UserService : IUserService
     }
 
     public async Task<List<UserResponseDto>> GetAllUsersAsync()
+
     {
+        var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
+        var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
+
         var users = await _userRepository.GetAllUsersAsync();
         return users.Select(user => new UserResponseDto
         {
@@ -180,6 +187,33 @@ public class UserService : IUserService
             UserStatus = user.UserStatus.ToString()
         }).ToList();
     }
+
+    public async Task<List<UserResponseDto>> GetAllTailorsAsync()
+    {
+        var user = _httpContextAccessor.HttpContext.User;
+        var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+        var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+
+        var users = await _userRepository.GetAllUsersAsync();
+        return users
+            .Where(u => u.Role.RoleName == "Tailor" && !u.IsDeleted)
+            .Select(user => new UserResponseDto
+            {
+                UserID = user.UserID,
+                Name = user.Name,
+                Email = user.Email,
+                MobileNo = user.MobileNo,
+                Address = user.Address,
+                RoleName = user.Role.RoleName,
+                UserStatus = user.UserStatus.ToString(),
+                BranchId = user.BranchId ?? 0,
+                BranchName = user.Branch?.BranchName ,
+                ShopId = user.ShopId ?? 0,
+                ShopName = user.Shop?.ShopName 
+
+            }).ToList();
+    }
+
 
     public async Task<bool> DeleteUserAsync(int userId)
     {

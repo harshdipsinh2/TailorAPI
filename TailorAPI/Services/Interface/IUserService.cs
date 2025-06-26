@@ -4,6 +4,8 @@ using TailorAPI.DTO;
 
 public interface IUserService
 {
+
+    Task<List<UserResponseDto>> GetAllTailorsAsync();
     Task<UserResponseDto?> GetUserByIdAsync(int id);
     Task<UserResponseDto?> UpdateUserAsync(int id, UserRequestDto userDto);
     Task<UserResponseDto?> RegisterUserAsync(UserRequestDto userDto);

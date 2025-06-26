@@ -79,6 +79,21 @@ namespace TailorAPI.Services
             var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
             var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
 
+            var shop = await _context.Shops
+          .Include(s => s.Plan)
+          .Include(s => s.Orders)
+          .FirstOrDefaultAsync(s => s.ShopId == shopId);
+
+            if (shop == null) throw new Exception("Shop not found");
+            if (shop.Plan == null) throw new Exception("No active plan found for this shop");
+
+            int currentOrderCount = shop.Orders
+                .Count(o => o.CreatedDate >= shop.PlanStartDate && o.CreatedDate <= shop.PlanEndDate && !o.IsDeleted);
+
+            if (currentOrderCount >= shop.Plan.MaxOrders)
+                throw new Exception("Order limit reached for your current plan.");
+
+
 
             var product = await _context.Products.FindAsync(productId);
             var fabricType = await _context.FabricTypes.FindAsync(fabricTypeId);
@@ -161,6 +176,7 @@ namespace TailorAPI.Services
                 OrderStatus = Enum.Parse<OrderStatus>("Pending"),
                 PaymentStatus = Enum.Parse<PaymentStatus>("Pending"),
                 ApprovalStatus = Enum.Parse<OrderApprovalStatus>("Pending"),
+                PlanId = shop.PlanId
             };
 
 
@@ -586,7 +602,7 @@ namespace TailorAPI.Services
                     o.ApprovalStatus == OrderApprovalStatus.Pending &&
                     o.AssignedAt != null &&
                     o.AssignedAt <= cutoffTime &&
-                    !o.IsDeleted)
+                    !o.IsDeleted)   
                 .ToListAsync();
 
             foreach (var order in ordersToReject)

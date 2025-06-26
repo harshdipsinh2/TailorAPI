@@ -1,32 +1,32 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using TailorAPI.DTO.RequestDTO;
-using TailorAPI.Services.Interface;
+﻿//using Microsoft.AspNetCore.Authorization;
+//using Microsoft.AspNetCore.Mvc;
+//using TailorAPI.DTO.RequestDTO;
+//using TailorAPI.Services.Interface;
 
-namespace TailorAPI.Controllers
-{
+//namespace TailorAPI.Controllers
+//{
 
-    public class BranchController : ControllerBase
-    {
-        public readonly IBranchService _branchService;
+//    public class BranchController : ControllerBase
+//    {
+//        public readonly IBranchService _branchService;
 
-        public BranchController(IBranchService branchService)
-        {
-            _branchService = branchService;
-        }
+//        public BranchController(IBranchService branchService)
+//        {
+//            _branchService = branchService;
+//        }
 
 
-        [Authorize(Roles = "SuperAdmin,Admin")]
-        [HttpPost("add-branch")]
-        public async Task<IActionResult> CreateBranch([FromBody] BranchRequestDTO dto)
-        {
-            var result = await _branchService.CreateBranchAsync(dto);
-            if (result == null)
-                return BadRequest("Invalid ShopId or failed to create branch.");
+//        [Authorize(Roles = "SuperAdmin,Admin")]
+//        [HttpPost("add-branch")]
+//        public async Task<IActionResult> CreateBranch([FromBody] BranchRequestDTO dto)
+//        {
+//            var result = await _branchService.CreateBranchAsync(dto);
+//            if (result == null)
+//                return BadRequest("Invalid ShopId or failed to create branch.");
 
-            return Ok(result);
-        }
-    }
+//            return Ok(result);
+//        }
+//    }
 
-}
+//}
 

@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace TailorAPI.Migrations
 {
     [DbContext(typeof(TailorDbContext))]
-    [Migration("20250619114207_changes2")]
-    partial class changes2
+    [Migration("20250626093349_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -70,6 +70,43 @@ namespace TailorAPI.Migrations
                     b.ToTable("Customers");
                 });
 
+            modelBuilder.Entity("Plan", b =>
+                {
+                    b.Property<int>("PlanId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PlanId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxBranches")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxOrders")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("PricePerMonth")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("StripePriceId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StripeProductId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("PlanId");
+
+                    b.ToTable("Plans");
+                });
+
             modelBuilder.Entity("TailorAPI.Models.Branch", b =>
                 {
                     b.Property<int>("BranchId")
@@ -89,10 +126,15 @@ namespace TailorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("PlanId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ShopId")
                         .HasColumnType("int");
 
                     b.HasKey("BranchId");
+
+                    b.HasIndex("PlanId");
 
                     b.HasIndex("ShopId");
 
@@ -282,6 +324,9 @@ namespace TailorAPI.Migrations
                     b.Property<DateTime>("CompletionDate")
                         .HasColumnType("date");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
@@ -304,6 +349,9 @@ namespace TailorAPI.Migrations
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<int?>("PlanId")
+                        .HasColumnType("int");
 
                     b.Property<int>("ProductID")
                         .HasColumnType("int");
@@ -329,6 +377,8 @@ namespace TailorAPI.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("FabricTypeID");
+
+                    b.HasIndex("PlanId");
 
                     b.HasIndex("ProductID");
 
@@ -470,6 +520,15 @@ namespace TailorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("PlanEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("PlanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PlanStartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ShopName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -477,6 +536,8 @@ namespace TailorAPI.Migrations
                     b.HasKey("ShopId");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("PlanId");
 
                     b.ToTable("Shops");
                 });
@@ -601,11 +662,17 @@ namespace TailorAPI.Migrations
 
             modelBuilder.Entity("TailorAPI.Models.Branch", b =>
                 {
+                    b.HasOne("Plan", "Plan")
+                        .WithMany("Branches")
+                        .HasForeignKey("PlanId");
+
                     b.HasOne("TailorAPI.Models.Shop", "Shop")
                         .WithMany("Branches")
                         .HasForeignKey("ShopId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Plan");
 
                     b.Navigation("Shop");
                 });
@@ -707,6 +774,10 @@ namespace TailorAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Plan", "Plan")
+                        .WithMany("Orders")
+                        .HasForeignKey("PlanId");
+
                     b.HasOne("TailorAPI.Models.Product", "Product")
                         .WithMany("Orders")
                         .HasForeignKey("ProductID")
@@ -724,6 +795,8 @@ namespace TailorAPI.Migrations
                     b.Navigation("Branch");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Plan");
 
                     b.Navigation("Product");
 
@@ -769,7 +842,13 @@ namespace TailorAPI.Migrations
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Plan", "Plan")
+                        .WithMany()
+                        .HasForeignKey("PlanId");
+
                     b.Navigation("CreatedByUser");
+
+                    b.Navigation("Plan");
                 });
 
             modelBuilder.Entity("TailorAPI.Models.TwilioSms", b =>
@@ -828,6 +907,13 @@ namespace TailorAPI.Migrations
                 {
                     b.Navigation("Measurement")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Plan", b =>
+                {
+                    b.Navigation("Branches");
+
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("TailorAPI.Models.Branch", b =>

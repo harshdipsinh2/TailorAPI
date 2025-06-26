@@ -23,6 +23,7 @@ public class TailorDbContext : DbContext
     public DbSet<Branch> Branches { get; set; }
     public DbSet<Shop> Shops { get; set; }
     public DbSet<TwilioSms> TwilioSms { get; set; }
+    public DbSet<Plan> Plans { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -175,6 +176,17 @@ public class TailorDbContext : DbContext
                 .WithMany(b => b.Products)
                 .HasForeignKey(p => p.BranchId)
                 .OnDelete(DeleteBehavior.Restrict); // product
+
+
+
+            //----------------------- for plan ---------------------------------
+
+            //modelBuilder.Entity<Branch>()
+            //    .HasOne(b => b.plan)
+            //    .WithMany(p => p.Branches)
+            //    .HasForeignKey(b => b.PlanId)
+            //    .OnDelete(DeleteBehavior.Restrict);
+
 
 
 
