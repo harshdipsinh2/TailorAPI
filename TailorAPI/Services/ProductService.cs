@@ -1,4 +1,5 @@
-﻿using TailorAPI.DTOs.Request;
+﻿using Microsoft.EntityFrameworkCore;
+using TailorAPI.DTOs.Request;
 using TailorAPI.DTOs.Response;
 using TailorAPI.Models;
 using TailorAPI.Repositories;
@@ -8,10 +9,12 @@ namespace TailorAPI.Services
     public class ProductService : IProductService
     {
         private readonly ProductRepository _productRepository;
+        private readonly TailorDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public ProductService(ProductRepository productRepository,IHttpContextAccessor httpContextAccessor)
+        public ProductService(ProductRepository productRepository,IHttpContextAccessor httpContextAccessor,TailorDbContext context)
         {
             _productRepository = productRepository;
+            _context = context;
             _httpContextAccessor = httpContextAccessor;
         }
 
@@ -20,6 +23,23 @@ namespace TailorAPI.Services
         {
             var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
             var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
+
+            // Check if the shop exists
+            var shop = await _context.Shops.FindAsync(shopId);
+            if (shop == null)
+                throw new Exception("Shop not found.");
+
+            // Count existing (not deleted) customers for this shop
+            var productCount = await _context.Products
+                .Where(c => c.ShopId == shopId && !c.IsDeleted)
+                .CountAsync();
+
+            // If no plan, allow only 2 customers
+            if (shop.PlanId == null && productCount >= 2)
+                throw new InvalidOperationException("Trial limit reached. Please purchase a plan to add more customers.");
+
+
 
             var product = new Product
             {

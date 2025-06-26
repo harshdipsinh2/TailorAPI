@@ -28,6 +28,17 @@ namespace TailorAPI.Services
             var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
             var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
 
+            var shop = await _context.Shops.FindAsync(shopId);
+            if (shop == null)
+                throw new Exception("shop not found");
+
+            var fabricCount = await _context.FabricTypes
+                .Where(c => c.ShopId == shopId && !c.IsDeleted)
+                .CountAsync();
+
+            if (shop.PlanId == null && fabricCount >= 2)
+                throw new InvalidOperationException("limit is completed now so buy the plan to add more");
+
 
             var fabricType = new FabricType
             {
@@ -116,6 +127,20 @@ namespace TailorAPI.Services
         {
             var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
             var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
+
+            var shop = await _context.Shops.FindAsync(shopId);
+            if (shop == null)
+                throw new Exception("shop not found");
+
+            var fabricStockCount = await _context.FabricStocks
+                .Where(c => c.ShopId == shopId )
+                .CountAsync();
+
+            if (shop.PlanId == null && fabricStockCount >= 2)
+                throw new InvalidOperationException("limit is completed now so buy the plan to add more");
+
+
 
             var fabricType = await _context.FabricTypes.FindAsync(request.FabricTypeID);
             if (fabricType == null || fabricType.IsDeleted)

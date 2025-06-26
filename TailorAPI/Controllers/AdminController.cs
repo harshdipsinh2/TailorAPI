@@ -80,14 +80,23 @@ namespace TailorAPI.Controllers
 
         [HttpPost("AddCustomer")]
         [Authorize(Roles = "SuperAdmin,Admin,Manager")]
+
         public async Task<ActionResult<CustomerDTO>> PostCustomer([FromBody] CustomerRequestDTO customerDto)
         {
             if (customerDto == null)
                 return BadRequest("Invalid customer data");
 
-            var createdCustomer = await _customerService.AddCustomerAsync(customerDto);
-            return CreatedAtAction(nameof(GetCustomerById), new { customerId = createdCustomer.FullName }, createdCustomer);
+            try
+            {
+                var createdCustomer = await _customerService.AddCustomerAsync(customerDto);
+                return CreatedAtAction(nameof(GetCustomerById), new { customerId = createdCustomer.CustomerId }, createdCustomer);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
+
 
         [HttpPut("EditCustomer")]
         [Authorize(Roles = "SuperAdmin,Admin,Manager")]
@@ -159,9 +168,20 @@ namespace TailorAPI.Controllers
         [HttpPost("AddProduct")]
         [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> AddProduct([FromBody] ProductRequestDTO productDto)
+
         {
-            var result = await _productService.AddProduct(productDto);
-            return Ok(result);
+
+            if (productDto == null)
+                return BadRequest("Invalid product data");
+            try
+            {
+                var result = await _productService.AddProduct(productDto);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut("UpdateProduct/{id}")]
@@ -205,8 +225,18 @@ namespace TailorAPI.Controllers
         [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> AddFabricType([FromBody] FabricTypeRequestDTO requestDTO)
         {
-            var result = await _fabricCombinedService.AddFabricTypeAsync(requestDTO);
-            return Ok(result);
+            if (requestDTO == null)
+            {
+                return BadRequest("Invalid fabric type data");
+            }try
+
+            { var result = await _fabricCombinedService.AddFabricTypeAsync(requestDTO);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut("UpdateFabricPrice")]
@@ -247,8 +277,20 @@ namespace TailorAPI.Controllers
         [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         public async Task<IActionResult> AddFabricStock([FromBody] FabricStockRequestDTO requestDTO)
         {
-            var result = await _fabricCombinedService.AddFabricStockAsync(requestDTO);
-            return Ok(result);
+            if (requestDTO == null)
+            {
+                return BadRequest("Invalid fabric stock data");
+
+            }
+            try
+            { 
+                var result = await _fabricCombinedService.AddFabricStockAsync(requestDTO);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("GetAllFabricStocks")]

@@ -74,9 +74,22 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDTO> AddCustomerAsync(CustomerRequestDTO customerDto)
     {
-
         var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
         var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+
+        // Check if the shop exists
+        var shop = await _context.Shops.FindAsync(shopId);
+        if (shop == null)
+            throw new Exception("Shop not found.");
+
+        // Count existing (not deleted) customers for this shop
+        var customerCount = await _context.Customers
+            .Where(c => c.ShopId == shopId && !c.IsDeleted)
+            .CountAsync();
+
+        // If no plan, allow only 2 customers
+        if (shop.PlanId == null && customerCount >= 2)
+            throw new InvalidOperationException("Trial limit reached. Please purchase a plan to add more customers.");
 
         var customer = new Customer
         {
@@ -102,6 +115,7 @@ public class CustomerService : ICustomerService
             Gender = customer.Gender
         };
     }
+
 
     public async Task<Customer> UpdateCustomerAsync(int customerId, CustomerRequestDTO customerDto)
     {
