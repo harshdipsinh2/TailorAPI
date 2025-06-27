@@ -169,14 +169,60 @@ public class UserService : IUserService
     }
 
     public async Task<List<UserResponseDto>> GetAllUsersAsync()
-
     {
-        var shopId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("shopId")?.Value ?? "0");
-        var branchId = int.Parse(_httpContextAccessor.HttpContext.User.FindFirst("branchId")?.Value ?? "0");
+        var user = _httpContextAccessor.HttpContext.User;
+        var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+        var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+        var role = user.FindFirst("roles")?.Value;
 
+        var allUsers = await _userRepository.GetAllUsersAsync();
 
-        var users = await _userRepository.GetAllUsersAsync();
-        return users.Select(user => new UserResponseDto
+        IEnumerable<User> filteredUsers;
+
+        if (role == "SuperAdmin")
+        {
+            filteredUsers = allUsers; // full access
+        }
+        else if (role == "Admin")
+        {
+            filteredUsers = allUsers.Where(u => u.ShopId == shopId && !u.IsDeleted);
+        }
+        else if (role == "Manager")
+        {
+            filteredUsers = allUsers.Where(u => u.ShopId == shopId && u.BranchId == branchId && !u.IsDeleted);
+        }
+        else
+        {
+            return new List<UserResponseDto>(); // No access
+        }
+
+        return filteredUsers.Select(u => new UserResponseDto
+        {
+            UserID = u.UserID,
+            Name = u.Name,
+            Email = u.Email,
+            MobileNo = u.MobileNo,
+            Address = u.Address,
+            RoleName = u.Role.RoleName,
+            UserStatus = u.UserStatus.ToString(),
+            BranchId = u.BranchId ?? 0,
+            BranchName = u.Branch?.BranchName,
+            ShopId = u.ShopId ?? 0,
+            ShopName = u.Shop?.ShopName,
+            IsVerified = u.IsVerified
+        }).ToList();
+    }
+    public async Task<List<UserResponseDto>> GetUsersByShopAsync(int shopId, int? branchId = null)
+    {
+        var allUsers = await _userRepository.GetAllUsersAsync();
+
+        var filtered = allUsers
+            .Where(u => u.ShopId == shopId && !u.IsDeleted);
+
+        if (branchId.HasValue)
+            filtered = filtered.Where(u => u.BranchId == branchId.Value);
+
+        return filtered.Select(user => new UserResponseDto
         {
             UserID = user.UserID,
             Name = user.Name,
@@ -184,9 +230,38 @@ public class UserService : IUserService
             MobileNo = user.MobileNo,
             Address = user.Address,
             RoleName = user.Role.RoleName,
-            UserStatus = user.UserStatus.ToString()
+            UserStatus = user.UserStatus.ToString(),
+            ShopId = user.ShopId ?? 0,
+            ShopName = user.Shop?.ShopName,
+            BranchId = user.BranchId ?? 0,
+            BranchName = user.Branch?.BranchName,
+            IsVerified = user.IsVerified
         }).ToList();
     }
+    public async Task<List<UserResponseDto>> GetUsersByBranchAsync(int shopId, int branchId)
+    {
+        var allUsers = await _userRepository.GetAllUsersAsync();
+
+        var filtered = allUsers
+            .Where(u => u.ShopId == shopId && u.BranchId == branchId && !u.IsDeleted);
+
+        return filtered.Select(user => new UserResponseDto
+        {
+            UserID = user.UserID,
+            Name = user.Name,
+            Email = user.Email,
+            MobileNo = user.MobileNo,
+            Address = user.Address,
+            RoleName = user.Role.RoleName,
+            UserStatus = user.UserStatus.ToString(),
+            ShopId = user.ShopId ?? 0,
+            ShopName = user.Shop?.ShopName,
+            BranchId = user.BranchId ?? 0,
+            BranchName = user.Branch?.BranchName,
+            IsVerified = user.IsVerified
+        }).ToList();
+    }
+
 
     public async Task<List<UserResponseDto>> GetAllTailorsAsync()
     {

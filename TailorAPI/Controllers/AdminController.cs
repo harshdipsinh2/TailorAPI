@@ -472,17 +472,37 @@ namespace TailorAPI.Controllers
 
         // -----------------------------Branch Endpoints ---------------------------------------
 
-
         [Authorize(Roles = "SuperAdmin,Admin")]
-        [HttpPost("add-branch")]
+        [HttpPost("create-Branch")]
         public async Task<IActionResult> CreateBranch([FromBody] BranchRequestDTO dto)
         {
-            var result = await _branchService.CreateBranchAsync(dto);
-            if (result == null)
-                return BadRequest("Invalid ShopId or failed to create branch.");
-
-            return Ok(result);
+            try
+            {
+                var branch = await _branchService.CreateBranchAsync(dto);
+                return Ok(branch);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
+
+
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        [HttpGet("all-branches")]
+        public async Task<IActionResult> GetAllBranches([FromQuery] int? shopId)
+        {
+            try
+            {
+                var result = await _branchService.GetAllBranchesAsync(shopId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
 
         //----------------------------------sUser endpoints
         [Authorize(Roles = "SuperAdmin,Admin,Manager")]
@@ -492,7 +512,25 @@ namespace TailorAPI.Controllers
             var users = await _userService.GetAllUsersAsync();
             return Ok(users);
         }
-        [Authorize(Roles = "SuperAdmin,Admi,Manager")]
+
+        [Authorize(Roles ="SuperAdmin,Admin")]
+        [HttpGet("admin/users")]
+        public async Task<IActionResult> GetUsersByShop([FromQuery] int shopId, [FromQuery] int? branchId = null)
+        {
+            var users = await _userService.GetUsersByShopAsync(shopId, branchId);
+            return Ok(users);
+        }
+
+        [Authorize(Roles ="Manager")]
+        [HttpGet("manager/users")]
+        public async Task<IActionResult> GetUsersByBranch([FromQuery] int shopId, [FromQuery] int branchId)
+        {
+            var users = await _userService.GetUsersByBranchAsync(shopId, branchId);
+            return Ok(users);
+        }
+
+
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         [HttpGet("GetAllTailor-User")]
         public async Task<IActionResult> GetAllTailors()
         {

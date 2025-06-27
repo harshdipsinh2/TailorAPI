@@ -18,6 +18,15 @@
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
+        public async Task<Shop?> GetShopByIdAsync(int shopId)
+        {
+            return await _context.Shops.FindAsync(shopId);
+        }
+
+        public async Task<Branch?> GetBranchByIdAsync(int branchId)
+        {
+            return await _context.Branches.FindAsync(branchId);
+        }
 
 
         public async Task<string?> AuthenticateUserAsync(string email, string password)
@@ -51,7 +60,10 @@
         {
             return await _context.Users
                 .Include(u => u.Role)
+                .Include(u => u.Shop)
+                .Include(u => u.Branch)
                 .Where(u => !u.IsDeleted)
+                
                 .ToListAsync();
         }
 

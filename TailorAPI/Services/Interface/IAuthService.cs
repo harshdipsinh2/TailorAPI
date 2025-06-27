@@ -8,9 +8,12 @@ namespace TailorAPI.Services.Interface
     {
         Task<string?> AuthenticateUserAsync(string email, string password);
         string HashPassword(string password); // ✅ Add this method
-        Task<IActionResult> RegisterUserAsync([FromBody] UserRequestDto request);
-        Task<IActionResult> RegisterUserWithOtpAsync(UserRequestDto request);
+        //Task<IActionResult> RegisterUserAsync([FromBody] UserRequestDto request);
+        //Task<IActionResult> RegisterUserWithOtpAsync(UserRequestDto request);
         Task<bool> VerifyOtpAndActivateUserAsync(OtpVerificationsRequestDTO dto);
+
+        Task<IActionResult> RegisterAdminAsync(AdminRegistrationDto request);
+        Task<IActionResult> RegisterEmployeeAsync(EmployeeRegistrationDto request);
 
     }
 }

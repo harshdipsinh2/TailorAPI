@@ -33,12 +33,12 @@ public class AuthController : ControllerBase
     }
 
     // ✅ Updated Registration: Sends OTP to email
-    [HttpPost("register")]
-    public async Task<IActionResult> RegisterUserAsync([FromBody] UserRequestDto request)
-    {
-        var result = await _authService.RegisterUserWithOtpAsync(request);
-        return result;
-    }
+    //[HttpPost("register")]
+    //public async Task<IActionResult> RegisterUserAsync([FromBody] UserRequestDto request)
+    //{
+    //    var result = await _authService.RegisterUserWithOtpAsync(request);
+    //    return result;
+    //}
 
     // ✅ OTP Verification Endpoint (email + otp)
     [HttpPost("verify-otp")]
@@ -49,6 +49,20 @@ public class AuthController : ControllerBase
             ? Ok("OTP verified and user activated.")
             : BadRequest("Invalid or expired OTP.");
     }
+
+    [HttpPost("register/admin")]
+    public async Task<IActionResult> RegisterAdmin([FromBody] AdminRegistrationDto request)
+    {
+        return await _authService.RegisterAdminAsync(request);
+    }
+
+    [HttpPost("register/employee")]
+    public async Task<IActionResult> RegisterEmployee([FromBody] EmployeeRegistrationDto request)
+    {
+        return await _authService.RegisterEmployeeAsync(request);
+    }
+
+
 
     // ❌ [Deprecated] Old OTP Send Endpoint (can remove)
     //[HttpPost("send")]

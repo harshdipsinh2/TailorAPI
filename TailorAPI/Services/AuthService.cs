@@ -72,20 +72,24 @@ public class AuthService : IAuthService
     }
 
     // ✅ New OTP-based Registration
-    public async Task<IActionResult> RegisterUserWithOtpAsync(UserRequestDto request)
+
+
+
+    public async Task<bool> VerifyOtpAndActivateUserAsync(OtpVerificationsRequestDTO dto)
+    {
+        return await _otpVerificationService.VerifyOtpAsync(dto);
+    }
+
+    public async Task<IActionResult> RegisterAdminAsync(AdminRegistrationDto request)
     {
         var existingUser = (await _userRepository.GetAllUsersAsync())
             .FirstOrDefault(u => u.Email == request.Email);
         if (existingUser != null)
-        {
             return new ConflictObjectResult(new { Message = "Email already exists." });
-        }
 
-        var role = await _userRepository.GetRoleByNameAsync(request.RoleName);
+        var role = await _userRepository.GetRoleByNameAsync("Admin");
         if (role == null)
-        {
             return new BadRequestObjectResult(new { Message = "Invalid role specified." });
-        }
 
         var user = new User
         {
@@ -99,84 +103,59 @@ public class AuthService : IAuthService
             IsVerified = false
         };
 
-        if (request.RoleName == "Admin")
+        await _userRepository.CreateUserAsync(user);
+
+        var shop = new Shop
         {
-            if (string.IsNullOrWhiteSpace(request.ShopName) || string.IsNullOrWhiteSpace(request.ShopLocation))
-            {
-                return new BadRequestObjectResult(new { Message = "ShopName and ShopLocation are required for Admin registration." });
-            }
+            ShopName = request.ShopName,
+            Location = request.ShopLocation,
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUserId = user.UserID,
+            CreatedByUserName = user.Name
+        };
+        await _userRepository.CreateShopAsync(shop);
 
-            // Step 1: Save user
-            await _userRepository.CreateUserAsync(user);
+        var headBranch = await _branchService.CreateHeadBranchForShopAsync(shop);
 
-            // Step 2: Create shop
-            var shop = new Shop
-            {
-                ShopName = request.ShopName,
-                Location = request.ShopLocation,
-                CreatedDate = DateTime.UtcNow,
-                CreatedByUserId = user.UserID,
-                CreatedByUserName = request.Name
-            };
-            await _userRepository.CreateShopAsync(shop);
+        user.ShopId = shop.ShopId;
+        user.BranchId = headBranch.BranchId;
+        await _userRepository.UpdateUserAsync(user);
 
-            // Step 3: Create Head Branch
-            var headBranch = await _branchService.CreateHeadBranchForShopAsync(shop);
-
-            // Step 4: Update user with ShopId and BranchId
-            user.ShopId = shop.ShopId;
-            user.BranchId = headBranch.BranchId;
-
-            await _userRepository.UpdateUserAsync(user);
-        }
-        else if (request.RoleName == "Manager" || request.RoleName == "Tailor")
-        {
-            if (request.ShopId == null || request.BranchId == null)
-            {
-                return new BadRequestObjectResult(new { Message = "ShopId and BranchId are required for Manager and Tailor registration." });
-            }
-
-            user.ShopId = request.ShopId;
-            user.BranchId = request.BranchId;
-
-            await _userRepository.CreateUserAsync(user);
-        }
-        else
-        {
-            return new BadRequestObjectResult(new { Message = "Unsupported role specified." });
-        }
-
-        // ✅ Send OTP
-        var otpSent = await _otpVerificationService.GenerateAndSendOtpAsync(request.Email);
+        var otpSent = await _otpVerificationService.GenerateAndSendOtpAsync(user.Email);
         if (!otpSent)
-        {
             return new BadRequestObjectResult(new { Message = "Failed to send OTP email." });
-        }
 
         return new OkObjectResult(new { Message = "OTP sent to email. Please verify to complete registration." });
     }
 
-
-    public async Task<bool> VerifyOtpAndActivateUserAsync(OtpVerificationsRequestDTO dto)
+    public async Task<IActionResult> RegisterEmployeeAsync(EmployeeRegistrationDto request)
     {
-        return await _otpVerificationService.VerifyOtpAsync(dto);
-    }
-
-    // ✅ Original registration (optional, you can remove if unused)
-    public async Task<IActionResult> RegisterUserAsync(UserRequestDto request)
-    {
-        var users = await _userRepository.GetAllUsersAsync();
-        if (users.Any(u => u.Email == request.Email))
-        {
+        var existingUser = (await _userRepository.GetAllUsersAsync())
+            .FirstOrDefault(u => u.Email == request.Email);
+        if (existingUser != null)
             return new ConflictObjectResult(new { Message = "Email already exists." });
-        }
 
         var role = await _userRepository.GetRoleByNameAsync(request.RoleName);
-        if (role == null)
-        {
-            return new ConflictObjectResult(new { Message = "Invalid role specified." });
-        }
+        if (role == null || (request.RoleName != "Manager" && request.RoleName != "Tailor"))
+            return new BadRequestObjectResult(new { Message = "Invalid role specified." });
 
+        // ✅ Validate ShopId and BranchId
+        if (request.ShopId == null || request.BranchId == null)
+            return new BadRequestObjectResult(new { Message = "ShopId and BranchId are required." });
+
+        var shop = await _userRepository.GetShopByIdAsync(request.ShopId);
+        var branch = await _userRepository.GetBranchByIdAsync(request.BranchId);
+
+        if (shop == null)
+            return new BadRequestObjectResult(new { Message = "Invalid ShopId provided." });
+
+        if (branch == null)
+            return new BadRequestObjectResult(new { Message = "Invalid BranchId provided." });
+
+        if (branch.ShopId != shop.ShopId)
+            return new BadRequestObjectResult(new { Message = "Branch does not belong to the specified shop." });
+
+        // ✅ Create user
         var user = new User
         {
             Name = request.Name,
@@ -185,51 +164,179 @@ public class AuthService : IAuthService
             Address = request.Address,
             PasswordHash = HashPassword(request.Password),
             RoleID = role.RoleID,
-            UserStatus = UserStatus.Available
+            ShopId = request.ShopId,
+            BranchId = request.BranchId,
+            UserStatus = UserStatus.Available,
+            IsVerified = false
         };
 
-        if (request.RoleName == "Admin")
-        {
-            if (string.IsNullOrWhiteSpace(request.ShopName) || string.IsNullOrWhiteSpace(request.ShopLocation))
-            {
-                return new BadRequestObjectResult(new { Message = "ShopName and ShopLocation are required for Admin registration." });
-            }
+        await _userRepository.CreateUserAsync(user);
 
-            await _userRepository.CreateUserAsync(user);
+        var otpSent = await _otpVerificationService.GenerateAndSendOtpAsync(user.Email);
+        if (!otpSent)
+            return new BadRequestObjectResult(new { Message = "Failed to send OTP email." });
 
-            var shop = new Shop
-            {
-                ShopName = request.ShopName,
-                Location = request.ShopLocation,
-                CreatedDate = DateTime.UtcNow,
-                CreatedByUserId = user.UserID,
-                CreatedByUserName = request.Name
-            };
-
-            await _userRepository.CreateShopAsync(shop);
-            var headBranch = await _branchService.CreateHeadBranchForShopAsync(shop);
-            user.ShopId = shop.ShopId;
-            user.BranchId = headBranch.BranchId;
-
-            await _userRepository.UpdateUserAsync(user);
-        }
-        else if (request.RoleName == "Manager" || request.RoleName == "Tailor")
-        {
-            if (request.ShopId == null || request.BranchId == null)
-            {
-                return new BadRequestObjectResult(new { Message = "ShopId and BranchId are required for Manager and Tailor registration." });
-            }
-
-            user.ShopId = request.ShopId;
-            user.BranchId = request.BranchId;
-
-            await _userRepository.CreateUserAsync(user);
-        }
-        else
-        {
-            return new BadRequestObjectResult(new { Message = "Unsupported role specified." });
-        }
-
-        return new OkObjectResult(new { Message = "User registered successfully." });
+        return new OkObjectResult(new { Message = "OTP sent to email. Please verify to complete registration." });
     }
+
+
+
+    // ✅ Original registration (optional, you can remove if unused)
+    //public async Task<IActionResult> RegisterUserAsync(UserRequestDto request)
+    //{
+    //    var users = await _userRepository.GetAllUsersAsync();
+    //    if (users.Any(u => u.Email == request.Email))
+    //    {
+    //        return new ConflictObjectResult(new { Message = "Email already exists." });
+    //    }
+
+    //    var role = await _userRepository.GetRoleByNameAsync(request.RoleName);
+    //    if (role == null)
+    //    {
+    //        return new ConflictObjectResult(new { Message = "Invalid role specified." });
+    //    }
+
+    //    var user = new User
+    //    {
+    //        Name = request.Name,
+    //        Email = request.Email,
+    //        MobileNo = request.MobileNo,
+    //        Address = request.Address,
+    //        PasswordHash = HashPassword(request.Password),
+    //        RoleID = role.RoleID,
+    //        UserStatus = UserStatus.Available
+    //    };
+
+    //    if (request.RoleName == "Admin")
+    //    {
+    //        if (string.IsNullOrWhiteSpace(request.ShopName) || string.IsNullOrWhiteSpace(request.ShopLocation))
+    //        {
+    //            return new BadRequestObjectResult(new { Message = "ShopName and ShopLocation are required for Admin registration." });
+    //        }
+
+    //        await _userRepository.CreateUserAsync(user);
+
+    //        var shop = new Shop
+    //        {
+    //            ShopName = request.ShopName,
+    //            Location = request.ShopLocation,
+    //            CreatedDate = DateTime.UtcNow,
+    //            CreatedByUserId = user.UserID,
+    //            CreatedByUserName = request.Name
+    //        };
+
+    //        await _userRepository.CreateShopAsync(shop);
+    //        var headBranch = await _branchService.CreateHeadBranchForShopAsync(shop);
+    //        user.ShopId = shop.ShopId;
+    //        user.BranchId = headBranch.BranchId;
+
+    //        await _userRepository.UpdateUserAsync(user);
+    //    }
+    //    else if (request.RoleName == "Manager" || request.RoleName == "Tailor")
+    //    {
+    //        if (request.ShopId == null || request.BranchId == null)
+    //        {
+    //            return new BadRequestObjectResult(new { Message = "ShopId and BranchId are required for Manager and Tailor registration." });
+    //        }
+
+    //        user.ShopId = request.ShopId;
+    //        user.BranchId = request.BranchId;
+
+    //        await _userRepository.CreateUserAsync(user);
+    //    }
+    //    else
+    //    {
+    //        return new BadRequestObjectResult(new { Message = "Unsupported role specified." });
+    //    }
+
+    //    return new OkObjectResult(new { Message = "User registered successfully." });
+    //}
+
+
+
+
+
+    //public async Task<IActionResult> RegisterUserWithOtpAsync(UserRequestDto request)
+    //{
+    //    var existingUser = (await _userRepository.GetAllUsersAsync())
+    //        .FirstOrDefault(u => u.Email == request.Email);
+    //    if (existingUser != null)
+    //    {
+    //        return new ConflictObjectResult(new { Message = "Email already exists." });
+    //    }
+
+    //    var role = await _userRepository.GetRoleByNameAsync(request.RoleName);
+    //    if (role == null)
+    //    {
+    //        return new BadRequestObjectResult(new { Message = "Invalid role specified." });
+    //    }
+
+    //    var user = new User
+    //    {
+    //        Name = request.Name,
+    //        Email = request.Email,
+    //        MobileNo = request.MobileNo,
+    //        Address = request.Address,
+    //        PasswordHash = HashPassword(request.Password),
+    //        RoleID = role.RoleID,
+    //        UserStatus = UserStatus.Available,
+    //        IsVerified = false
+    //    };
+
+    //    if (request.RoleName == "Admin")
+    //    {
+    //        if (string.IsNullOrWhiteSpace(request.ShopName) || string.IsNullOrWhiteSpace(request.ShopLocation))
+    //        {
+    //            return new BadRequestObjectResult(new { Message = "ShopName and ShopLocation are required for Admin registration." });
+    //        }
+
+    //        // Step 1: Save user
+    //        await _userRepository.CreateUserAsync(user);
+
+    //        // Step 2: Create shop
+    //        var shop = new Shop
+    //        {
+    //            ShopName = request.ShopName,
+    //            Location = request.ShopLocation,
+    //            CreatedDate = DateTime.UtcNow,
+    //            CreatedByUserId = user.UserID,
+    //            CreatedByUserName = request.Name
+    //        };
+    //        await _userRepository.CreateShopAsync(shop);
+
+    //        // Step 3: Create Head Branch
+    //        var headBranch = await _branchService.CreateHeadBranchForShopAsync(shop);
+
+    //        // Step 4: Update user with ShopId and BranchId
+    //        user.ShopId = shop.ShopId;
+    //        user.BranchId = headBranch.BranchId;
+
+    //        await _userRepository.UpdateUserAsync(user);
+    //    }
+    //    else if (request.RoleName == "Manager" || request.RoleName == "Tailor")
+    //    {
+    //        if (request.ShopId == null || request.BranchId == null)
+    //        {
+    //            return new BadRequestObjectResult(new { Message = "ShopId and BranchId are required for Manager and Tailor registration." });
+    //        }
+
+    //        user.ShopId = request.ShopId;
+    //        user.BranchId = request.BranchId;
+
+    //        await _userRepository.CreateUserAsync(user);
+    //    }
+    //    else
+    //    {
+    //        return new BadRequestObjectResult(new { Message = "Unsupported role specified." });
+    //    }
+
+    //    // ✅ Send OTP
+    //    var otpSent = await _otpVerificationService.GenerateAndSendOtpAsync(request.Email);
+    //    if (!otpSent)
+    //    {
+    //        return new BadRequestObjectResult(new { Message = "Failed to send OTP email." });
+    //    }
+
+    //    return new OkObjectResult(new { Message = "OTP sent to email. Please verify to complete registration." });
+    //}
 }

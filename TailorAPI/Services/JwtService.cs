@@ -31,6 +31,7 @@ public class JwtService
         {
         new Claim(JwtRegisteredClaimNames.Sub, userId),
         new Claim("roles", role),
+
         new Claim("shopId", shopId?.ToString() ?? "0"),
         new Claim("branchId", branchId?.ToString() ?? "0"),
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),

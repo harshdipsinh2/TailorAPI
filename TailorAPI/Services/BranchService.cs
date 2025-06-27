@@ -16,11 +16,12 @@ namespace TailorAPI.Services
         private readonly JwtService _JwtService;
         private readonly IShopService _shopService;
         private readonly BranchRepository _branchRepository;
-
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ShopRepository _shopRepository;
 
         public BranchService(
             UserRepository userRepository,
+            IHttpContextAccessor httpContextAccessor,
             JwtService jwtService,
             IShopService shopService,
             BranchRepository branchRepository,
@@ -28,6 +29,7 @@ namespace TailorAPI.Services
             ShopRepository shopRepository)
         {
             _userRepository = userRepository;
+            _httpContextAccessor = httpContextAccessor;
             _passwordHasher = new PasswordHasher<User>();
             _JwtService = jwtService;
             _shopService = shopService;
@@ -51,28 +53,40 @@ namespace TailorAPI.Services
             return headBranch;
         }
 
-        // ✅ Used in /api/branch for admins creating additional branches
+
+        private int? GetCurrentShopId()
+        {
+            var claim = _httpContextAccessor.HttpContext?.User.FindFirst("shopId");
+            return int.TryParse(claim?.Value, out int shopId) ? shopId : null;
+        }
+        private string? GetCurrentUserRole()
+        {
+            return _httpContextAccessor.HttpContext?.User.FindFirst("roles")?.Value?.Trim().ToLower();
+        }
+
+
         public async Task<BranchResponseDTO?> CreateBranchAsync(BranchRequestDTO dto)
         {
+            var shopId = GetCurrentShopId();
+            if (shopId == null) throw new Exception("Unauthorized: No ShopId found in token.");
+
             var shop = await _context.Shops
                 .Include(s => s.Plan)
                 .Include(s => s.Branches)
-                .FirstOrDefaultAsync(s => s.ShopId == dto.ShopId);
+                .FirstOrDefaultAsync(s => s.ShopId == shopId);
 
             if (shop == null) throw new Exception("Shop not found");
             if (shop.Plan == null) throw new Exception("No active plan found for this shop");
 
-            var currentBranchCount = shop.Branches.Count();
-
-            if (currentBranchCount >= shop.Plan.MaxBranches)
+            if (shop.Branches.Count >= shop.Plan.MaxBranches)
                 throw new Exception("Branch creation limit reached for your current plan.");
 
             var newBranch = new Branch
             {
                 BranchName = dto.BranchName,
                 Location = dto.Location,
-                ShopId = dto.ShopId,
-                PlanId = shop.PlanId
+                PlanId = shop.PlanId,
+                ShopId = shop.ShopId // ✅ Now set only here
             };
 
             await _branchRepository.CreateBranchAsync(newBranch);
@@ -82,11 +96,47 @@ namespace TailorAPI.Services
                 BranchId = newBranch.BranchId,
                 BranchName = newBranch.BranchName,
                 Location = newBranch.Location,
-                ShopId = newBranch.ShopId
+                ShopId = newBranch.ShopId,
+                ShopName = shop.ShopName
             };
         }
 
 
+        public async Task<List<BranchResponseDTO>> GetAllBranchesAsync(int? shopId = null)
+        {
+            var role = GetCurrentUserRole(); // returns lowercase
+            var tokenShopId = GetCurrentShopId();
+
+            IQueryable<Branch> query = _context.Branches.Include(b => b.Shop);
+
+            if (role == "admin")
+            {
+                if (tokenShopId == null)
+                    throw new Exception("Unauthorized: ShopId not found in token.");
+                query = query.Where(b => b.ShopId == tokenShopId);
+            }
+            else if (role == "superadmin")
+            {
+                if (shopId.HasValue)
+                    query = query.Where(b => b.ShopId == shopId.Value);
+                // else return all branches
+            }
+            else
+            {
+                throw new Exception("Unauthorized: Only Admin or SuperAdmin can access branches.");
+            }
+
+            var branches = await query.ToListAsync();
+
+            return branches.Select(b => new BranchResponseDTO
+            {
+                BranchId = b.BranchId,
+                BranchName = b.BranchName,
+                Location = b.Location,
+                ShopId = b.ShopId,
+                ShopName = b.Shop?.ShopName
+            }).ToList();
+        }
 
     }
 }
