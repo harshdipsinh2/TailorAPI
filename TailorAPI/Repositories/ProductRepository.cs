@@ -49,7 +49,9 @@ namespace TailorAPI.Repositories
         public async Task<List<Product>> GetAllProducts()
         {
             return await _context.Products
-                .Where(p => !p.IsDeleted)
+                .Include(c => c.Shop)
+                .Include(c => c.Branch)
+                .Where(c => !c.IsDeleted)
                 .ToListAsync();
         }
 

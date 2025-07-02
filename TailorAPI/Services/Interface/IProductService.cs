@@ -10,6 +10,8 @@ namespace TailorAPI.Services
         Task<ProductResponseDTO> UpdateProduct(int id, ProductRequestDTO productDto);
         Task<bool> DeleteProduct(int id);
         Task<ProductResponseDTO> GetProductById(int id);
-        Task<IEnumerable<ProductResponseDTO>> GetAllProducts();
-        Task<List<ProductResponseDTO>> GetAllProductsForSuperAdmin();    }
+        Task<IEnumerable<ProductResponseDTO>> GetProductForAdminAsync(int? shopId, int? branchId);
+        Task<List<ProductResponseDTO>> GetProductForManagerAsync();
+        Task<List<ProductResponseDTO>> GetAllProductsForSuperAdmin(int shopId,int? branchId);   
+    }
 }

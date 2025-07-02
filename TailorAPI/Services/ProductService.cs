@@ -103,43 +103,27 @@ namespace TailorAPI.Services
             };
         }
 
-        public async Task<IEnumerable<ProductResponseDTO>> GetAllProducts()
+        public async Task<IEnumerable<ProductResponseDTO>> GetProductForAdminAsync(int? shopId,int? branchId)
+
         {
-            var user = _httpContextAccessor.HttpContext.User;
-            var role = user.FindFirst("role")?.Value;
-            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
-            var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
-
-            var products = await _productRepository.GetAllProducts();
-
-            // Apply role-based filtering
-
-            products = products
-                .Where(p => p.ShopId == shopId && p.BranchId == branchId)
-                .ToList();
-
-            return products.Select(product => new ProductResponseDTO
+            if (shopId == null )
             {
-                ProductID = product.ProductID,
-                ProductName = product.ProductName,
-                MakingPrice = product.MakingPrice,
-                ProductType = product.ProductType,
-                BranchId = product.BranchId,
-                BranchName = product.Branch?.BranchName,
-                ShopId = product.ShopId,
-                ShopName = product.Shop?.ShopName,
-            });
-        }
+                throw new ArgumentException("shopid is required");
+            }
 
-        public async Task<List<ProductResponseDTO>> GetAllProductsForSuperAdmin()
-        {
-            return await _context.Products
-                .Where(p => !p.IsDeleted)
+            var query = _context.Products
+                .Where(p => p.ShopId == shopId && !p.IsDeleted);
+
+            if(branchId != null)
+            {
+                query = query.Where(p => p.BranchId == branchId);
+            }
+
+            return await query
                 .Include(p => p.Shop)
                 .Include(p => p.Branch)
                 .AsNoTracking()
                 .Select(product => new ProductResponseDTO
-
                 {
                     ProductID = product.ProductID,
                     ProductName = product.ProductName,
@@ -153,5 +137,58 @@ namespace TailorAPI.Services
                 .ToListAsync();
 
         }
+
+        public async Task<List<ProductResponseDTO>> GetProductForManagerAsync()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            var role = user?.FindFirst("roles")?.Value;
+            var shopId = int.Parse(user?.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user?.FindFirst("branchId")?.Value ?? "0");
+
+            return await _context.Products
+                .Where(p => p.ShopId == shopId && p.BranchId == branchId && !p.IsDeleted)
+                .Include(p => p.Shop)
+                .Include(p => p.Branch)
+                .AsNoTracking()
+                .Select(product => new ProductResponseDTO
+                {
+                    ProductID = product.ProductID,
+                    ProductName = product.ProductName,
+                    MakingPrice = product.MakingPrice,
+                    ProductType = product.ProductType,
+                    BranchId = product.BranchId,
+                    BranchName = product.Branch.BranchName,
+                    ShopId = product.ShopId,
+                    ShopName = product.Shop.ShopName,
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<ProductResponseDTO>> GetAllProductsForSuperAdmin(int shopId,int? branchId = null)
+        {
+            var allProducts = await _productRepository.GetAllProducts();
+
+            var filteredProducts = allProducts
+                .Where(p => p.ShopId == shopId && !p.IsDeleted);
+
+            if (branchId.HasValue)
+                filteredProducts = filteredProducts.Where(p => p.BranchId == branchId.Value);
+
+            return filteredProducts.Select(product => new ProductResponseDTO
+
+            {
+                    ProductID = product.ProductID,
+                    ProductName = product.ProductName,
+                    MakingPrice = product.MakingPrice,
+                    ProductType = product.ProductType,
+                    BranchId = product.BranchId,
+                    BranchName = product.Branch.BranchName,
+                    ShopId = product.ShopId,
+                    ShopName = product.Shop.ShopName,
+                })
+                .ToList();
+
+        }
+
     }
 }

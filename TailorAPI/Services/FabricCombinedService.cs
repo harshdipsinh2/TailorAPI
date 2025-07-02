@@ -85,30 +85,43 @@ namespace TailorAPI.Services
         }
 
 
-        //public async Task<IEnumerable<FabricTypeResponseDTO>> GetAllFabricTypesAsync() =>
-        //    await _context.FabricTypes
-        //        .Where(f => !f.IsDeleted)
-        //        .AsNoTracking() // for database tracking issue 
-        //        .Select(f => new FabricTypeResponseDTO
-        //        {
-        //            FabricTypeID = f.FabricTypeID,
-        //            FabricName = f.FabricName,
-        //            PricePerMeter = f.PricePerMeter,
-        //            AvailableStock = f.AvailableStock
-        //        }).ToListAsync();
+        public async Task<List<FabricTypeResponseDTO>> GetFabriTypeForAdminAsync(int? shopId, int? branchId)
+        {
+            if (shopId == null)
+                throw new ArgumentException("shopId is required for admin");
 
-        public async Task<IEnumerable<FabricTypeResponseDTO>> GetAllFabricTypesAsync()
+            var query = _context.FabricTypes
+                .Where(c => !c.IsDeleted && c.ShopId == shopId);
+
+            if (branchId != null)
+                query = query.Where(c => c.BranchId == branchId);
+
+            return await query
+                .Include(c => c.Shop)
+                .Include(c => c.Branch)
+                .AsNoTracking()
+                .Select(c => new FabricTypeResponseDTO
+                {
+                    FabricTypeID = c.FabricTypeID,
+                    FabricName = c.FabricName,
+                    PricePerMeter = c.PricePerMeter,
+                    AvailableStock = c.AvailableStock,
+                    BranchId = c.BranchId,
+                    BranchName = c.Branch.BranchName,
+                    ShopId = c.ShopId,
+                    ShopName = c.Shop.ShopName
+                })
+                .ToListAsync();
+        }
+
+
+        public async Task<List<FabricTypeResponseDTO>> GetAllFabricTypeForManager()
         {
             var user = _httpContextAccessor.HttpContext.User;
             var role = user.FindFirst("role")?.Value;
             var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
             var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
 
-            if (role == "Tailor")
-            {
-
-                throw new UnauthorizedAccessException("Tailor is not authorized to access customer data.");
-            }
             return await _context.FabricTypes
                 .Where(c => !c.IsDeleted && c.ShopId == shopId && c.BranchId == branchId)
                 .Include(c => c.Shop)
@@ -128,14 +141,20 @@ namespace TailorAPI.Services
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<FabricTypeResponseDTO>> GetAllFabricTypeForSuperAdmin()
+
+
+        public async Task<List<FabricTypeResponseDTO>> GetAllFabricTypeForSuperAdmin(int shopId,int? branchId = null)
         {
-            return await _context.FabricTypes
-                .Where(f => !f.IsDeleted)
-                .Include(f => f.Shop)
-                .Include(f => f.Branch)
-                .AsNoTracking() // for database tracking issue 
-                .Select(f => new FabricTypeResponseDTO
+            var allfabric = await _fabricTypeCombinedRepository.GetAllFabricTypes();
+
+            var filterd = allfabric
+                .Where(c => c.ShopId == shopId && !c.IsDeleted);
+
+            if (branchId.HasValue)
+                filterd = filterd.Where(c => c.BranchId == branchId.Value);
+
+                return filterd.Select(f => new FabricTypeResponseDTO
+
                 {
                     FabricTypeID = f.FabricTypeID,
                     FabricName = f.FabricName,
@@ -145,7 +164,7 @@ namespace TailorAPI.Services
                     BranchName = f.Branch.BranchName,
                     ShopId = f.ShopId,
                     ShopName = f.Shop.ShopName
-                }).ToListAsync();
+                }).ToList();
         }
 
 
@@ -240,6 +259,8 @@ namespace TailorAPI.Services
                     StockOut = fs.StockUse,
                     StockAddDate = fs.StockAddDate
                 }).ToListAsync();
+
+
 
         public async Task<FabricStockResponseDTO> GetFabricStockByIdAsync(int id)
         {

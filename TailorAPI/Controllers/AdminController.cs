@@ -271,18 +271,28 @@ namespace TailorAPI.Controllers
             return Ok(result);
         }
 
-        [HttpGet("GetAllProducts")]
-        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
-        public async Task<IActionResult> GetAllProducts()
+        [HttpGet("GetAllProductsForManager")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> GetAllProductsForManager()
         {
-            var result = await _productService.GetAllProducts();
+            var result = await _productService.GetProductForManagerAsync();
+            return Ok(result);
+        }
+
+
+
+        [HttpGet("GetAllProductsForAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        public async Task<IActionResult> GetAllProductsForAdmin([FromQuery] int? shopId, [FromQuery] int? branchId)
+        {
+            var result = await _productService.GetProductForAdminAsync(shopId,branchId);
             return Ok(result);
         }
         [HttpGet("GetAllProductsForSuperAdmin")]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> GetAllProductsForSuperAdmin()
+        public async Task<IActionResult> GetAllProductsForSuperAdmin([FromQuery] int shopId, [FromQuery] int? branchId)
         {
-            var result = await _productService.GetAllProductsForSuperAdmin();
+            var result = await _productService.GetAllProductsForSuperAdmin(shopId , branchId);
             return Ok(result);
         }
 
@@ -316,19 +326,25 @@ namespace TailorAPI.Controllers
 
         [HttpGet("GetAllFabricTypeForSuperAdmin")]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> GetAllFabricTypeForSuperAdmin()
+        public async Task<IActionResult> GetAllFabricTypeForSuperAdminAsync([FromQuery] int shopId, [FromQuery] int? branchId)
         {
-            var result = await _fabricCombinedService.GetAllFabricTypeForSuperAdmin();
+            var result = await _fabricCombinedService.GetAllFabricTypeForSuperAdmin(shopId,branchId);
+            return Ok(result);
+        }
+        [HttpGet("GetAllFabricTypeForAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        public async Task<IActionResult> GetAllFabricTypeForAdminAsync([FromQuery] int? shopId, [FromQuery] int? branchId)
+        {
+            var result = await _fabricCombinedService.GetFabriTypeForAdminAsync(shopId, branchId);
             return Ok(result);
         }
 
 
-
-        [HttpGet("GetAllFabricTypes")]
+        [HttpGet("GetAllFabricTypesForManager")]
         [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
-        public async Task<IActionResult> GetAllFabricTypes()
+        public async Task<IActionResult> GetAllFabricTypeForManagerAsync()
         {
-            var result = await _fabricCombinedService.GetAllFabricTypesAsync();
+            var result = await _fabricCombinedService.GetAllFabricTypeForManager();
             return Ok(result);
         }
 

@@ -95,18 +95,32 @@ namespace TailorAPI.Repositories
             };
         }
 
-        public async Task<List<FabricTypeResponseDTO>> GetAllFabricTypes()
+        //public async Task<List<FabricTypeResponseDTO>> GetAllFabricTypes()
+        //{
+        //    return await _context.FabricTypes
+        //        .Include(c => c.Shop)
+        //        .Include(c => c.Branch)
+        //        .Where(f => !f.IsDeleted)
+
+        //        .Select(f => new FabricTypeResponseDTO
+        //        {
+        //            FabricTypeID = f.FabricTypeID,
+        //            FabricName = f.FabricName,
+        //            PricePerMeter = f.PricePerMeter,
+        //            AvailableStock = f.AvailableStock,
+
+        //        }).ToListAsync();
+        //}
+
+        public async Task<List<FabricType>> GetAllFabricTypes()
         {
             return await _context.FabricTypes
+                .Include(c => c.Shop)
+                .Include(c => c.Branch)
                 .Where(f => !f.IsDeleted)
-                .Select(f => new FabricTypeResponseDTO
-                {
-                    FabricTypeID = f.FabricTypeID,
-                    FabricName = f.FabricName,
-                    PricePerMeter = f.PricePerMeter,
-                    AvailableStock = f.AvailableStock
-                }).ToListAsync();
+                .ToListAsync();
         }
+
 
         public async Task<FabricTypeResponseDTO> GetFabricTypeById(int id)
         {
