@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TailorAPI.DTO.RequestDTO;
 using TailorAPI.Services.Interface;
 
 [ApiController]
@@ -31,4 +32,34 @@ public class PlanController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpGet("all")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAllPlans()
+    {
+        var plans = await _planService.GetAllPlansAsync();
+        return Ok(plans);
+    }
+
+
+    //[HttpPost("create")]
+    //public async Task<IActionResult> CreatePlan([FromBody] PlanCreateDTO dto)
+    //{
+    //    if (dto == null) return BadRequest("Invalid plan data.");
+
+    //    var plan = new Plan
+    //    {
+    //        Name = dto.Name,
+    //        MaxBranches = dto.MaxBranches,
+    //        MaxOrders = dto.MaxOrders,
+    //        PricePerMonth = dto.PricePerMonth,
+    //        StripeProductId = dto.StripeProductId,
+    //        StripePriceId = dto.StripePriceId,
+    //        IsActive = dto.IsActive
+    //    };
+
+    //    var createdPlan = await _planService.CreatePlanAsync(dto);
+    //    return CreatedAtAction(nameof(GetAllPlans), new { id = createdPlan.PlanId }, createdPlan);
+    //}
+
 }

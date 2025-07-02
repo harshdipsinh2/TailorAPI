@@ -7,8 +7,8 @@ namespace TailorAPI.DTO.RequestDTO
         public string FullName { get; set; }
 
 
-        public string BranchName { get; set; }
-        public string ShopName { get; set; }
+        //public string BranchName { get; set; }
+        //public string ShopName { get; set; }
 
 
         public string PhoneNumber { get; set; }

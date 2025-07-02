@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.Metrics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.DTO.ResponseDTO;
 using TailorAPI.Models;
@@ -12,7 +13,7 @@ namespace TailorAPI.Services
         private readonly TailorDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public MeasurementService(TailorDbContext context,IHttpContextAccessor httpContextAccessor)
+        public MeasurementService(TailorDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;
@@ -78,7 +79,7 @@ namespace TailorAPI.Services
             return new MeasurementResponseDTO
             {
                 CustomerId = measurement.CustomerId, // Include CustomerID in response
-                
+
                 Chest = measurement.Chest,
                 Waist = measurement.Waist,
                 Hip = measurement.Hip,
@@ -147,14 +148,31 @@ namespace TailorAPI.Services
 
         public async Task<List<MeasurementResponseDTO>> GetAllMeasurementsAsync()
         {
-            var measurements = await _context.Measurements
-                .Include(m => m.Customer)
-                .Where(m => !m.IsDeleted)
+
+            var user = _httpContextAccessor.HttpContext.User;
+            var role = user.FindFirst("role")?.Value;
+            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+
+
+            if (role == "Tailor")
+            {
+                // Option 1: Return empty list (silent failure)
+                //return new List<CustomerDTO>();
+
+                // Option 2: Throw exception (visible failure)
+                throw new UnauthorizedAccessException("Tailor is not authorized to access customer data.");
+            }
+            return await _context.Measurements
+                .Where(m => !m.IsDeleted && m.ShopId == shopId && m.BranchId == branchId)
+                .Include(m => m.Shop)
+                .Include(m => m.Branch)
+                .AsNoTracking()
                 .Select(m => new MeasurementResponseDTO
                 {
 
 
-                    MeasurementID = m.MeasurementID,    
+                    MeasurementID = m.MeasurementID,
                     CustomerId = m.CustomerId,
                     Chest = m.Chest,
                     Waist = m.Waist,
@@ -178,7 +196,40 @@ namespace TailorAPI.Services
                 })
                 .ToListAsync();
 
-            return measurements;
+
+
+        }
+        public async Task<List<MeasurementResponseDTO>> GetallMeasurementForSuperAdminAsync()
+        {
+            return await _context.Measurements
+                .Where(m => !m.IsDeleted)
+                .Include(m => m.Shop)
+                .Include(m => m.Branch)
+                .AsNoTracking()
+                .Select(m => new MeasurementResponseDTO
+                {
+                    MeasurementID = m.MeasurementID,
+                    CustomerId = m.CustomerId,
+                    Chest = m.Chest,
+                    Waist = m.Waist,
+                    Hip = m.Hip,
+                    Shoulder = m.Shoulder,
+                    SleeveLength = m.SleeveLength,
+                    TrouserLength = m.TrouserLength,
+                    Inseam = m.Inseam,
+                    Thigh = m.Thigh,
+                    Neck = m.Neck,
+                    Sleeve = m.Sleeve,
+                    Arms = m.Arms,
+                    Bicep = m.Bicep,
+                    Forearm = m.Forearm,
+                    Wrist = m.Wrist,
+                    Ankle = m.Ankle,
+                    Calf = m.Calf,
+                    UpperBodyMeasurement = m.UpperBodyMeasurement,
+                    LowerBodyMeasurement = m.LowerBodyMeasurement
+                })
+                .ToListAsync();
         }
     }
 }

@@ -102,40 +102,53 @@ namespace TailorAPI.Services
         }
 
 
-        public async Task<List<BranchResponseDTO>> GetAllBranchesAsync(int? shopId = null)
+        public async Task<List<BranchResponseDTO>> GetAllBranchesAsync()
         {
-            var role = GetCurrentUserRole(); // returns lowercase
-            var tokenShopId = GetCurrentShopId();
+            var user = _httpContextAccessor.HttpContext.User;
+            var role = user.FindFirst("role")?.Value;
+            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
 
-            IQueryable<Branch> query = _context.Branches.Include(b => b.Shop);
-
-            if (role == "admin")
+            if (role == "Tailor")
             {
-                if (tokenShopId == null)
-                    throw new Exception("Unauthorized: ShopId not found in token.");
-                query = query.Where(b => b.ShopId == tokenShopId);
-            }
-            else if (role == "superadmin")
-            {
-                if (shopId.HasValue)
-                    query = query.Where(b => b.ShopId == shopId.Value);
-                // else return all branches
-            }
-            else
-            {
-                throw new Exception("Unauthorized: Only Admin or SuperAdmin can access branches.");
+                throw new UnauthorizedAccessException("Tailor is not authorized to access branch data.");
             }
 
-            var branches = await query.ToListAsync();
+            return await _context.Branches
+                .Where(c => c.ShopId == shopId) // ✅ Show all branches of the shop
+                .Include(c => c.Shop)
+                .AsNoTracking()
+                .Select(c => new BranchResponseDTO
+                {
+                    BranchId = c.BranchId,
+                    BranchName = c.BranchName,
+                    Location = c.Location,
+                    ShopId = c.ShopId,
+                    ShopName = c.Shop.ShopName
+                }).ToListAsync();
+        }
 
-            return branches.Select(b => new BranchResponseDTO
-            {
-                BranchId = b.BranchId,
-                BranchName = b.BranchName,
-                Location = b.Location,
-                ShopId = b.ShopId,
-                ShopName = b.Shop?.ShopName
-            }).ToList();
+
+
+
+
+        public async Task<List<BranchResponseDTO>> GetAllBranchForSuperAdmin()
+        {
+            return await _context.Branches
+                .Include(b => b.Shop)
+                .AsNoTracking()
+                .Select(b => new BranchResponseDTO
+                {
+                    BranchId = b.BranchId,
+                    BranchName = b.BranchName,
+                    Location = b.Location,
+                    ShopId = b.ShopId,
+                    ShopName = b.Shop.ShopName
+
+                })
+                .ToListAsync();
+
+
+
         }
 
     }

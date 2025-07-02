@@ -12,6 +12,8 @@ namespace TailorAPI.Services.Interface
         Task<FabricTypeResponseDTO> GetFabricTypeByIdAsync(int id);
         Task<bool> SoftDeleteFabricTypeAsync(int id);
 
+        Task<IEnumerable<FabricTypeResponseDTO>> GetAllFabricTypeForSuperAdmin();
+
         // FabricStock Methods
         Task<FabricStockResponseDTO> AddFabricStockAsync(FabricStockRequestDTO request);
         Task<IEnumerable<FabricStockResponseDTO>> GetAllFabricStocksAsync();

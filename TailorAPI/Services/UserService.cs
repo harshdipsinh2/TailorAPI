@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using TailorAPI.Services.Interface;
 using TailorAPI.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 
 public class UserService : IUserService
@@ -238,6 +240,7 @@ public class UserService : IUserService
             IsVerified = user.IsVerified
         }).ToList();
     }
+
     public async Task<List<UserResponseDto>> GetUsersByBranchAsync(int shopId, int branchId)
     {
         var allUsers = await _userRepository.GetAllUsersAsync();
@@ -265,13 +268,25 @@ public class UserService : IUserService
 
     public async Task<List<UserResponseDto>> GetAllTailorsAsync()
     {
-        var user = _httpContextAccessor.HttpContext.User;
-        var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
-        var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+        var user = _httpContextAccessor.HttpContext?.User;
+
+        if (user == null)
+            return new List<UserResponseDto>();
+
+        var shopIdClaim = user.FindFirst("shopId")?.Value;
+        var branchIdClaim = user.FindFirst("branchId")?.Value;
+
+        if (!int.TryParse(shopIdClaim, out int shopId) || !int.TryParse(branchIdClaim, out int branchId))
+            return new List<UserResponseDto>();
 
         var users = await _userRepository.GetAllUsersAsync();
-        return users
-            .Where(u => u.Role.RoleName == "Tailor" && !u.IsDeleted)
+
+        var tailors = users
+            .Where(u =>
+                u.Role.RoleName == "Tailor" &&
+                u.ShopId == shopId &&
+                u.BranchId == branchId &&
+                !u.IsDeleted)
             .Select(user => new UserResponseDto
             {
                 UserID = user.UserID,
@@ -282,12 +297,14 @@ public class UserService : IUserService
                 RoleName = user.Role.RoleName,
                 UserStatus = user.UserStatus.ToString(),
                 BranchId = user.BranchId ?? 0,
-                BranchName = user.Branch?.BranchName ,
+                BranchName = user.Branch?.BranchName,
                 ShopId = user.ShopId ?? 0,
-                ShopName = user.Shop?.ShopName 
-
+                ShopName = user.Shop?.ShopName
             }).ToList();
+
+        return tailors;
     }
+
 
 
     public async Task<bool> DeleteUserAsync(int userId)

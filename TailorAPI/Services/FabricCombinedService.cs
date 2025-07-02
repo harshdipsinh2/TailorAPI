@@ -9,6 +9,8 @@ using System.Text.Json.Serialization; // Add this
 using System.Linq;
 using System.Threading.Tasks;
 using TailorAPI.DTOs.Request;
+using TailorAPI.DTOs.Response;
+using TailorAPI.Repositories;
 
 namespace TailorAPI.Services
 {
@@ -16,9 +18,11 @@ namespace TailorAPI.Services
     {
         private readonly TailorDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public FabricCombinedService(TailorDbContext context,IHttpContextAccessor httpContextAccessor)
+        private readonly FabricTypeCombinedRepository _fabricTypeCombinedRepository;
+        public FabricCombinedService(TailorDbContext context,IHttpContextAccessor httpContextAccessor, FabricTypeCombinedRepository fabricTypeCombinedRepository)
         {
             _context = context;
+            _fabricTypeCombinedRepository = fabricTypeCombinedRepository;
             _httpContextAccessor = httpContextAccessor;
         }
 
@@ -80,17 +84,71 @@ namespace TailorAPI.Services
             };
         }
 
-        public async Task<IEnumerable<FabricTypeResponseDTO>> GetAllFabricTypesAsync() =>
-            await _context.FabricTypes
+
+        //public async Task<IEnumerable<FabricTypeResponseDTO>> GetAllFabricTypesAsync() =>
+        //    await _context.FabricTypes
+        //        .Where(f => !f.IsDeleted)
+        //        .AsNoTracking() // for database tracking issue 
+        //        .Select(f => new FabricTypeResponseDTO
+        //        {
+        //            FabricTypeID = f.FabricTypeID,
+        //            FabricName = f.FabricName,
+        //            PricePerMeter = f.PricePerMeter,
+        //            AvailableStock = f.AvailableStock
+        //        }).ToListAsync();
+
+        public async Task<IEnumerable<FabricTypeResponseDTO>> GetAllFabricTypesAsync()
+        {
+            var user = _httpContextAccessor.HttpContext.User;
+            var role = user.FindFirst("role")?.Value;
+            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+
+            if (role == "Tailor")
+            {
+
+                throw new UnauthorizedAccessException("Tailor is not authorized to access customer data.");
+            }
+            return await _context.FabricTypes
+                .Where(c => !c.IsDeleted && c.ShopId == shopId && c.BranchId == branchId)
+                .Include(c => c.Shop)
+                .Include(c => c.Branch)
+                .AsNoTracking()
+                .Select(c => new FabricTypeResponseDTO
+                {
+                FabricTypeID = c.FabricTypeID,
+                FabricName = c.FabricName,
+                PricePerMeter = c.PricePerMeter,
+                AvailableStock = c.AvailableStock,
+                BranchId = c.BranchId,
+                BranchName = c.Branch.BranchName,
+                ShopId = c.ShopId,
+                ShopName = c.Shop.ShopName
+            })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<FabricTypeResponseDTO>> GetAllFabricTypeForSuperAdmin()
+        {
+            return await _context.FabricTypes
                 .Where(f => !f.IsDeleted)
+                .Include(f => f.Shop)
+                .Include(f => f.Branch)
                 .AsNoTracking() // for database tracking issue 
                 .Select(f => new FabricTypeResponseDTO
                 {
                     FabricTypeID = f.FabricTypeID,
                     FabricName = f.FabricName,
                     PricePerMeter = f.PricePerMeter,
-                    AvailableStock = f.AvailableStock
+                    AvailableStock = f.AvailableStock,
+                    BranchId = f.BranchId,
+                    BranchName = f.Branch.BranchName,
+                    ShopId = f.ShopId,
+                    ShopName = f.Shop.ShopName
                 }).ToListAsync();
+        }
+
+
 
         public async Task<FabricTypeResponseDTO> GetFabricTypeByIdAsync(int id)
         {
@@ -182,7 +240,7 @@ namespace TailorAPI.Services
                     StockOut = fs.StockUse,
                     StockAddDate = fs.StockAddDate
                 }).ToListAsync();
-         
+
         public async Task<FabricStockResponseDTO> GetFabricStockByIdAsync(int id)
         {
             var fabricStock = await _context.FabricStocks.FindAsync(id);

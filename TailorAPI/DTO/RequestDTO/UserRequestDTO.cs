@@ -10,8 +10,7 @@
         public int? BranchId { get; set; }
         public string ShopName { get; set; }
         public string ShopLocation { get; set; }
-        public string BranchName { get; set; }
-        public string BranchLocation { get; set; }
+
 
 
         public string Email { get; set; }

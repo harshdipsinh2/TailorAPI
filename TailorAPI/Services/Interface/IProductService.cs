@@ -1,4 +1,5 @@
-﻿using TailorAPI.DTOs.Request;
+﻿using System.Threading.Tasks;
+using TailorAPI.DTOs.Request;
 using TailorAPI.DTOs.Response;
 
 namespace TailorAPI.Services
@@ -10,5 +11,5 @@ namespace TailorAPI.Services
         Task<bool> DeleteProduct(int id);
         Task<ProductResponseDTO> GetProductById(int id);
         Task<IEnumerable<ProductResponseDTO>> GetAllProducts();
-    }
+        Task<List<ProductResponseDTO>> GetAllProductsForSuperAdmin();    }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore;
 using TailorAPI.DTO.RequestDTO;
+using TailorAPI.Repositories;
 using TailorAPI.Services;
 using TailorAPI.Services.Interface;
 
@@ -8,30 +9,57 @@ public class CustomerService : ICustomerService
 {
     private readonly TailorDbContext _context;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly CustomerRepository _repo;
     private readonly IAccessScopeService _accessScope;
-    public CustomerService(TailorDbContext context , IHttpContextAccessor httpContextAccessor, IAccessScopeService accessScope)
+    public CustomerService(TailorDbContext context , IHttpContextAccessor httpContextAccessor, IAccessScopeService accessScope,CustomerRepository repository)
     {
         _context = context;
         _httpContextAccessor = httpContextAccessor;
         _accessScope = accessScope;
+        _repo = repository;
     }
 
-    public async Task<List<CustomerDTO>> GetAllCustomersAsync()
+    public async Task<List<CustomerDTO>> GetCustomersForAdminAsync(int? shopId, int? branchId)
     {
-        var user = _httpContextAccessor.HttpContext.User;
-        var role = user.FindFirst("role")?.Value;
-        var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
-        var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+        if (shopId == null)
+            throw new ArgumentException("shopId is required for admin");
 
-        // Restrict access for Tailor role
-        if (role == "Tailor")
-        {
-            // Option 1: Return empty list (silent failure)
-            //return new List<CustomerDTO>();
+        var query = _context.Customers
+            .Where(c => !c.IsDeleted && c.ShopId == shopId);
 
-            // Option 2: Throw exception (visible failure)
-            throw new UnauthorizedAccessException("Tailor is not authorized to access customer data.");
-        }
+        if (branchId != null)
+            query = query.Where(c => c.BranchId == branchId);
+
+        return await query
+            .Include(c => c.Shop)
+            .Include(c => c.Branch)
+            .AsNoTracking()
+            .Select(c => new CustomerDTO
+            {
+                CustomerId = c.CustomerId,
+                ShopId = c.ShopId,
+                BranchId = c.BranchId,
+                ShopName = c.Shop.ShopName,
+                BranchName = c.Branch.BranchName,
+                FullName = c.FullName,
+                PhoneNumber = c.PhoneNumber,
+                Email = c.Email,
+                Address = c.Address,
+                Gender = c.Gender
+            })
+            .ToListAsync();
+    }
+
+    // ✅ For Manager: Uses HttpContext
+    public async Task<List<CustomerDTO>> GetCustomersForManagerAsync()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        var role = user?.FindFirst("roles")?.Value;
+        var shopId = int.Parse(user?.FindFirst("shopId")?.Value ?? "0");
+        var branchId = int.Parse(user?.FindFirst("branchId")?.Value ?? "0");
+
+
+
         return await _context.Customers
             .Where(c => !c.IsDeleted && c.ShopId == shopId && c.BranchId == branchId)
             .Include(c => c.Shop)
@@ -51,10 +79,72 @@ public class CustomerService : ICustomerService
                 Gender = c.Gender
             })
             .ToListAsync();
-
     }
 
+    //public async Task<List<CustomerDTO>> GetAllCustomersAsync()
+    //{
+    //    var user = _httpContextAccessor.HttpContext.User;
+    //    var role = user.FindFirst("role")?.Value;
+    //    var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+    //    var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
 
+    //    // Restrict access for Tailor role
+    //    if (role == "Tailor")
+    //    {
+    //        // Option 1: Return empty list (silent failure)
+    //        //return new List<CustomerDTO>();
+
+    //        // Option 2: Throw exception (visible failure)
+    //        throw new UnauthorizedAccessException("Tailor is not authorized to access customer data.");
+    //    }
+    //    return await _context.Customers
+    //        .Where(c => !c.IsDeleted && c.ShopId == shopId && c.BranchId == branchId)
+    //        .Include(c => c.Shop)
+    //        .Include(c => c.Branch)
+    //        .AsNoTracking()
+    //        .Select(c => new CustomerDTO
+    //        {
+    //            CustomerId = c.CustomerId,
+    //            ShopId = c.ShopId,
+    //            BranchId = c.BranchId,
+    //            ShopName = c.Shop.ShopName,
+    //            BranchName = c.Branch.BranchName,
+    //            FullName = c.FullName,
+    //            PhoneNumber = c.PhoneNumber,
+    //            Email = c.Email,
+    //            Address = c.Address,
+    //            Gender = c.Gender
+    //        })
+    //        .ToListAsync();
+
+    //}
+
+
+    public async Task<List<CustomerDTO>> GetAllCustomersForSuperAdminAsync(int shopId , int? branchId = null)
+    {
+        var allcustomers = await _repo.GetAllcustomer();
+
+        var filterd = allcustomers
+            .Where(c => c.ShopId == shopId && !c.IsDeleted);
+
+        if (branchId.HasValue)
+            filterd = filterd.Where(c => c.BranchId == branchId.Value);
+
+        return filterd.Select(customer => new CustomerDTO
+            {
+                CustomerId = customer.CustomerId,
+                ShopId = customer.ShopId,
+                BranchId = customer.BranchId,
+            ShopName = customer.Shop?.ShopName ,        // null-safe
+            BranchName = customer.Branch?.BranchName ,  // null-safe
+            FullName = customer.FullName,
+                PhoneNumber = customer.PhoneNumber,
+                Email = customer.Email,
+                Address = customer.Address,
+                Gender = customer.Gender
+            })
+            .ToList();
+    }
 
     public async Task<CustomerDTO> GetCustomerByIdAsync(int customerId)
     {

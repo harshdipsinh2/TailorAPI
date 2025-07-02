@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using TailorAPI.Services.Interface;
 using Stripe;
+using TailorAPI.DTO.RequestDTO;
 
 public class PlanService : IPlanService
 {
@@ -57,4 +58,31 @@ public class PlanService : IPlanService
 
         return session.Url;
     }
+
+    public async Task<IEnumerable<Plan>> GetAllPlansAsync()
+    {
+        return await _context.Plans
+            .Where(p => p.IsActive)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+    //public async Task<PlanCreateDTO> CreatePlanAsync(PlanCreateDTO dto)
+    //{
+    //    var plan = new Plan
+    //    {
+    //        Name = dto.Name,
+    //        MaxBranches = dto.MaxBranches,
+    //        MaxOrders = dto.MaxOrders,
+    //        PricePerMonth = dto.PricePerMonth,
+    //        StripeProductId = dto.StripeProductId,
+    //        StripePriceId = dto.StripePriceId,
+    //        IsActive = dto.IsActive
+    //    };
+
+    //    _context.Plans.Add(plan);
+    //    await _context.SaveChangesAsync();
+    //    return dto;
+    //}
+
+
 }

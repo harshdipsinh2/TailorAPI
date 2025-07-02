@@ -9,8 +9,6 @@ namespace TailorAPI.DTO.RequestDTO
             public OrderApprovalStatus ApprovalStatus { get; set; }
 
 
-        public string BranchName { get; set; }
-        public string ShopName { get; set; }
 
 
 

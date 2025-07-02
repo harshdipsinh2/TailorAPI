@@ -11,7 +11,7 @@ namespace TailorAPI.Services
         private readonly ProductRepository _productRepository;
         private readonly TailorDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public ProductService(ProductRepository productRepository,IHttpContextAccessor httpContextAccessor,TailorDbContext context)
+        public ProductService(ProductRepository productRepository, IHttpContextAccessor httpContextAccessor, TailorDbContext context)
         {
             _productRepository = productRepository;
             _context = context;
@@ -105,13 +105,19 @@ namespace TailorAPI.Services
 
         public async Task<IEnumerable<ProductResponseDTO>> GetAllProducts()
         {
-
             var user = _httpContextAccessor.HttpContext.User;
+            var role = user.FindFirst("role")?.Value;
             var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
             var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
 
-
             var products = await _productRepository.GetAllProducts();
+
+            // Apply role-based filtering
+
+            products = products
+                .Where(p => p.ShopId == shopId && p.BranchId == branchId)
+                .ToList();
+
             return products.Select(product => new ProductResponseDTO
             {
                 ProductID = product.ProductID,
@@ -119,11 +125,33 @@ namespace TailorAPI.Services
                 MakingPrice = product.MakingPrice,
                 ProductType = product.ProductType,
                 BranchId = product.BranchId,
-                BranchName = product.Branch?.BranchName,   // ✅ Get Branch Name
+                BranchName = product.Branch?.BranchName,
                 ShopId = product.ShopId,
                 ShopName = product.Shop?.ShopName,
-
             });
+        }
+
+        public async Task<List<ProductResponseDTO>> GetAllProductsForSuperAdmin()
+        {
+            return await _context.Products
+                .Where(p => !p.IsDeleted)
+                .Include(p => p.Shop)
+                .Include(p => p.Branch)
+                .AsNoTracking()
+                .Select(product => new ProductResponseDTO
+
+                {
+                    ProductID = product.ProductID,
+                    ProductName = product.ProductName,
+                    MakingPrice = product.MakingPrice,
+                    ProductType = product.ProductType,
+                    BranchId = product.BranchId,
+                    BranchName = product.Branch.BranchName,
+                    ShopId = product.ShopId,
+                    ShopName = product.Shop.ShopName,
+                })
+                .ToListAsync();
+
         }
     }
 }

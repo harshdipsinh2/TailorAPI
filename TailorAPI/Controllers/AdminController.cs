@@ -5,6 +5,7 @@ using TailorAPI.DTO;
 using TailorAPI.DTO.Request;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.DTOs.Request;
+using TailorAPI.Repositories;
 using TailorAPI.Services;
 using TailorAPI.Services.Interface;
 
@@ -24,9 +25,14 @@ namespace TailorAPI.Controllers
         private readonly IRoleService _roleService;
         private readonly IBranchService _branchService;
         private readonly IUserService _userService;
+        private readonly IOtpVerificationService _otpVerificationService;
+        private readonly IAuthService _authService;
+        private readonly UserRepository _userRepository;
 
 
         public AdminController(IAdminService adminService,
+                                UserRepository userRepository,
+                                IOtpVerificationService otpVerificationService,
                                ICustomerService customerService,
                                IMeasurementService measurementService,
                                IProductService productService,
@@ -34,11 +40,15 @@ namespace TailorAPI.Controllers
                                IOrderService orderService,
                                IDashboardService dashboardService,
                                  IBranchService branchService,
+                                 IAuthService authService,
                                  IUserService userService,
                                IRoleService roleService)
         {
             _dashboardService = dashboardService;
             _userService = userService;
+            _otpVerificationService = otpVerificationService;
+            _userRepository = userRepository;
+            _authService = authService;
             _adminService = adminService;
             _customerService = customerService;
             _measurementService = measurementService;
@@ -61,11 +71,51 @@ namespace TailorAPI.Controllers
 
         // ----------- Customer Endpoints -----------
 
-        [HttpGet("GetAllCustomers")]
-        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
-        public async Task<ActionResult<List<CustomerDTO>>> GetAllCustomers()
+
+
+
+        //[HttpGet("GetAllCustomers")]
+        //[Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
+        //public async Task<ActionResult<List<CustomerDTO>>> GetAllCustomers()
+        //{
+        //    var customers = await _customerService.GetAllCustomersAsync();
+        //    return Ok(customers);
+        //}
+        [Authorize(Roles ="Admin")]
+        [HttpGet("GetAllCustomer-Admin")]
+        public async Task<IActionResult> GetCustomersForAdmin([FromQuery] int? shopId, [FromQuery] int? branchId)
         {
-            var customers = await _customerService.GetAllCustomersAsync();
+            try
+            {
+                var customers = await _customerService.GetCustomersForAdminAsync(shopId, branchId);
+                return Ok(customers);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles ="Manager")]
+        [HttpGet("GetAllCustomer-Manager")]
+        public async Task<IActionResult> GetCustomersForManager()
+        {
+            try
+            {
+                var customers = await _customerService.GetCustomersForManagerAsync();
+                return Ok(customers);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        [HttpGet("GetAllCustomersForSuperAdmin")]
+        public async Task<IActionResult> GetAllCustomersForSuperAdmin([FromQuery] int shopId, [FromQuery] int? branchId = null)
+        {
+            var customers = await _customerService.GetAllCustomersForSuperAdminAsync(shopId, branchId);
             return Ok(customers);
         }
 
@@ -133,6 +183,14 @@ namespace TailorAPI.Controllers
             }
         }
 
+        [HttpGet("GetAllMeasurementForSuperAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> GetAllMeasurementsForSuperAdmin()
+        {
+            var measurements = await _measurementService.GetallMeasurementForSuperAdminAsync();
+            return Ok(measurements);
+        }
+
         [HttpGet("GetMeasurement")]
         [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         public async Task<IActionResult> GetMeasurementByCustomerID([FromQuery] int customerId)
@@ -151,6 +209,8 @@ namespace TailorAPI.Controllers
 
             return NoContent();
         }
+
+
 
         [HttpGet("GetAllMeasurements")]
         [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
@@ -218,6 +278,13 @@ namespace TailorAPI.Controllers
             var result = await _productService.GetAllProducts();
             return Ok(result);
         }
+        [HttpGet("GetAllProductsForSuperAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> GetAllProductsForSuperAdmin()
+        {
+            var result = await _productService.GetAllProductsForSuperAdmin();
+            return Ok(result);
+        }
 
         //-------------------Fabric Endpoints ----------------------------------
 
@@ -246,6 +313,16 @@ namespace TailorAPI.Controllers
             var result = await _fabricCombinedService.UpdateFabricTypePriceAsync(id, newPrice);
             return Ok(result);
         }
+
+        [HttpGet("GetAllFabricTypeForSuperAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> GetAllFabricTypeForSuperAdmin()
+        {
+            var result = await _fabricCombinedService.GetAllFabricTypeForSuperAdmin();
+            return Ok(result);
+        }
+
+
 
         [HttpGet("GetAllFabricTypes")]
         [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
@@ -490,11 +567,11 @@ namespace TailorAPI.Controllers
 
         [Authorize(Roles = "SuperAdmin,Admin")]
         [HttpGet("all-branches")]
-        public async Task<IActionResult> GetAllBranches([FromQuery] int? shopId)
+        public async Task<IActionResult> GetAllBranches()
         {
             try
             {
-                var result = await _branchService.GetAllBranchesAsync(shopId);
+                var result = await _branchService.GetAllBranchesAsync();
                 return Ok(result);
             }
             catch (Exception ex)
@@ -502,6 +579,15 @@ namespace TailorAPI.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        [Authorize(Roles ="SuperAdmin")]
+        [HttpGet("All-BranchesForSuperAdmin")]
+        public async Task<IActionResult> GetAllBranchesForSuperAdmin()
+        {
+            var result = await _branchService.GetAllBranchForSuperAdmin();
+            return Ok(result);
+        }
+
 
 
         //----------------------------------sUser endpoints
@@ -567,6 +653,13 @@ namespace TailorAPI.Controllers
             if (updatedUser == null) return NotFound("User not found.");
 
             return Ok(updatedUser);
+        }
+
+        [Authorize(Roles ="SuperAdmin,Admin")]
+        [HttpPost("register/employee")]
+        public async Task<IActionResult> RegisterEmployee([FromBody] EmployeeRegistrationDto request)
+        {
+            return await _authService.RegisterEmployeeAsync(request);
         }
     }
 }

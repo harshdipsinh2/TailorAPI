@@ -9,7 +9,7 @@ namespace TailorAPI.Repositories
     {
         private readonly TailorDbContext _context;
 
-        public FabricTypeCombinedRepository(TailorDbContext context)
+        public FabricTypeCombinedRepository(TailorDbContext context )
         {
             _context = context;
         }

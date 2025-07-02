@@ -477,6 +477,10 @@ namespace TailorAPI.Services
         // ✅ Corrected for Non-null Values in List
         public async Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync(int userId, string role)
         {
+            var user = _httpContextAccessor.HttpContext.User;
+            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+
             var query = _context.Orders
                 .IgnoreQueryFilters()
                 .Include(o => o.Product)
@@ -489,11 +493,21 @@ namespace TailorAPI.Services
 
             if (role == "Tailor")
             {
-                var user = _httpContextAccessor.HttpContext.User;
-                var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
-                var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
-
-                query = query.Where(o => o.AssignedTo == userId);
+                // Tailor should only see their own assigned orders
+                query = query.Where(o => o.AssignedTo == userId && o.ShopId == shopId && o.BranchId == branchId);
+            }
+            else if (role == "Admin" || role == "Manager")
+            {
+                // Admins and Managers should only see orders from their own shop/branch
+                query = query.Where(o => o.ShopId == shopId && o.BranchId == branchId);
+            }
+            else if (role == "SuperAdmin")
+            {
+                // SuperAdmin sees all — no filter applied
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Unauthorized role for viewing orders.");
             }
 
             var orders = await query.ToListAsync();
@@ -514,7 +528,7 @@ namespace TailorAPI.Services
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
 
                 BranchId = order.BranchId,
-                BranchName = order.Branch?.BranchName,   // ✅ Get Branch Name
+                BranchName = order.Branch?.BranchName,
                 ShopId = order.ShopId,
                 ShopName = order.Shop?.ShopName,
 
@@ -528,16 +542,44 @@ namespace TailorAPI.Services
 
             }).ToList();
         }
-    
-         public async Task<IEnumerable<OrderResponseDto>> GetRejectedOrdersAsync()
+
+
+        public async Task<IEnumerable<OrderResponseDto>> GetRejectedOrdersAsync()
         {
-            var orders = await _context.Orders
+            var user = _httpContextAccessor.HttpContext.User;
+            var role = user.FindFirst("role")?.Value;
+            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+            var userId = int.Parse(user.FindFirst("sub")?.Value ?? "0");
+
+            var query = _context.Orders
                 .Include(o => o.Product)
                 .Include(o => o.fabricType)
                 .Include(o => o.Customer)
                 .Include(o => o.Assigned)
                 .Where(o => o.ApprovalStatus == OrderApprovalStatus.Rejected && !o.IsDeleted)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (role == "Tailor")
+            {
+                // Tailor sees only their own rejected orders
+                query = query.Where(o => o.AssignedTo == userId && o.ShopId == shopId && o.BranchId == branchId);
+            }
+            else if (role == "Admin" || role == "Manager")
+            {
+                // Admins and Managers see all rejected orders in their shop and branch
+                query = query.Where(o => o.ShopId == shopId && o.BranchId == branchId);
+            }
+            else if (role == "SuperAdmin")
+            {
+                // SuperAdmin sees all rejected orders (no additional filter)
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Unauthorized role for viewing rejected orders.");
+            }
+
+            var orders = await query.ToListAsync();
 
             return orders.Select(order => new OrderResponseDto
             {
@@ -551,16 +593,17 @@ namespace TailorAPI.Services
                 FabricLength = order.FabricLength,
                 Quantity = order.Quantity,
                 TotalPrice = order.TotalPrice,
-                OrderDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+                OrderDate = order.OrderDate.ToString("yyyy-MM-dd"),
                 CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
                 AssignedTo = order.AssignedTo,
                 AssignedToName = order.Assigned?.Name,
                 OrderStatus = order.OrderStatus,
                 PaymentStatus = order.PaymentStatus,
                 ApprovalStatus = order.ApprovalStatus,
-                RejectionReason = order.RejectionReason // ✅ So admin sees why tailor rejected it
+                RejectionReason = order.RejectionReason
             });
         }
+
         public async Task<bool> ReassignRejectedOrderAsync(int orderId, ReassignOrderDTO dto)
         {
             var order = await _context.Orders.FindAsync(orderId);

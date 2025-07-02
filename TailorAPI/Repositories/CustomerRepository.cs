@@ -1,4 +1,7 @@
-﻿namespace TailorAPI.Repositories
+﻿using Microsoft.EntityFrameworkCore;
+using TailorAPI.Models;
+
+namespace TailorAPI.Repositories
 {
     public class CustomerRepository
     {
@@ -20,5 +23,15 @@
         {
             return await _context.Customers.FindAsync(id);
         }
+
+        public async Task<List<Customer>> GetAllcustomer()
+        {
+            return await _context.Customers
+                .Include(c => c.Shop)
+                .Include(c => c.Branch)
+                .Where(c => !c.IsDeleted)
+                .ToListAsync();
+        }
+
     }
 }

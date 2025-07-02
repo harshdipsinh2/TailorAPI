@@ -9,8 +9,7 @@ namespace TailorAPI.DTOs.Request
         public decimal MakingPrice { get; set; }
 
 
-        public string BranchName { get; set; }
-        public string ShopName { get; set; }
+
 
 
 

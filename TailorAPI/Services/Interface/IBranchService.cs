@@ -9,6 +9,7 @@ namespace TailorAPI.Services.Interface
         Task<Branch> CreateHeadBranchForShopAsync(Shop shop);
 
         Task<BranchResponseDTO?> CreateBranchAsync(BranchRequestDTO dto);
-        Task<List<BranchResponseDTO>> GetAllBranchesAsync(int? shopId = null);
+        Task<List<BranchResponseDTO>> GetAllBranchesAsync();
+        Task<List<BranchResponseDTO>> GetAllBranchForSuperAdmin();
     }
 }
