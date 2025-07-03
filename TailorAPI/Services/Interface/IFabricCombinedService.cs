@@ -17,7 +17,8 @@ namespace TailorAPI.Services.Interface
 
         // FabricStock Methods
         Task<FabricStockResponseDTO> AddFabricStockAsync(FabricStockRequestDTO request);
-        Task<IEnumerable<FabricStockResponseDTO>> GetAllFabricStocksAsync();
+        Task<List<FabricStockResponseDTO>> GetFabricTypeForManagerAsync();
+        Task<List<FabricStockResponseDTO>> GetFabricStockForAdminAsync(int? shopId, int? branchId);
         Task<FabricStockResponseDTO> GetFabricStockByIdAsync(int id);
     }
 }

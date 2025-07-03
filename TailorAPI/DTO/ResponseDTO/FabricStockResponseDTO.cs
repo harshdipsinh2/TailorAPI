@@ -4,6 +4,8 @@
     {
         public int StockID { get; set; }
         public int FabricTypeID { get; set; }
+        public string FabricName { get; set; }
+        public decimal PricePerMeter { get; set; }
 
 
         public int BranchId { get; set; }

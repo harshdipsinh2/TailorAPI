@@ -127,6 +127,27 @@ namespace TailorAPI.Services
                 }).ToListAsync();
         }
 
+        public async Task<List<BranchResponseDTO>> GetAllBranchForManager()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            var role = user?.FindFirst("roles")?.Value;
+            var shopId = int.Parse(user?.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user?.FindFirst("branchId")?.Value ?? "0");
+
+            return await _context.Branches
+            .Where(c => c.ShopId == shopId) // ✅ Show all branches of the shop
+            .Include(c => c.Shop)
+             .AsNoTracking()
+             .Select(c => new BranchResponseDTO
+    {
+        BranchId = c.BranchId,
+        BranchName = c.BranchName,
+        Location = c.Location,
+        ShopId = c.ShopId,
+        ShopName = c.Shop.ShopName
+    }).ToListAsync();
+        }
+
 
 
 

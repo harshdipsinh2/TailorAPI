@@ -11,6 +11,8 @@ using Stripe.Checkout;
 using TailorAPI.DTO.Request;
 using TailorAPI.DTO.RequestDTO;
 using TailorAPI.Services;
+using Stripe.Climate;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 
 namespace TailorAPI.Services
@@ -22,7 +24,7 @@ namespace TailorAPI.Services
         private readonly TwilioService _twilioService;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public OrderService(OrderRepository orderRepository, TailorDbContext context, TwilioService twilioService,IHttpContextAccessor httpContextAccessor)
+        public OrderService(OrderRepository orderRepository, TailorDbContext context, TwilioService twilioService, IHttpContextAccessor httpContextAccessor)
         {
             _orderRepository = orderRepository;
             _context = context;
@@ -160,7 +162,7 @@ namespace TailorAPI.Services
             var totalPrice = ((decimal)requestDto.FabricLength * fabricType.PricePerMeter + product.MakingPrice)
                            * requestDto.Quantity;
 
-            var order = new Order
+            var order = new TailorAPI.Models.Order
             {
                 CustomerId = customerId,
                 ProductID = productId,
@@ -474,8 +476,235 @@ namespace TailorAPI.Services
         }
 
 
-        // ✅ Corrected for Non-null Values in List
-        public async Task<IEnumerable<OrderResponseDto>> GetAllOrdersAsync(int userId, string role)
+
+
+        public async Task<IEnumerable<OrderResponseDto>> GetRejectedOrdersAsync()
+        {
+            var user = _httpContextAccessor.HttpContext.User;
+            var role = user.Claims.FirstOrDefault(c => c.Type.Contains("role"))?.Value;
+            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+            var userId = int.Parse(user.FindFirst("sub")?.Value ?? "0");
+
+            var query = _context.Orders
+                .Include(o => o.Product)
+                .Include(o => o.fabricType)
+                .Include(o => o.Customer)
+                .Include(o => o.Assigned)
+                .Where(o => o.ApprovalStatus == OrderApprovalStatus.Rejected && !o.IsDeleted)
+                .AsQueryable();
+
+            if (role == "Tailor")
+            {
+                query = query.Where(o => o.AssignedTo == userId && o.ShopId == shopId && o.BranchId == branchId);
+            }
+            else if (role == "Admin" || role == "Manager")
+            {
+                query = query.Where(o => o.ShopId == shopId && o.BranchId == branchId);
+            }
+            else if (role == "SuperAdmin")
+            {
+                // no filter
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Unauthorized role for viewing rejected orders.");
+            }
+
+            var orders = await query.ToListAsync();
+
+            return orders.Select(order => new OrderResponseDto
+            {
+                OrderID = order.OrderID,
+                CustomerID = order.CustomerId,
+                ProductID = order.ProductID,
+                FabricTypeID = order.FabricTypeID,
+                CustomerName = order.Customer?.FullName,
+                ProductName = order.Product?.ProductName,
+                FabricName = order.fabricType?.FabricName ?? "N/A",
+                FabricLength = order.FabricLength,
+                Quantity = order.Quantity,
+                TotalPrice = order.TotalPrice,
+                OrderDate = order.OrderDate.ToString("yyyy-MM-dd"),
+                CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+                AssignedTo = order.AssignedTo,
+                AssignedToName = order.Assigned?.Name,
+                OrderStatus = order.OrderStatus,
+                PaymentStatus = order.PaymentStatus,
+                ApprovalStatus = order.ApprovalStatus,
+                RejectionReason = order.RejectionReason
+            });
+        }
+
+
+        public async Task<bool> ReassignRejectedOrderAsync(int orderId, ReassignOrderDTO dto)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null || order.ApprovalStatus != OrderApprovalStatus.Rejected || order.IsDeleted)
+                return false;
+
+            var previousTailor = await _context.Users.FindAsync(order.AssignedTo);
+            if (previousTailor != null)
+            {
+                previousTailor.UserStatus = UserStatus.Available;
+                _context.Users.Update(previousTailor);
+            }
+
+            var newTailor = await _context.Users.FindAsync(dto.UserID);
+            if (newTailor == null || !newTailor.IsVerified)
+                throw new Exception("New tailor must be a verified user.");
+
+            // Update order
+            order.AssignedTo = dto.UserID;
+            order.ApprovalStatus = OrderApprovalStatus.Pending;
+            order.OrderStatus = OrderStatus.Pending;
+            order.RejectionReason = null;
+
+            newTailor.UserStatus = UserStatus.Busy;
+
+            _context.Users.Update(newTailor);
+            _context.Orders.Update(order);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<int> RejectUnapprovedOrdersAfter24HoursAsync()
+        {
+            var cutoffTime = DateTime.UtcNow.AddHours(-24);  // 1 minute ago, for quick test
+
+            var ordersToReject = await _context.Orders
+                .Where(o =>
+                    o.ApprovalStatus == OrderApprovalStatus.Pending &&
+                    o.AssignedAt != null &&
+                    o.AssignedAt <= cutoffTime &&
+                    !o.IsDeleted)
+                .ToListAsync();
+
+            foreach (var order in ordersToReject)
+            {
+                order.ApprovalStatus = OrderApprovalStatus.Rejected;
+                order.RejectionReason = "Automatically rejected due to no approval/rejection within 24 hours.";
+                order.OrderStatus = OrderStatus.Pending; // Optional, depends on your flow
+
+                // Free assigned user
+                var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
+                if (assignedUser != null)
+                {
+                    assignedUser.UserStatus = UserStatus.Available;
+                    _context.Users.Update(assignedUser);
+                }
+            }
+
+            _context.Orders.UpdateRange(ordersToReject);
+            await _context.SaveChangesAsync();
+
+            return ordersToReject.Count;
+        }
+
+
+
+        public async Task<List<OrderResponseDto>> GetOrderForAdmin(int? shopId, int? branchId)
+        {
+            if (shopId == null)
+                throw new ArgumentException("shopId is required for admin");
+
+            var query = _context.Orders
+                .Where(o => !o.IsDeleted && o.ShopId == shopId);
+
+            if (branchId != null)
+                query = query.Where(o => o.BranchId == branchId);
+
+            return await query
+                .Include(o => o.Product)
+                .Include(o => o.fabricType)
+                .Include(o => o.Customer)
+                .Include(o => o.Assigned) // Include the Assigned User
+                .Include(o => o.Branch)
+                .Include(o => o.Shop)
+                .AsNoTracking()
+                .Select(o => new OrderResponseDto
+                {
+                    OrderID = o.OrderID,
+                    CustomerID = o.CustomerId,
+                    ProductID = o.ProductID,
+                    FabricTypeID = o.FabricTypeID,
+                    CustomerName = o.Customer.FullName,
+                    ProductName = o.Product.ProductName,
+                    FabricName = o.fabricType.FabricName ?? "N/A",
+                    FabricLength = o.FabricLength,
+                    Quantity = o.Quantity,
+                    TotalPrice = o.TotalPrice,
+                    OrderDate = o.OrderDate.ToString("yyyy-MM-dd"),
+                    CompletionDate = o.CompletionDate != null ? o.CompletionDate.Value.ToString("yyyy-MM-dd") : null,
+
+                    BranchId = o.BranchId,
+                    BranchName = o.Branch.BranchName,
+                    ShopId = o.ShopId,
+                    ShopName = o.Shop.ShopName,
+
+                    AssignedTo = o.AssignedTo,
+                    AssignedAt = o.AssignedAt,
+                    AssignedToName = o.Assigned.Name,
+                    OrderStatus = o.OrderStatus,
+                    PaymentStatus = o.PaymentStatus,
+                    ApprovalStatus = o.ApprovalStatus,
+                    RejectionReason = o.RejectionReason
+
+                })
+                .ToListAsync();
+
+
+        }
+
+        public async Task<List<OrderResponseDto>> GetOrderForManager()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            var role = user?.FindFirst("roles")?.Value;
+            var shopId = int.Parse(user?.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user?.FindFirst("branchId")?.Value ?? "0");
+
+            return await _context.Orders
+                .Where(o => !o.IsDeleted && o.ShopId == shopId && o.BranchId == branchId)
+                .Include(o => o.Product)
+                .Include(o => o.fabricType)
+                .Include(o => o.Customer)
+                .Include(o => o.Assigned)
+                .Include(o => o.Branch)
+                .Include(o => o.Shop)
+                .AsNoTracking()
+                .Select(o => new OrderResponseDto
+                {
+                    OrderID = o.OrderID,
+                    CustomerID = o.CustomerId,
+                    ProductID = o.ProductID,
+                    FabricTypeID = o.FabricTypeID,
+                    CustomerName = o.Customer.FullName,
+                    ProductName = o.Product.ProductName,
+                    FabricName = o.fabricType.FabricName ?? "N/A",
+                    FabricLength = o.FabricLength,
+                    Quantity = o.Quantity,
+                    TotalPrice = o.TotalPrice,
+                    OrderDate = o.OrderDate.ToString("yyyy-MM-dd"),
+                    CompletionDate = o.CompletionDate != null ? o.CompletionDate.Value.ToString("yyyy-MM-dd") : null,
+
+                    BranchId = o.BranchId,
+                    BranchName = o.Branch.BranchName,
+                    ShopId = o.ShopId,
+                    ShopName = o.Shop.ShopName,
+
+                    AssignedTo = o.AssignedTo,
+                    AssignedAt = o.AssignedAt,
+                    AssignedToName = o.Assigned.Name,
+                    OrderStatus = o.OrderStatus,
+                    PaymentStatus = o.PaymentStatus,
+                    ApprovalStatus = o.ApprovalStatus,
+                    RejectionReason = o.RejectionReason
+
+                }).ToListAsync();
+        }
+
+        public async Task<IEnumerable<OrderResponseDto>> GetAllOrdersForTailor(int userId, string role)
         {
             var user = _httpContextAccessor.HttpContext.User;
             var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
@@ -543,131 +772,49 @@ namespace TailorAPI.Services
             }).ToList();
         }
 
-
-        public async Task<IEnumerable<OrderResponseDto>> GetRejectedOrdersAsync()
+        public async Task<List<OrderResponseDto>> GetAllOrderForSuperAdmin(int shopId,int? branchId = null)
         {
-            var user = _httpContextAccessor.HttpContext.User;
-            var role = user.FindFirst("role")?.Value;
-            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
-            var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
-            var userId = int.Parse(user.FindFirst("sub")?.Value ?? "0");
+            var allorders = await _orderRepository.GetAllOrdersAsync();
 
-            var query = _context.Orders
-                .Include(o => o.Product)
-                .Include(o => o.fabricType)
-                .Include(o => o.Customer)
-                .Include(o => o.Assigned)
-                .Where(o => o.ApprovalStatus == OrderApprovalStatus.Rejected && !o.IsDeleted)
-                .AsQueryable();
+            var filterd = allorders
+                .Where(o => o.ShopId == shopId && !o.IsDeleted);
 
-            if (role == "Tailor")
-            {
-                // Tailor sees only their own rejected orders
-                query = query.Where(o => o.AssignedTo == userId && o.ShopId == shopId && o.BranchId == branchId);
-            }
-            else if (role == "Admin" || role == "Manager")
-            {
-                // Admins and Managers see all rejected orders in their shop and branch
-                query = query.Where(o => o.ShopId == shopId && o.BranchId == branchId);
-            }
-            else if (role == "SuperAdmin")
-            {
-                // SuperAdmin sees all rejected orders (no additional filter)
-            }
-            else
-            {
-                throw new UnauthorizedAccessException("Unauthorized role for viewing rejected orders.");
-            }
+            if (branchId.HasValue)
+                filterd = filterd.Where(o => o.BranchId == branchId.Value);
 
-            var orders = await query.ToListAsync();
-
-            return orders.Select(order => new OrderResponseDto
+            return filterd.Select(order => new OrderResponseDto
             {
                 OrderID = order.OrderID,
                 CustomerID = order.CustomerId,
                 ProductID = order.ProductID,
                 FabricTypeID = order.FabricTypeID,
-                CustomerName = order.Customer?.FullName,
-                ProductName = order.Product?.ProductName,
-                FabricName = order.fabricType?.FabricName ?? "N/A",
+                CustomerName = order.Customer.FullName,
+                ProductName = order.Product.ProductName,
+                FabricName = order.fabricType.FabricName ?? "N/A",
                 FabricLength = order.FabricLength,
                 Quantity = order.Quantity,
                 TotalPrice = order.TotalPrice,
                 OrderDate = order.OrderDate.ToString("yyyy-MM-dd"),
-                CompletionDate = order.CompletionDate?.ToString("yyyy-MM-dd"),
+                CompletionDate = order.CompletionDate != null ? order.CompletionDate.Value.ToString("yyyy-MM-dd") : null,
+
+                BranchId = order.BranchId,
+                BranchName = order.Branch.BranchName,
+                ShopId = order.ShopId,
+                ShopName = order.Shop.ShopName,
+
                 AssignedTo = order.AssignedTo,
-                AssignedToName = order.Assigned?.Name,
+                AssignedAt = order.AssignedAt,
+                AssignedToName = order.Assigned.Name,
                 OrderStatus = order.OrderStatus,
                 PaymentStatus = order.PaymentStatus,
                 ApprovalStatus = order.ApprovalStatus,
                 RejectionReason = order.RejectionReason
-            });
+
+            })
+                .ToList();
         }
 
-        public async Task<bool> ReassignRejectedOrderAsync(int orderId, ReassignOrderDTO dto)
-        {
-            var order = await _context.Orders.FindAsync(orderId);
-            if (order == null || order.ApprovalStatus != OrderApprovalStatus.Rejected || order.IsDeleted)
-                return false;
 
-            var previousTailor = await _context.Users.FindAsync(order.AssignedTo);
-            if (previousTailor != null)
-            {
-                previousTailor.UserStatus = UserStatus.Available;
-                _context.Users.Update(previousTailor);
-            }
-
-            var newTailor = await _context.Users.FindAsync(dto.UserID);
-            if (newTailor == null || !newTailor.IsVerified)
-                throw new Exception("New tailor must be a verified user.");
-
-            // Update order
-            order.AssignedTo = dto.UserID;
-            order.ApprovalStatus = OrderApprovalStatus.Pending;
-            order.OrderStatus = OrderStatus.Pending;
-            order.RejectionReason = null;
-
-            newTailor.UserStatus = UserStatus.Busy;
-
-            _context.Users.Update(newTailor);
-            _context.Orders.Update(order);
-            await _context.SaveChangesAsync();
-
-            return true;
-        }
-
-        public async Task<int> RejectUnapprovedOrdersAfter24HoursAsync()
-        {
-            var cutoffTime = DateTime.UtcNow.AddHours(-24);  // 1 minute ago, for quick test
-
-            var ordersToReject = await _context.Orders
-                .Where(o =>
-                    o.ApprovalStatus == OrderApprovalStatus.Pending &&
-                    o.AssignedAt != null &&
-                    o.AssignedAt <= cutoffTime &&
-                    !o.IsDeleted)   
-                .ToListAsync();
-
-            foreach (var order in ordersToReject)
-            {
-                order.ApprovalStatus = OrderApprovalStatus.Rejected;
-                order.RejectionReason = "Automatically rejected due to no approval/rejection within 24 hours.";
-                order.OrderStatus = OrderStatus.Pending; // Optional, depends on your flow
-
-                // Free assigned user
-                var assignedUser = await _context.Users.FindAsync(order.AssignedTo);
-                if (assignedUser != null)
-                {
-                    assignedUser.UserStatus = UserStatus.Available;
-                    _context.Users.Update(assignedUser);
-                }
-            }
-
-            _context.Orders.UpdateRange(ordersToReject);
-            await _context.SaveChangesAsync();
-
-            return ordersToReject.Count;
-        }
 
     }
 }

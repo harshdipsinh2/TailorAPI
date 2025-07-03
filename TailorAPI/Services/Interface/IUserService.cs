@@ -10,8 +10,9 @@ public interface IUserService
     Task<UserResponseDto?> UpdateUserAsync(int id, UserRequestDto userDto);
     Task<UserResponseDto?> RegisterUserAsync(UserRequestDto userDto);
     Task<UserResponseDto?> AuthenticateUserAsync(string email, string password);  // Changed to DTO
-    Task<List<UserResponseDto>> GetUsersByBranchAsync(int shopId, int branchId);
-    Task<List<UserResponseDto>> GetUsersByShopAsync(int shopId, int? branchId = null);
+    Task<List<UserResponseDto>> GetUsersForManager();
+    Task<List<UserResponseDto>> GetUsersForAdmin(int shopId, int? branchId = null);
+    Task<List<UserResponseDto>> GetUserForSuperAdmin(int shopId, int? branchId);
     Task<List<UserResponseDto>> GetAllUsersAsync();  // Changed to DTO
     Task<bool> DeleteUserAsync(int userId);
 }

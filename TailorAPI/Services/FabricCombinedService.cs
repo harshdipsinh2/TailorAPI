@@ -249,18 +249,66 @@ namespace TailorAPI.Services
             };
         }
 
-        public async Task<IEnumerable<FabricStockResponseDTO>> GetAllFabricStocksAsync() =>
-            await _context.FabricStocks
-                .Select(fs => new FabricStockResponseDTO
+        public async Task<List<FabricStockResponseDTO>> GetFabricTypeForManagerAsync()
+        {
+
+            var user = _httpContextAccessor.HttpContext.User;
+            var role = user.FindFirst("role")?.Value;
+            var shopId = int.Parse(user.FindFirst("shopId")?.Value ?? "0");
+            var branchId = int.Parse(user.FindFirst("branchId")?.Value ?? "0");
+
+            return await _context.FabricStocks
+                .Where(c => c.ShopId == shopId && c.BranchId == branchId)
+                .Include(c => c.Shop)
+                .Include(c => c.Branch)
+                .Include(c => c.FabricType)
+                .Select(c => new FabricStockResponseDTO
                 {
-                    StockID = fs.StockID,
-                    FabricTypeID = fs.FabricTypeID,
-                    StockIn = fs.StockIn,
-                    StockOut = fs.StockUse,
-                    StockAddDate = fs.StockAddDate
-                }).ToListAsync();
+                    StockID = c.StockID,
+                    FabricTypeID = c.FabricTypeID,
+                    StockIn = c.StockIn,
+                    StockOut = c.StockUse,
+                    StockAddDate = c.StockAddDate,
+                    ShopId = c.ShopId,
+                    ShopName = c.Shop.ShopName,
+                    BranchId = c.BranchId,
+                    BranchName = c.Branch.BranchName,
+                    FabricName = c.FabricType.FabricName,
+                    PricePerMeter = c.FabricType.PricePerMeter
+                })
+                .ToListAsync();
 
+        }
 
+        public async Task<List<FabricStockResponseDTO>> GetFabricStockForAdminAsync(int? shopId, int? branchId)
+        {
+            if (shopId == null)
+                throw new ArgumentException("shopId is required for admin");
+            var query = _context.FabricStocks
+                .Where(c => c.ShopId == shopId);
+            if (branchId != null)
+                query = query.Where(c => c.BranchId == branchId);
+            return await query
+                .Include(c => c.Shop)
+                .Include(c => c.Branch)
+                .Include(c => c.FabricType)
+                .AsNoTracking()
+                .Select(c => new FabricStockResponseDTO
+                {
+                    StockID = c.StockID,
+                    FabricTypeID = c.FabricTypeID,
+                    StockIn = c.StockIn,
+                    StockOut = c.StockUse,
+                    StockAddDate = c.StockAddDate,
+                    ShopId = c.ShopId,
+                    ShopName = c.Shop.ShopName,
+                    BranchId = c.BranchId,
+                    BranchName = c.Branch.BranchName,
+                    FabricName = c.FabricType.FabricName,
+                    PricePerMeter = c.FabricType.PricePerMeter
+                })
+                .ToListAsync();
+        }
 
         public async Task<FabricStockResponseDTO> GetFabricStockByIdAsync(int id)
         {

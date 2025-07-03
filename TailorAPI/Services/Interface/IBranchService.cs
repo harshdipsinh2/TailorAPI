@@ -10,6 +10,7 @@ namespace TailorAPI.Services.Interface
 
         Task<BranchResponseDTO?> CreateBranchAsync(BranchRequestDTO dto);
         Task<List<BranchResponseDTO>> GetAllBranchesAsync();
+        Task<List<BranchResponseDTO>> GetAllBranchForManager();
         Task<List<BranchResponseDTO>> GetAllBranchForSuperAdmin();
     }
 }

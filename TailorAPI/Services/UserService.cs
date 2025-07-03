@@ -9,6 +9,7 @@ using TailorAPI.Services.Interface;
 using TailorAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 
 public class UserService : IUserService
@@ -18,19 +19,21 @@ public class UserService : IUserService
     private readonly JwtService _JwtService;
     private readonly IShopService _shopService;
     private readonly IBranchService _branchService;
+    private readonly TailorDbContext _context;
     private readonly BranchRepository _branchRepository;
     private readonly ShopRepository _shopRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
 
     public UserService(UserRepository userRepository,JwtService jwtService,IShopService shopService,IHttpContextAccessor httpContextAccessor,
-        IBranchService branchService,BranchRepository branchRepository,ShopRepository shopRepository)
+        IBranchService branchService,BranchRepository branchRepository,TailorDbContext context,ShopRepository shopRepository)
     {
         _userRepository = userRepository;
         _passwordHasher = new PasswordHasher<User>();
         _JwtService = jwtService;
         _shopService = shopService;
         _branchService = branchService;
+        _context = context;
         _branchRepository = branchRepository;
         _shopRepository = shopRepository;
         _httpContextAccessor = httpContextAccessor;
@@ -214,7 +217,7 @@ public class UserService : IUserService
             IsVerified = u.IsVerified
         }).ToList();
     }
-    public async Task<List<UserResponseDto>> GetUsersByShopAsync(int shopId, int? branchId = null)
+    public async Task<List<UserResponseDto>> GetUsersForAdmin(int shopId, int? branchId = null)
     {
         var allUsers = await _userRepository.GetAllUsersAsync();
 
@@ -241,12 +244,45 @@ public class UserService : IUserService
         }).ToList();
     }
 
-    public async Task<List<UserResponseDto>> GetUsersByBranchAsync(int shopId, int branchId)
+    public async Task<List<UserResponseDto>> GetUsersForManager()
     {
-        var allUsers = await _userRepository.GetAllUsersAsync();
+        var user = _httpContextAccessor.HttpContext?.User;
+        var role = user?.FindFirst("roles")?.Value;
+        var shopId = int.Parse(user?.FindFirst("shopId")?.Value ?? "0");
+        var branchId = int.Parse(user?.FindFirst("branchId")?.Value ?? "0");
 
-        var filtered = allUsers
-            .Where(u => u.ShopId == shopId && u.BranchId == branchId && !u.IsDeleted);
+
+        return await _context.Users
+            .Where(user => !user.IsDeleted && user.ShopId == shopId && user.BranchId == branchId)
+            .Include(user => user.Shop)
+            .Include(user => user.Branch)
+            .AsNoTracking()
+            .Select(user => new UserResponseDto
+        {
+            UserID = user.UserID,
+            Name = user.Name,
+            Email = user.Email,
+            MobileNo = user.MobileNo,
+            Address = user.Address,
+            RoleName = user.Role.RoleName,
+            UserStatus = user.UserStatus.ToString(),
+            ShopId = user.ShopId ?? 0,
+            ShopName = user.Shop.ShopName,
+            BranchId = user.BranchId ?? 0,
+            BranchName = user.Branch.BranchName,
+            IsVerified = user.IsVerified
+        }).ToListAsync();
+    }
+
+    public async Task<List<UserResponseDto>>GetUserForSuperAdmin(int shopId,int? branchId)
+    {
+        var alluser = await _userRepository.GetAllUsersAsync();
+
+        var filtered = alluser
+            .Where(u => u.ShopId == shopId && !u.IsDeleted);
+
+        if (branchId.HasValue)
+            filtered = filtered.Where(u => u.BranchId == branchId.Value);
 
         return filtered.Select(user => new UserResponseDto
         {
@@ -262,7 +298,8 @@ public class UserService : IUserService
             BranchId = user.BranchId ?? 0,
             BranchName = user.Branch?.BranchName,
             IsVerified = user.IsVerified
-        }).ToList();
+        }
+        ).ToList();
     }
 
 

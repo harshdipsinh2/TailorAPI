@@ -96,7 +96,7 @@ namespace TailorAPI.Controllers
             }
         }
 
-        [Authorize(Roles ="Manager")]
+        [Authorize(Roles ="Manager,Tailor")]
         [HttpGet("GetAllCustomer-Manager")]
         public async Task<IActionResult> GetCustomersForManager()
         {
@@ -272,7 +272,7 @@ namespace TailorAPI.Controllers
         }
 
         [HttpGet("GetAllProductsForManager")]
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "Manager,Tailor")]
         public async Task<IActionResult> GetAllProductsForManager()
         {
             var result = await _productService.GetProductForManagerAsync();
@@ -386,13 +386,23 @@ namespace TailorAPI.Controllers
             }
         }
 
-        [HttpGet("GetAllFabricStocks")]
-        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
-        public async Task<IActionResult> GetAllFabricStocks()
+        [HttpGet("GetAllFabricStocksForAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        public async Task<IActionResult> GetAllFabricStocksForAdminAsync([FromQuery] int? shopId, [FromQuery] int? branchId)
         {
-            var result = await _fabricCombinedService.GetAllFabricStocksAsync();
+            var result = await _fabricCombinedService.GetFabricStockForAdminAsync(shopId, branchId);
             return Ok(result);
         }
+
+        [HttpGet("GetAllFabricStocksForManager")]
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
+        public async Task<IActionResult> GetAllFabricStocksForManagerAsync()
+        {
+            var result = await _fabricCombinedService.GetFabricTypeForManagerAsync();
+            return Ok(result);
+        }
+
+
 
         [HttpGet("GetFabricStockById")]
         [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
@@ -468,6 +478,31 @@ namespace TailorAPI.Controllers
             return Ok(order);
         }
 
+        [HttpGet("GetAll-OrderForAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        public async Task<IActionResult> GetAllOrdersForAdmin([FromQuery] int? shopId, [FromQuery] int? branchId)
+        {
+            var orders = await _orderService.GetOrderForAdmin(shopId, branchId);
+            return Ok(orders);
+
+        }
+        [HttpGet("GetAll-OrderForManager")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> GetAllOrdersForManager()
+        {
+            var orders = await _orderService.GetOrderForManager();
+            return Ok(orders);
+        }
+
+        [HttpGet("GetAll-OrderForSuperAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> GetAllOrdersForSuperAdmin([FromQuery] int shopId, [FromQuery] int? branchId = null)
+        {
+            var orders = await _orderService.GetAllOrderForSuperAdmin(shopId, branchId);
+            return Ok(orders);
+        }
+
+
         [HttpPut("{orderId}/approval")]
         [Authorize(Roles = "SuperAdmin,Tailor")]
         public async Task<IActionResult> UpdateOrderApproval(int orderId, [FromBody] OrderApprovalUpdateDTO requestDto)
@@ -493,8 +528,8 @@ namespace TailorAPI.Controllers
             }
         }
 
-        [HttpGet("GetAll-Order")]
-        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
+        [HttpGet("GetAllOrderFor-Tailor")]
+        [Authorize(Roles = "Tailor")]
         public async Task<IActionResult> GetAllOrders()
         {
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserID" || c.Type == ClaimTypes.NameIdentifier);
@@ -506,7 +541,7 @@ namespace TailorAPI.Controllers
             int userId = int.Parse(userIdClaim.Value);
             string role = roleClaim.Value;
 
-            var orders = await _orderService.GetAllOrdersAsync(userId, role);
+            var orders = await _orderService.GetAllOrdersForTailor(userId, role);
             return Ok(orders);
         }
 
@@ -581,7 +616,7 @@ namespace TailorAPI.Controllers
         }
 
 
-        [Authorize(Roles = "SuperAdmin,Admin")]
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
         [HttpGet("all-branches")]
         public async Task<IActionResult> GetAllBranches()
         {
@@ -595,6 +630,22 @@ namespace TailorAPI.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
+        [HttpGet("all-branchesForManager")]
+        public async Task<IActionResult> GetAllBranchesForManager()
+        {
+            try
+            {
+                var result = await _branchService.GetAllBranchForManager();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
 
         [Authorize(Roles ="SuperAdmin")]
         [HttpGet("All-BranchesForSuperAdmin")]
@@ -616,23 +667,29 @@ namespace TailorAPI.Controllers
         }
 
         [Authorize(Roles ="SuperAdmin,Admin")]
-        [HttpGet("admin/users")]
+        [HttpGet("GetAllUserForAdmin")]
         public async Task<IActionResult> GetUsersByShop([FromQuery] int shopId, [FromQuery] int? branchId = null)
         {
-            var users = await _userService.GetUsersByShopAsync(shopId, branchId);
+            var users = await _userService.GetUsersForAdmin(shopId, branchId);
             return Ok(users);
         }
 
         [Authorize(Roles ="Manager")]
-        [HttpGet("manager/users")]
+        [HttpGet("GetAllUserForManager")]
         public async Task<IActionResult> GetUsersByBranch([FromQuery] int shopId, [FromQuery] int branchId)
         {
-            var users = await _userService.GetUsersByBranchAsync(shopId, branchId);
+            var users = await _userService.GetUsersForManager();
             return Ok(users);
         }
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpGet("GetUserForSuperAdmin")]
+        public async Task<IActionResult> GetAllUserForSuperAdmin([FromQuery] int shopId, [FromQuery] int? branchId = null)
+        {
+            var orders = await _orderService.GetAllOrderForSuperAdmin(shopId, branchId);
+            return Ok(orders);
+        }
 
-
-        [Authorize(Roles = "SuperAdmin,Admin,Manager")]
+        [Authorize(Roles = "SuperAdmin,Admin,Manager,Tailor")]
         [HttpGet("GetAllTailor-User")]
         public async Task<IActionResult> GetAllTailors()
         {

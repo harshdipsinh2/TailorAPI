@@ -27,6 +27,8 @@ namespace TailorAPI.Repositories
                 .Include(o => o.Product)
                 .Include(o => o.fabricType)
                 .Include(o => o.Assigned)
+                .Include(o => o.Shop)
+                .Include(o => o.Branch)
                 .ToListAsync();
         }
 
