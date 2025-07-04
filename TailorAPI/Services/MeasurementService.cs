@@ -170,15 +170,18 @@ namespace TailorAPI.Services
                 .AsNoTracking()
                 .Select(m => new MeasurementResponseDTO
                 {
-
-
                     MeasurementID = m.MeasurementID,
                     CustomerId = m.CustomerId,
+                    FullName=m.Customer.FullName,
                     Chest = m.Chest,
                     Waist = m.Waist,
                     Hip = m.Hip,
                     Shoulder = m.Shoulder,
                     SleeveLength = m.SleeveLength,
+                    BranchId =m.BranchId,
+                    BranchName=m.Branch.BranchName,
+                    ShopId=m.ShopId,
+                    ShopName=m.Shop.ShopName,
                     TrouserLength = m.TrouserLength,
                     Inseam = m.Inseam,
                     Thigh = m.Thigh,
@@ -210,6 +213,10 @@ namespace TailorAPI.Services
                 {
                     MeasurementID = m.MeasurementID,
                     CustomerId = m.CustomerId,
+                    BranchId = m.BranchId,
+                    BranchName = m.Branch.BranchName,
+                    ShopId = m.ShopId,
+                    ShopName = m.Shop.ShopName,
                     Chest = m.Chest,
                     Waist = m.Waist,
                     Hip = m.Hip,

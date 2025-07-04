@@ -135,7 +135,7 @@ namespace TailorAPI.Services
             var branchId = int.Parse(user?.FindFirst("branchId")?.Value ?? "0");
 
             return await _context.Branches
-            .Where(c => c.ShopId == shopId) // ✅ Show all branches of the shop
+        .Where(c => c.ShopId == shopId && c.BranchId == branchId) // ✅ Only that manager's branch
             .Include(c => c.Shop)
              .AsNoTracking()
              .Select(c => new BranchResponseDTO

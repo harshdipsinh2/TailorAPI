@@ -13,3 +13,4 @@ BEGIN
         (SELECT COUNT(*) FROM Products) AS TotalProducts,
         (SELECT COUNT(*) FROM FabricTypes) AS TotalFabrics -- <-- Add this line
 END
+    
