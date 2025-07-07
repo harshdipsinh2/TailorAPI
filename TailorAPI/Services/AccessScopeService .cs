@@ -43,5 +43,5 @@ public class AccessScopeService : IAccessScopeService
     {
         return GetUserScope().Role.Equals("Tailor", StringComparison.OrdinalIgnoreCase);
     }
-
+       
 }
