@@ -6,7 +6,7 @@ EXPOSE 443
 
 # --- BUILD IMAGE ---
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
+WORKDIR /TailorAPI
 
 # Copy everything into the container
 COPY . .
