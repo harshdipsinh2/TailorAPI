@@ -13,7 +13,7 @@ using TailorAPI.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Add Controllers and JSON options (including enums as strings)
+// ✅ JSON & Controllers
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.PropertyNamingPolicy = null;
@@ -21,14 +21,13 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// ✅ Swagger + Enums inline + JWT Auth config
+// ✅ Swagger Config with JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "TailorAPI", Version = "v1" });
-    options.UseInlineDefinitionsForEnums(); // ✅ Shows enums directly inside schema
+    options.UseInlineDefinitionsForEnums();
 
-    // ✅ JWT Auth in Swagger UI
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -55,9 +54,12 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ✅ Configure DB
+// ✅ Use MySQL DB
 builder.Services.AddDbContext<TailorDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+    )
 );
 
 // ✅ CORS Policy
@@ -67,13 +69,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
                       policy =>
                       {
-                          policy.WithOrigins("http://localhost:3000")
+                          policy.AllowAnyOrigin()
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
                       });
 });
 
-// ✅ Register Services and Repositories
+// ✅ DI: Services & Repositories
 builder.Services.AddScoped<IAccessScopeService, AccessScopeService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IMeasurementService, MeasurementService>();
@@ -88,14 +90,12 @@ builder.Services.AddScoped<IFabricCombinedService, FabricCombinedService>();
 builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IOtpVerificationService, OtpVerificationService>();
-builder.Services.AddScoped<ITwilioService, TwilioService>();
 builder.Services.AddHostedService<OrderAutoRejectService>();
 builder.Services.AddScoped<TwilioService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<IShopService, ShopService>();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IPlanService, PlanService>();    
-
+builder.Services.AddScoped<IPlanService, PlanService>();
 
 builder.Services.AddScoped<BranchRepository>();
 builder.Services.AddScoped<ShopRepository>();
@@ -113,7 +113,7 @@ builder.Services.AddScoped<MeasurementRepository>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<MeasurementService>();
 
-// ✅ JWT Configuration
+// ✅ JWT Auth Setup
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
@@ -132,7 +132,7 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-// ✅ Authorization Roles
+// ✅ Role-Based Policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdmin"));
@@ -141,18 +141,17 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ManagerOnly", policy => policy.RequireRole("Manager"));
 });
 
-
 // ✅ Build App
 var app = builder.Build();
 
-// ✅ Seed Roles and Admin User
+// ✅ Seed Roles and Admin
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<TailorDbContext>();
     EnsureSuperAdminExists(dbContext);
 }
 
-// ✅ Middleware Pipeline
+// ✅ Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -161,19 +160,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(MyAllowSpecificOrigins);
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.Run();
 
-// ✅ Admin Seeding Method
+// ✅ Seeding Method
 static void EnsureSuperAdminExists(TailorDbContext context)
 {
     context.Database.Migrate();
 
-    // Look for the SuperAdmin role (ID 1, seeded in OnModelCreating)
     var superAdminRole = context.Roles.FirstOrDefault(r => r.RoleName == "SuperAdmin");
     if (superAdminRole == null)
     {
@@ -210,5 +206,3 @@ static void EnsureSuperAdminExists(TailorDbContext context)
         Console.WriteLine("✅ SuperAdmin user already exists.");
     }
 }
-
-
