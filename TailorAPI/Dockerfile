@@ -6,12 +6,11 @@ EXPOSE 443
 
 # --- BUILD IMAGE ---
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /TailorAPI
+WORKDIR /src
 
-# Copy everything into the container
-COPY . .
-
-# Restore dependencies and build
+# Copy everything and restore
+COPY ../ ./
+WORKDIR /src/TailorAPI
 RUN dotnet restore "TailorAPI.csproj"
 RUN dotnet build "TailorAPI.csproj" -c Release -o /app/build
 RUN dotnet publish "TailorAPI.csproj" -c Release -o /app/publish
@@ -20,6 +19,4 @@ RUN dotnet publish "TailorAPI.csproj" -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-
-# Start the application
 ENTRYPOINT ["dotnet", "TailorAPI.dll"]
