@@ -62,6 +62,11 @@ builder.Services.AddDbContext<TailorDbContext>(options =>
     )
 );
 
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
+
 // ✅ CORS Policy
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 builder.Services.AddCors(options =>
